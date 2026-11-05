@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 9 of 10. Write readable scripts with quoting, tests, loops, functions and error handling.">
+  <title>Part 09: Bash Scripting Foundations | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html" aria-current="page"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 09</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 09</p>
+        <h1>Bash Scripting Foundations</h1>
+        <p class="g-deck">Write readable scripts with quoting, tests, loops, functions and error handling.</p>
+        <div class="g-chapter-meta">
+          <span>18 min read</span>
+          <span>20 sections</span>
+          <span>36 code blocks</span>
+          <span>Part 09 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>20 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#start-with-a-safe-template" data-toc-link>Start with a safe template</a><a class="g-toc-link depth-2" href="#variables-and-quoting" data-toc-link>Variables and quoting</a><a class="g-toc-link depth-2" href="#command-substitution" data-toc-link>Command substitution</a><a class="g-toc-link depth-2" href="#arguments" data-toc-link>Arguments</a><a class="g-toc-link depth-2" href="#tests-and-conditionals" data-toc-link>Tests and conditionals</a><a class="g-toc-link depth-2" href="#loops" data-toc-link>Loops</a><a class="g-toc-link depth-2" href="#functions" data-toc-link>Functions</a><a class="g-toc-link depth-2" href="#error-handling" data-toc-link>Error handling</a><a class="g-toc-link depth-2" href="#a-practical-script" data-toc-link>A practical script</a><a class="g-toc-link depth-2" href="#parameter-expansion" data-toc-link>Parameter expansion</a><a class="g-toc-link depth-2" href="#arrays" data-toc-link>Arrays</a><a class="g-toc-link depth-2" href="#case-statements-and-menus" data-toc-link>Case statements and menus</a><a class="g-toc-link depth-2" href="#here-documents-and-generated-configuration" data-toc-link>Here documents and generated configuration</a><a class="g-toc-link depth-2" href="#process-substitution-and-file-descriptors" data-toc-link>Process substitution and file descriptors</a><a class="g-toc-link depth-2" href="#parse-options-with-getopts" data-toc-link>Parse options with getopts</a><a class="g-toc-link depth-2" href="#debugging-and-testing" data-toc-link>Debugging and testing</a><a class="g-toc-link depth-2" href="#portability-and-scheduling" data-toc-link>Portability and scheduling</a><a class="g-toc-link depth-2" href="#lab-write-a-system-report" data-toc-link>Lab: write a system report</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>A shell script is a text file that the shell reads and executes. It is the fastest way to automate a sequence of commands, and it is already installed on almost every Linux system. This part teaches the subset you need for reliable, readable scripts.</p>
+<h2 id="start-with-a-safe-template">Start with a safe template<a aria-label="Link to this section" class="g-anchor" href="#start-with-a-safe-template">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/usr/bin/env bash</span>
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+main<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'Starting %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span>
+<span class="o">}</span>
+
+main<span class="w"> </span><span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span>
+</code></pre></div>
+<p>The first line is the shebang. It tells the kernel which interpreter to use. <code>set -euo pipefail</code> makes the script fail on unhandled errors, unset variables and failed pipeline stages. It is not a complete safety system, but it catches many mistakes early.</p>
+<p>Make the script executable and run it:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">chmod<span class="w"> </span>+x<span class="w"> </span>script.sh
+./script.sh
+</code></pre></div>
+<p>Use <code>shellcheck script.sh</code> when available. It catches quoting bugs, unused variables and many portability problems.</p>
+<h2 id="variables-and-quoting">Variables and quoting<a aria-label="Link to this section" class="g-anchor" href="#variables-and-quoting">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">name</span><span class="o">=</span><span class="s2">"Linux Foundations"</span>
+<span class="nv">count</span><span class="o">=</span><span class="m">10</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'name=%s count=%d\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$count</span><span class="s2">"</span>
+</code></pre></div>
+<p>Assign without spaces around <code>=</code>. Read with <code>$name</code> or <code>${name}</code>. Use braces when the variable is followed by text:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">file</span><span class="o">=</span><span class="s2">"report"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">file</span><span class="si">}</span><span class="s2">.txt"</span>
+</code></pre></div>
+<p>Quote expansions in most cases:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span>
+</code></pre></div>
+<p>Unquoted values undergo word splitting and glob expansion. That can turn one argument into several or expand <code>*</code> into filenames. Use arrays when you need a list:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">files</span><span class="o">=(</span><span class="s2">"one.txt"</span><span class="w"> </span><span class="s2">"two words.txt"</span><span class="o">)</span>
+<span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">files</span><span class="p">[@]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'file: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<h2 id="command-substitution">Command substitution<a aria-label="Link to this section" class="g-anchor" href="#command-substitution">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">today</span><span class="o">=</span><span class="k">$(</span>date<span class="w"> </span>+%F<span class="k">)</span>
+<span class="nv">kernel</span><span class="o">=</span><span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'date=%s kernel=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$today</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$kernel</span><span class="s2">"</span>
+</code></pre></div>
+<p>Capture output only when you need it. If you just want to run a command and show output, run it directly. Avoid backticks; <code>$(...)</code> nests cleanly and is easier to read.</p>
+<h2 id="arguments">Arguments<a aria-label="Link to this section" class="g-anchor" href="#arguments">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$0</code></td>
+<td>Script name</td>
+</tr>
+<tr>
+<td><code>$1</code>, <code>$2</code></td>
+<td>Positional arguments</td>
+</tr>
+<tr>
+<td><code>$#</code></td>
+<td>Number of arguments</td>
+</tr>
+<tr>
+<td><code>$@</code></td>
+<td>All arguments as separate words</td>
+</tr>
+<tr>
+<td><code>$*</code></td>
+<td>All arguments as one word in some contexts</td>
+</tr>
+<tr>
+<td><code>$?</code></td>
+<td>Exit status of the last command</td>
+</tr>
+</tbody>
+</table></div>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$#</span><span class="s2">"</span><span class="w"> </span>-lt<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'usage: %s &lt;path&gt;\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span>
+<span class="k">fi</span>
+
+<span class="nv">target</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'target=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$target</span><span class="s2">"</span>
+</code></pre></div>
+<p>Use <code>"$@"</code> when forwarding arguments. It preserves each argument as a separate word.</p>
+<h2 id="tests-and-conditionals">Tests and conditionals<a aria-label="Link to this section" class="g-anchor" href="#tests-and-conditionals">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span>/etc/passwd<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'file exists\n'</span>
+<span class="k">fi</span>
+
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-d<span class="w"> </span>/tmp/lab<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab
+<span class="k">fi</span>
+
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"root"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'running as root\n'</span>
+<span class="k">else</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'running as %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span>
+<span class="k">fi</span>
+</code></pre></div>
+<p>Common tests:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Test</th>
+<th>True when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-e path</code></td>
+<td>Path exists</td>
+</tr>
+<tr>
+<td><code>-f path</code></td>
+<td>Regular file</td>
+</tr>
+<tr>
+<td><code>-d path</code></td>
+<td>Directory</td>
+</tr>
+<tr>
+<td><code>-r path</code></td>
+<td>Readable</td>
+</tr>
+<tr>
+<td><code>-w path</code></td>
+<td>Writable</td>
+</tr>
+<tr>
+<td><code>-x path</code></td>
+<td>Executable</td>
+</tr>
+<tr>
+<td><code>-z string</code></td>
+<td>String is empty</td>
+</tr>
+<tr>
+<td><code>-n string</code></td>
+<td>String is not empty</td>
+</tr>
+<tr>
+<td><code>a = b</code></td>
+<td>Strings are equal</td>
+</tr>
+<tr>
+<td><code>a != b</code></td>
+<td>Strings differ</td>
+</tr>
+<tr>
+<td><code>n -eq m</code></td>
+<td>Integers are equal</td>
+</tr>
+<tr>
+<td><code>n -lt m</code></td>
+<td>Integer is less than</td>
+</tr>
+</tbody>
+</table></div>
+<p>Bash also supports <code>[[ ... ]]</code>, which handles pattern matching and avoids some word-splitting problems:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span><span class="w"> </span><span class="o">==</span><span class="w"> </span>*.log<span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'log file\n'</span>
+<span class="k">fi</span>
+</code></pre></div>
+<p>Use <code>(( ... ))</code> for arithmetic:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">count</span><span class="o">=</span><span class="m">0</span>
+<span class="o">((</span>count++<span class="o">))</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'count=%d\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$count</span><span class="s2">"</span>
+</code></pre></div>
+<h2 id="loops">Loops<a aria-label="Link to this section" class="g-anchor" href="#loops">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span>/etc/*.conf<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span>
+<span class="k">done</span>
+
+<span class="nv">count</span><span class="o">=</span><span class="m">1</span>
+<span class="k">while</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$count</span><span class="s2">"</span><span class="w"> </span>-le<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'count=%d\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$count</span><span class="s2">"</span>
+<span class="w">    </span><span class="o">((</span>count++<span class="o">))</span>
+<span class="k">done</span>
+
+<span class="k">while</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>line<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'line: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$line</span><span class="s2">"</span>
+<span class="k">done</span><span class="w"> </span>&lt;<span class="w"> </span>/etc/hostname
+</code></pre></div>
+<p><code>IFS= read -r</code> preserves whitespace and backslashes. Use it for line-oriented input. For arbitrary filenames, use null-delimited input as shown in the files chapter.</p>
+<h2 id="functions">Functions<a aria-label="Link to this section" class="g-anchor" href="#functions">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">usage<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'usage: %s &lt;directory&gt;\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="o">}</span>
+
+check_dir<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">local</span><span class="w"> </span><span class="nv">dir</span><span class="o">=</span><span class="nv">$1</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-d<span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'not a directory: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="m">1</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="o">}</span>
+
+check_dir<span class="w"> </span>/tmp<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p>Use <code>local</code> for function variables. Return a status with <code>return 0</code> for success or a non-zero value for failure. Do not use <code>exit</code> inside a function unless you really want to end the whole script.</p>
+<h2 id="error-handling">Error handling<a aria-label="Link to this section" class="g-anchor" href="#error-handling">#</a></h2>
+<p><code>set -e</code> is useful but subtle. A command in an <code>if</code>, <code>while</code> or <code>&amp;&amp;</code> chain is allowed to fail without exiting. If you need to clean up, use <code>trap</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/usr/bin/env bash</span>
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+<span class="nv">tmpdir</span><span class="o">=</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span>
+cleanup<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="s2">"</span><span class="nv">$tmpdir</span><span class="s2">"</span>
+<span class="o">}</span>
+<span class="nb">trap</span><span class="w"> </span>cleanup<span class="w"> </span>EXIT
+
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'working in %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$tmpdir</span><span class="s2">"</span>
+</code></pre></div>
+<p>The trap runs when the script exits, including on an error. Keep cleanup idempotent so it is safe to run more than once.</p>
+<p>For expected failures, handle them explicitly:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="k">if</span><span class="w"> </span>!<span class="w"> </span>grep<span class="w"> </span>-q<span class="w"> </span><span class="s1">'^root:'</span><span class="w"> </span>/etc/passwd<span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'root entry missing\n'</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<span class="k">fi</span>
+</code></pre></div>
+<h2 id="a-practical-script">A practical script<a aria-label="Link to this section" class="g-anchor" href="#a-practical-script">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/usr/bin/env bash</span>
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+usage<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'usage: %s &lt;logfile&gt;\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span>
+<span class="o">}</span>
+
+<span class="o">[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$#</span><span class="s2">"</span><span class="w"> </span>-eq<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span>usage
+<span class="nv">logfile</span><span class="o">=</span><span class="nv">$1</span>
+
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-r<span class="w"> </span><span class="s2">"</span><span class="nv">$logfile</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'cannot read: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$logfile</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<span class="k">fi</span>
+
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'lines: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>wc<span class="w"> </span>-l<span class="w"> </span>&lt;<span class="w"> </span><span class="s2">"</span><span class="nv">$logfile</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'errors: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>grep<span class="w"> </span>-ci<span class="w"> </span><span class="s1">'error'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$logfile</span><span class="s2">"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span><span class="k">)</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'last modified: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>stat<span class="w"> </span>-c<span class="w"> </span><span class="s1">'%y'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$logfile</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</code></pre></div>
+<p>The <code>|| true</code> on <code>grep</code> keeps a no-match result from failing the script under <code>set -e</code>. Use that pattern only when no match is a valid outcome.</p>
+<h2 id="parameter-expansion">Parameter expansion<a aria-label="Link to this section" class="g-anchor" href="#parameter-expansion">#</a></h2>
+<p>Bash can transform a variable while expanding it. These forms avoid extra commands and work well in scripts.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Form</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>${name:-default}</code></td>
+<td>Use <code>default</code> if <code>name</code> is unset or empty</td>
+</tr>
+<tr>
+<td><code>${name:=default}</code></td>
+<td>Assign <code>default</code> if <code>name</code> is unset or empty</td>
+</tr>
+<tr>
+<td><code>${name:?message}</code></td>
+<td>Print <code>message</code> and exit if <code>name</code> is unset or empty</td>
+</tr>
+<tr>
+<td><code>${name:+alternate}</code></td>
+<td>Use <code>alternate</code> if <code>name</code> is set and non-empty</td>
+</tr>
+<tr>
+<td><code>${#name}</code></td>
+<td>Length of the value</td>
+</tr>
+<tr>
+<td><code>${name#prefix}</code></td>
+<td>Remove the shortest matching prefix</td>
+</tr>
+<tr>
+<td><code>${name##prefix}</code></td>
+<td>Remove the longest matching prefix</td>
+</tr>
+<tr>
+<td><code>${name%suffix}</code></td>
+<td>Remove the shortest matching suffix</td>
+</tr>
+<tr>
+<td><code>${name%%suffix}</code></td>
+<td>Remove the longest matching suffix</td>
+</tr>
+<tr>
+<td><code>${name/old/new}</code></td>
+<td>Replace the first match</td>
+</tr>
+<tr>
+<td><code>${name//old/new}</code></td>
+<td>Replace all matches</td>
+</tr>
+</tbody>
+</table></div>
+<p>Examples:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">set</span><span class="w"> </span>-u
+<span class="nv">target</span><span class="o">=</span><span class="si">${</span><span class="nv">1</span><span class="p">:?usage: script.sh &lt;path&gt;</span><span class="si">}</span>
+<span class="nv">backup</span><span class="o">=</span><span class="si">${</span><span class="nv">BACKUP_DIR</span><span class="k">:-</span><span class="nv">$HOME</span><span class="p">/backups</span><span class="si">}</span>
+<span class="nv">name</span><span class="o">=</span><span class="s1">'report-2026-01.txt'</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'name=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'base=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">name</span><span class="p">%.txt</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'stem=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">name</span><span class="p">%-*</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'length=%d\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${#</span><span class="nv">name</span><span class="si">}</span><span class="s2">"</span>
+</code></pre></div>
+<p><code>${1:?message}</code> is a compact way to require an argument. The script exits with an error if the value is missing. <code>${name%.txt}</code> removes the suffix. <code>${name%-*}</code> removes the shortest match from the end.</p>
+<p>Use <code>set -u</code> while developing. It turns an unset variable into an error instead of an empty string. That catches typos, but it can also break scripts that intentionally test for an unset value.</p>
+<h2 id="arrays">Arrays<a aria-label="Link to this section" class="g-anchor" href="#arrays">#</a></h2>
+<p>An array holds multiple values. Use it when a list has spaces or when you need to preserve each item as one argument.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">files</span><span class="o">=(</span><span class="s2">"one.txt"</span><span class="w"> </span><span class="s2">"two words.txt"</span><span class="w"> </span><span class="s2">"three.txt"</span><span class="o">)</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'count=%d\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${#</span><span class="nv">files</span><span class="p">[@]</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">files</span><span class="p">[@]</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">files</span><span class="p">[@]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'file: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<p><code>${files[@]}</code> expands to separate words. <code>"${files[@]}"</code> preserves each element as one argument. <code>${#files[@]}</code> is the number of elements. <code>${!files[@]}</code> lists the indexes.</p>
+<p>Associative arrays use string keys:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">declare</span><span class="w"> </span>-A<span class="w"> </span>sizes
+sizes<span class="o">[</span>small<span class="o">]=</span><span class="m">10</span>
+sizes<span class="o">[</span>large<span class="o">]=</span><span class="m">100</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'large=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">sizes</span><span class="p">[large]</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">for</span><span class="w"> </span>key<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="p">!sizes[@]</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$key</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">sizes</span><span class="p">[</span><span class="nv">$key</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<p>Associative arrays require Bash 4 or newer. If a script must run under <code>/bin/sh</code>, do not use them.</p>
+<p>Read a file into an array safely:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mapfile<span class="w"> </span>-t<span class="w"> </span>lines<span class="w"> </span>&lt;<span class="w"> </span>file.txt
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">lines</span><span class="p">[@]</span><span class="si">}</span><span class="s2">"</span>
+</code></pre></div>
+<p><code>mapfile</code> preserves lines and avoids word splitting. Use <code>readarray</code> as an alias in Bash.</p>
+<h2 id="case-statements-and-menus">Case statements and menus<a aria-label="Link to this section" class="g-anchor" href="#case-statements-and-menus">#</a></h2>
+<p>A <code>case</code> statement is clearer than a long <code>if</code> chain when matching a small set of values.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">action</span><span class="o">=</span><span class="si">${</span><span class="nv">1</span><span class="k">:-</span><span class="nv">status</span><span class="si">}</span>
+<span class="k">case</span><span class="w"> </span><span class="nv">$action</span><span class="w"> </span><span class="k">in</span>
+<span class="w">    </span>start<span class="o">)</span>
+<span class="w">        </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'starting\n'</span>
+<span class="w">        </span><span class="p">;;</span>
+<span class="w">    </span>stop<span class="o">)</span>
+<span class="w">        </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'stopping\n'</span>
+<span class="w">        </span><span class="p">;;</span>
+<span class="w">    </span>status<span class="p">|</span>check<span class="o">)</span>
+<span class="w">        </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'checking\n'</span>
+<span class="w">        </span><span class="p">;;</span>
+<span class="w">    </span>*<span class="o">)</span>
+<span class="w">        </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'usage: %s {start|stop|status}\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">        </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span>
+<span class="w">        </span><span class="p">;;</span>
+<span class="k">esac</span>
+</code></pre></div>
+<p>The <code>|</code> separates alternatives. The <code>*</code> pattern is the default. Quote the variable in the <code>case</code> word only when you want to prevent pattern interpretation. In a <code>case</code> pattern, unquoted variables are treated as patterns, which is usually not what you want.</p>
+<p>A simple menu uses <code>select</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">PS3</span><span class="o">=</span><span class="s1">'Choose an action: '</span>
+<span class="k">select</span><span class="w"> </span>action<span class="w"> </span><span class="k">in</span><span class="w"> </span>status<span class="w"> </span>start<span class="w"> </span>stop<span class="w"> </span>quit<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nv">$action</span><span class="w"> </span><span class="k">in</span>
+<span class="w">        </span>quit<span class="o">)</span><span class="w"> </span><span class="k">break</span><span class="w"> </span><span class="p">;;</span>
+<span class="w">        </span>*<span class="o">)</span><span class="w"> </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'selected: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$action</span><span class="s2">"</span><span class="w"> </span><span class="p">;;</span>
+<span class="w">    </span><span class="k">esac</span>
+<span class="k">done</span>
+</code></pre></div>
+<p><code>select</code> is interactive and not suitable for unattended scripts. It is useful for small lab tools.</p>
+<h2 id="here-documents-and-generated-configuration">Here documents and generated configuration<a aria-label="Link to this section" class="g-anchor" href="#here-documents-and-generated-configuration">#</a></h2>
+<p>A here document feeds a block of text to a command.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>&gt;<span class="w"> </span>config.ini<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">[server]</span>
+<span class="s">host = 127.0.0.1</span>
+<span class="s">port = 8080</span>
+<span class="s">EOF</span>
+</code></pre></div>
+<p>The quoted delimiter prevents variable expansion. Remove the quotes when you want expansion:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">host</span><span class="o">=</span><span class="m">127</span>.0.0.1
+<span class="nv">port</span><span class="o">=</span><span class="m">8080</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>config.ini<span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">[server]</span>
+<span class="s">host = $host</span>
+<span class="s">port = $port</span>
+<span class="s">EOF</span>
+</code></pre></div>
+<p>Be careful when generating configuration from untrusted values. A value containing a newline can inject an extra directive. Validate input or use a tool that escapes values correctly.</p>
+<p>A here string passes one line:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>-q<span class="w"> </span>root<span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="w"> </span><span class="s1">'root:x:0:0:root:/root:/bin/bash'</span>
+</code></pre></div>
+<h2 id="process-substitution-and-file-descriptors">Process substitution and file descriptors<a aria-label="Link to this section" class="g-anchor" href="#process-substitution-and-file-descriptors">#</a></h2>
+<p>Process substitution presents a command's output as a file-like path.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">diff<span class="w"> </span>-u<span class="w"> </span>&lt;<span class="o">(</span>sort<span class="w"> </span>a.txt<span class="o">)</span><span class="w"> </span>&lt;<span class="o">(</span>sort<span class="w"> </span>b.txt<span class="o">)</span>
+<span class="k">while</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>line<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'line: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$line</span><span class="s2">"</span>
+<span class="k">done</span><span class="w"> </span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span>/etc/services<span class="o">)</span>
+</code></pre></div>
+<p>The second example uses input redirection from a process substitution. It keeps the loop in the current shell. A pipeline would run the loop in a subshell in some shells, so variables set inside would be lost.</p>
+<p>File descriptors can be assigned and reused:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">exec</span><span class="w"> </span><span class="m">3</span>&gt;<span class="w"> </span>output.log
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'hello\n'</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">3</span>
+<span class="nb">exec</span><span class="w"> </span><span class="m">3</span>&gt;<span class="p">&amp;</span>-
+</code></pre></div>
+<p><code>exec 3&gt;</code> opens descriptor 3 for writing. <code>&gt;&amp;3</code> writes to it. <code>exec 3&gt;&amp;-</code> closes it. This is advanced shell work. Use it when a script needs several output streams, not as a default pattern.</p>
+<h2 id="parse-options-with-getopts">Parse options with getopts<a aria-label="Link to this section" class="g-anchor" href="#parse-options-with-getopts">#</a></h2>
+<p><code>getopts</code> handles short options in a portable way.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/usr/bin/env bash</span>
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+<span class="nv">verbose</span><span class="o">=</span><span class="m">0</span>
+<span class="nv">output</span><span class="o">=</span><span class="s1">''</span>
+
+<span class="k">while</span><span class="w"> </span><span class="nb">getopts</span><span class="w"> </span><span class="s1">':vo:h'</span><span class="w"> </span>opt<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nv">$opt</span><span class="w"> </span><span class="k">in</span>
+<span class="w">        </span>v<span class="o">)</span><span class="w"> </span><span class="nv">verbose</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="p">;;</span>
+<span class="w">        </span>o<span class="o">)</span><span class="w"> </span><span class="nv">output</span><span class="o">=</span><span class="nv">$OPTARG</span><span class="w"> </span><span class="p">;;</span>
+<span class="w">        </span>h<span class="o">)</span>
+<span class="w">            </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'usage: %s [-v] [-o file] path\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span>
+<span class="w">            </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+<span class="w">            </span><span class="p">;;</span>
+<span class="w">        </span>:<span class="o">)</span>
+<span class="w">            </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'missing argument for -%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$OPTARG</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">            </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span>
+<span class="w">            </span><span class="p">;;</span>
+<span class="w">        </span><span class="se">\?</span><span class="o">)</span>
+<span class="w">            </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'unknown option: -%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$OPTARG</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">            </span><span class="nb">exit</span><span class="w"> </span><span class="m">2</span>
+<span class="w">            </span><span class="p">;;</span>
+<span class="w">    </span><span class="k">esac</span>
+<span class="k">done</span>
+<span class="nb">shift</span><span class="w"> </span><span class="k">$((</span><span class="nv">OPTIND</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">1</span><span class="k">))</span>
+
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'verbose=%d output=%s remaining=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$verbose</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$output</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$*</span><span class="s2">"</span>
+</code></pre></div>
+<p>The leading <code>:</code> in <code>':vo:h'</code> enables silent error handling so the script can print its own messages. <code>OPTARG</code> holds the option argument. <code>OPTIND</code> is the index of the first non-option argument. <code>shift</code> removes the parsed options.</p>
+<p>For long options, Bash has no built-in parser. Use a small manual loop or a portable argument parser. Do not pretend <code>getopts</code> handles <code>--long</code> options.</p>
+<h2 id="debugging-and-testing">Debugging and testing<a aria-label="Link to this section" class="g-anchor" href="#debugging-and-testing">#</a></h2>
+<p>Print commands as they run:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">bash<span class="w"> </span>-x<span class="w"> </span>script.sh
+bash<span class="w"> </span>-n<span class="w"> </span>script.sh
+</code></pre></div>
+<p><code>-x</code> traces expansions and commands. <code>-n</code> checks syntax without running the script. Both are fast and should be part of your routine.</p>
+<p>Inside a script, enable tracing around a suspect block:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">set</span><span class="w"> </span>-x
+dangerous_function
+<span class="nb">set</span><span class="w"> </span>+x
+</code></pre></div>
+<p><code>trap</code> can report where a script failed:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">trap</span><span class="w"> </span><span class="s1">'printf "failed at line %s\n" "$LINENO" &gt;&amp;2'</span><span class="w"> </span>ERR
+</code></pre></div>
+<p>Use <code>shellcheck</code> for static analysis:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">shellcheck<span class="w"> </span>script.sh
+</code></pre></div>
+<p>ShellCheck catches quoting mistakes, unused variables, incorrect tests and many portability problems. Fix warnings rather than suppressing them. If a warning is intentional, add a comment explaining why.</p>
+<p>A minimal test harness can run a script in a temporary directory:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">tmpdir</span><span class="o">=</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span>
+<span class="nb">trap</span><span class="w"> </span><span class="s1">'rm -rf "$tmpdir"'</span><span class="w"> </span>EXIT
+
+<span class="nb">cd</span><span class="w"> </span><span class="s2">"</span><span class="nv">$tmpdir</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'alpha\nbeta\n'</span><span class="w"> </span>&gt;<span class="w"> </span>input.txt
+<span class="nv">result</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span>-c<span class="w"> </span>alpha<span class="w"> </span>input.txt<span class="k">)</span>
+<span class="o">[</span><span class="w"> </span><span class="s2">"</span><span class="nv">$result</span><span class="s2">"</span><span class="w"> </span>-eq<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'expected 1 match, got %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$result</span><span class="s2">"</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>This is not a full test framework, but it catches regressions and documents expected behavior.</p>
+<h2 id="portability-and-scheduling">Portability and scheduling<a aria-label="Link to this section" class="g-anchor" href="#portability-and-scheduling">#</a></h2>
+<p>Bash is not POSIX shell. Features such as arrays, <code>[[ ]]</code>, process substitution and <code>local</code> are extensions. If a script starts with <code>#!/bin/sh</code>, test it with <code>dash</code> or another POSIX shell.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/bin/sh</span>
+<span class="nb">set</span><span class="w"> </span>-eu
+</code></pre></div>
+<p>For maximum portability, avoid Bash-only syntax, use <code>[ ]</code> carefully and quote every expansion. For complex scripts, choose Bash deliberately and document the requirement.</p>
+<p>Scripts that must run on a schedule belong in cron or a systemd timer.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">crontab<span class="w"> </span>-e
+crontab<span class="w"> </span>-l
+</code></pre></div>
+<p>A cron entry has five time fields followed by the command:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">15 2 * * * /usr/local/bin/nightly-report.sh &gt;&gt; /var/log/nightly-report.log 2&gt;&amp;1
+</code></pre></div>
+<p>Cron uses a minimal environment. Use absolute paths, set <code>PATH</code> explicitly and redirect output. Test the exact command as the same user before trusting the schedule.</p>
+<h2 id="lab-write-a-system-report">Lab: write a system report<a aria-label="Link to this section" class="g-anchor" href="#lab-write-a-system-report">#</a></h2>
+<p>Create <code>report.sh</code> that prints:</p>
+<ul>
+<li>The hostname.</li>
+<li>The kernel version.</li>
+<li>The current user.</li>
+<li>The root filesystem usage.</li>
+<li>The number of listening TCP sockets.</li>
+</ul>
+<p>Requirements:</p>
+<ol>
+<li>Use <code>set -euo pipefail</code>.</li>
+<li>Put the work in a <code>main</code> function.</li>
+<li>Quote every variable expansion.</li>
+<li>Exit with status 2 if an unexpected argument is supplied.</li>
+<li>Run <code>shellcheck</code> if it is installed.</li>
+</ol>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Omitting quotes around variables.</li>
+<li>Using <code>[ $var = value ]</code> when <code>$var</code> can be empty.</li>
+<li>Parsing <code>ls</code> output instead of using globs or <code>find</code>.</li>
+<li>Ignoring command failures.</li>
+<li>Using <code>cd</code> without checking that it succeeded.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Write a script with a shebang and strict mode.</li>
+<li>Quote variables and forward arguments safely.</li>
+<li>Use tests, conditionals, loops and functions.</li>
+<li>Handle expected failures and clean up with a trap.</li>
+<li>Read and adapt a small automation script.</li>
+</ul>
+<p>Next you will use logs and troubleshooting habits to keep a system healthy.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 09 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/08-networking-essentials.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 08</span><strong>Networking from the Command Line</strong></a><a class="g-chapter-card" href="../foundations/10-logs-troubleshooting-security.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 10</span><strong>Logs, Troubleshooting and a Secure Baseline</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#start-with-a-safe-template" data-toc-link>Start with a safe template</a><a class="g-toc-link depth-2" href="#variables-and-quoting" data-toc-link>Variables and quoting</a><a class="g-toc-link depth-2" href="#command-substitution" data-toc-link>Command substitution</a><a class="g-toc-link depth-2" href="#arguments" data-toc-link>Arguments</a><a class="g-toc-link depth-2" href="#tests-and-conditionals" data-toc-link>Tests and conditionals</a><a class="g-toc-link depth-2" href="#loops" data-toc-link>Loops</a><a class="g-toc-link depth-2" href="#functions" data-toc-link>Functions</a><a class="g-toc-link depth-2" href="#error-handling" data-toc-link>Error handling</a><a class="g-toc-link depth-2" href="#a-practical-script" data-toc-link>A practical script</a><a class="g-toc-link depth-2" href="#parameter-expansion" data-toc-link>Parameter expansion</a><a class="g-toc-link depth-2" href="#arrays" data-toc-link>Arrays</a><a class="g-toc-link depth-2" href="#case-statements-and-menus" data-toc-link>Case statements and menus</a><a class="g-toc-link depth-2" href="#here-documents-and-generated-configuration" data-toc-link>Here documents and generated configuration</a><a class="g-toc-link depth-2" href="#process-substitution-and-file-descriptors" data-toc-link>Process substitution and file descriptors</a><a class="g-toc-link depth-2" href="#parse-options-with-getopts" data-toc-link>Parse options with getopts</a><a class="g-toc-link depth-2" href="#debugging-and-testing" data-toc-link>Debugging and testing</a><a class="g-toc-link depth-2" href="#portability-and-scheduling" data-toc-link>Portability and scheduling</a><a class="g-toc-link depth-2" href="#lab-write-a-system-report" data-toc-link>Lab: write a system report</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 09 / 20 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

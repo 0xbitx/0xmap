@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 6 of 10. Inspect processes, manage jobs, send signals and control services with systemd.">
+  <title>Part 06: Processes, Services and systemd | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html" aria-current="page"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 06</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 06</p>
+        <h1>Processes, Services and systemd</h1>
+        <p class="g-deck">Inspect processes, manage jobs, send signals and control services with systemd.</p>
+        <div class="g-chapter-meta">
+          <span>20 min read</span>
+          <span>19 sections</span>
+          <span>36 code blocks</span>
+          <span>Part 06 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>19 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#the-process-model" data-toc-link>The process model</a><a class="g-toc-link depth-2" href="#inspect-resource-use" data-toc-link>Inspect resource use</a><a class="g-toc-link depth-2" href="#jobs-in-an-interactive-shell" data-toc-link>Jobs in an interactive shell</a><a class="g-toc-link depth-2" href="#signals" data-toc-link>Signals</a><a class="g-toc-link depth-2" href="#process-control-quick-reference" data-toc-link>Process control quick reference</a><a class="g-toc-link depth-2" href="#the-proc-filesystem" data-toc-link>The /proc filesystem</a><a class="g-toc-link depth-2" href="#systemd-services" data-toc-link>systemd services</a><a class="g-toc-link depth-2" href="#read-service-logs" data-toc-link>Read service logs</a><a class="g-toc-link depth-2" href="#unit-files" data-toc-link>Unit files</a><a class="g-toc-link depth-2" href="#process-lifecycle-and-exit-status" data-toc-link>Process lifecycle and exit status</a><a class="g-toc-link depth-2" href="#resource-limits-and-cgroups" data-toc-link>Resource limits and cgroups</a><a class="g-toc-link depth-2" href="#process-inspection-tools" data-toc-link>Process inspection tools</a><a class="g-toc-link depth-2" href="#nice-values-and-scheduling" data-toc-link>Nice values and scheduling</a><a class="g-toc-link depth-2" href="#timers-and-targets" data-toc-link>Timers and targets</a><a class="g-toc-link depth-2" href="#service-hardening" data-toc-link>Service hardening</a><a class="g-toc-link depth-2" href="#kernel-modules-and-sysctl" data-toc-link>Kernel modules and sysctl</a><a class="g-toc-link depth-2" href="#lab-observe-a-service" data-toc-link>Lab: observe a service</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>A running Linux system is a moving collection of processes. Some are short commands you start in a terminal. Others are long-lived services that start at boot and wait for work. Understanding both is essential for troubleshooting and for reading a system accurately.</p>
+<h2 id="the-process-model">The process model<a aria-label="Link to this section" class="g-anchor" href="#the-process-model">#</a></h2>
+<p>Every process has:</p>
+<ul>
+<li>A process ID, or PID.</li>
+<li>A parent process ID, or PPID.</li>
+<li>A user and group identity.</li>
+<li>A state, such as running, sleeping or stopped.</li>
+<li>Memory, open files and environment variables.</li>
+<li>A current working directory.</li>
+</ul>
+<p>The first process started by the kernel is usually PID 1. On most modern distributions, PID 1 is <code>systemd</code>. It starts and supervises other services. A process tree shows how everything descends from PID 1.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ps<span class="w"> </span>-ef
+ps<span class="w"> </span>aux
+ps<span class="w"> </span>-o<span class="w"> </span>pid,ppid,user,stat,cmd<span class="w"> </span>-p<span class="w"> </span><span class="nv">$$</span>
+pstree<span class="w"> </span>-p
+</code></pre></div>
+<p><code>$$</code> is the PID of the current shell. The <code>STAT</code> column shows the process state. Common values include <code>R</code> for running, <code>S</code> for sleeping, <code>D</code> for uninterruptible sleep, <code>T</code> for stopped and <code>Z</code> for zombie.</p>
+<h2 id="inspect-resource-use">Inspect resource use<a aria-label="Link to this section" class="g-anchor" href="#inspect-resource-use">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">top
+htop
+uptime
+free<span class="w"> </span>-h
+vmstat<span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p><code>top</code> and <code>htop</code> show CPU, memory and process activity. <code>uptime</code> shows load averages for the last one, five and fifteen minutes. Load is not the same as CPU percentage: it counts runnable and uninterruptible tasks. A high load with low CPU use can mean storage or I/O is stalled.</p>
+<p><code>free -h</code> shows memory and swap. Linux uses free memory for cache, so "free" being low is not automatically a problem. Look at available memory and swap activity.</p>
+<p>Inside <code>top</code>, press <code>k</code> to send a signal, <code>r</code> to renice a process and <code>q</code> to quit. <code>htop</code> exposes the same actions through function keys and a menu.</p>
+<h2 id="jobs-in-an-interactive-shell">Jobs in an interactive shell<a aria-label="Link to this section" class="g-anchor" href="#jobs-in-an-interactive-shell">#</a></h2>
+<p>A job is a command started from your shell. You can move it between the foreground and background.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sleep<span class="w"> </span><span class="m">300</span>
+</code></pre></div>
+<p>Press <code>Ctrl+Z</code> to suspend it. Then:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">jobs</span>
+<span class="nb">bg</span><span class="w"> </span>%1
+<span class="nb">fg</span><span class="w"> </span>%1
+</code></pre></div>
+<p><code>bg</code> continues the job in the background. <code>fg</code> brings it back to the foreground. A command started with <code>&amp;</code> goes directly to the background:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sleep<span class="w"> </span><span class="m">300</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="nb">jobs</span>
+</code></pre></div>
+<p>Background jobs still belong to the shell. If the shell exits, they may receive a hangup signal. Use <code>nohup</code> or a service manager for work that must survive logout.</p>
+<h2 id="signals">Signals<a aria-label="Link to this section" class="g-anchor" href="#signals">#</a></h2>
+<p>A signal is an asynchronous notification. The <code>kill</code> command sends signals, despite its name.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">kill</span><span class="w"> </span>-l
+<span class="nb">kill</span><span class="w"> </span>-TERM<span class="w"> </span><span class="m">1234</span>
+<span class="nb">kill</span><span class="w"> </span>-INT<span class="w"> </span><span class="m">1234</span>
+<span class="nb">kill</span><span class="w"> </span>-KILL<span class="w"> </span><span class="m">1234</span>
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Common meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SIGTERM</code></td>
+<td>Request termination; the process can clean up</td>
+</tr>
+<tr>
+<td><code>SIGINT</code></td>
+<td>Interrupt, usually from <code>Ctrl+C</code></td>
+</tr>
+<tr>
+<td><code>SIGHUP</code></td>
+<td>Hangup or reload, depending on the program</td>
+</tr>
+<tr>
+<td><code>SIGKILL</code></td>
+<td>Force termination; cannot be caught</td>
+</tr>
+<tr>
+<td><code>SIGSTOP</code></td>
+<td>Stop the process; cannot be caught</td>
+</tr>
+<tr>
+<td><code>SIGCONT</code></td>
+<td>Continue a stopped process</td>
+</tr>
+</tbody>
+</table></div>
+<p>Start with <code>SIGTERM</code>. Give the process time to exit. Use <code>SIGKILL</code> only when a process is stuck and you understand the consequences. A killed database or editor can lose data.</p>
+<p>Find and signal processes by name:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">pgrep<span class="w"> </span>-a<span class="w"> </span>ssh
+pkill<span class="w"> </span>-TERM<span class="w"> </span>-f<span class="w"> </span><span class="s1">'python3 worker.py'</span>
+</code></pre></div>
+<p><code>pkill -f</code> matches the full command line. Check the matches with <code>pgrep -af</code> first so you do not kill the wrong process.</p>
+<h2 id="process-control-quick-reference">Process control quick reference<a aria-label="Link to this section" class="g-anchor" href="#process-control-quick-reference">#</a></h2>
+<p>Use this table when you know the task but not the command.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Task</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>List every process</td>
+<td><code>ps -ef</code> or <code>ps aux</code></td>
+</tr>
+<tr>
+<td>Show one user's processes</td>
+<td><code>ps -u alice</code></td>
+</tr>
+<tr>
+<td>Show a process by name</td>
+<td><code>ps -C nginx -o pid,cmd</code></td>
+</tr>
+<tr>
+<td>Find a process by name</td>
+<td><code>pgrep -a nginx</code> or <code>pidof nginx</code></td>
+</tr>
+<tr>
+<td>Show the process tree</td>
+<td><code>pstree -p</code></td>
+</tr>
+<tr>
+<td>Watch live resource use</td>
+<td><code>top</code> or <code>htop</code></td>
+</tr>
+<tr>
+<td>Send a signal</td>
+<td><code>kill -TERM PID</code></td>
+</tr>
+<tr>
+<td>Signal by name</td>
+<td><code>pkill -TERM nginx</code> or <code>killall nginx</code></td>
+</tr>
+<tr>
+<td>Stop and resume</td>
+<td><code>kill -STOP PID</code>, then <code>kill -CONT PID</code></td>
+</tr>
+<tr>
+<td>Wait for a child</td>
+<td><code>wait PID</code></td>
+</tr>
+<tr>
+<td>Run in the background</td>
+<td><code>command &amp;</code></td>
+</tr>
+<tr>
+<td>Keep running after logout</td>
+<td><code>nohup command &gt; log 2&gt;&amp;1 &amp;</code></td>
+</tr>
+<tr>
+<td>Remove a job from the shell table</td>
+<td><code>disown %1</code></td>
+</tr>
+<tr>
+<td>Limit runtime</td>
+<td><code>timeout 30s command</code></td>
+</tr>
+<tr>
+<td>Repeat a command</td>
+<td><code>watch -n 2 command</code></td>
+</tr>
+<tr>
+<td>Change priority</td>
+<td><code>nice -n 10 command</code>, <code>renice 10 -p PID</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Examples:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">pgrep<span class="w"> </span>-af<span class="w"> </span><span class="s1">'python.*worker'</span>
+<span class="nb">kill</span><span class="w"> </span>-TERM<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>pgrep<span class="w"> </span>-f<span class="w"> </span><span class="s1">'python.*worker'</span><span class="k">)</span><span class="s2">"</span>
+timeout<span class="w"> </span>10s<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span>example.com
+watch<span class="w"> </span>-n<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="s1">'ss -tulpn'</span>
+nohup<span class="w"> </span>./backup.sh<span class="w"> </span>&gt;<span class="w"> </span>backup.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="nb">disown</span>
+</code></pre></div>
+<p><code>killall</code> matches process names and is not available on every system. <code>pkill -f</code> matches the full command line, so verify the matches with <code>pgrep -af</code> first. <code>wait</code> only works for children of the current shell. <code>disown</code> removes a job from the shell's job table so the shell does not send it a hangup signal when it exits. It does not make a badly behaved program into a service. Use systemd for anything that must survive reboots and be monitored.</p>
+<h2 id="the-proc-filesystem">The /proc filesystem<a aria-label="Link to this section" class="g-anchor" href="#the-proc-filesystem">#</a></h2>
+<p><code>/proc</code> exposes process and kernel information as a virtual filesystem.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>/proc/<span class="nv">$$</span>
+cat<span class="w"> </span>/proc/<span class="nv">$$</span>/status
+cat<span class="w"> </span>/proc/<span class="nv">$$</span>/cmdline<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\0'</span><span class="w"> </span><span class="s1">' '</span>
+ls<span class="w"> </span>-l<span class="w"> </span>/proc/<span class="nv">$$</span>/cwd
+ls<span class="w"> </span>-l<span class="w"> </span>/proc/<span class="nv">$$</span>/fd
+</code></pre></div>
+<p>The <code>fd</code> directory lists open file descriptors. The <code>cwd</code> link points to the current working directory. These views are generated by the kernel and change as the process changes.</p>
+<h2 id="systemd-services">systemd services<a aria-label="Link to this section" class="g-anchor" href="#systemd-services">#</a></h2>
+<p>A service is a long-running program managed by an init system. systemd uses unit files to describe services, sockets, timers, mounts and targets.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>status<span class="w"> </span>ssh
+systemctl<span class="w"> </span>is-enabled<span class="w"> </span>ssh
+systemctl<span class="w"> </span>is-active<span class="w"> </span>ssh
+systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running
+systemctl<span class="w"> </span>list-unit-files<span class="w"> </span>--type<span class="o">=</span>service
+</code></pre></div>
+<p>Common actions:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>nginx
+sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>nginx
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>nginx
+sudo<span class="w"> </span>systemctl<span class="w"> </span>reload<span class="w"> </span>nginx
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>nginx
+sudo<span class="w"> </span>systemctl<span class="w"> </span>disable<span class="w"> </span>nginx
+</code></pre></div>
+<p><code>start</code> changes the current state. <code>enable</code> changes whether the service starts at boot. They are separate decisions. <code>reload</code> asks the service to reread its configuration without a full restart, but not every service supports it.</p>
+<h2 id="read-service-logs">Read service logs<a aria-label="Link to this section" class="g-anchor" href="#read-service-logs">#</a></h2>
+<p>systemd captures service output in the journal.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span><span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>--since<span class="w"> </span><span class="s1">'1 hour ago'</span>
+journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>-f
+</code></pre></div>
+<p><code>-u</code> selects a unit. <code>-n</code> limits the number of lines. <code>--since</code> filters by time. <code>-f</code> follows new entries. If the journal is not persistent across reboots, check <code>/etc/systemd/journald.conf</code>.</p>
+<h2 id="unit-files">Unit files<a aria-label="Link to this section" class="g-anchor" href="#unit-files">#</a></h2>
+<p>System and package unit files usually live in <code>/usr/lib/systemd/system</code>. Local administrator overrides belong in <code>/etc/systemd/system</code>. Do not edit package-owned files directly if you can use an override.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>cat<span class="w"> </span>ssh
+systemctl<span class="w"> </span>show<span class="w"> </span>ssh<span class="w"> </span>-p<span class="w"> </span>FragmentPath,ExecStart,User
+</code></pre></div>
+<p>A minimal service unit looks like this:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="k">[Unit]</span>
+<span class="na">Description</span><span class="o">=</span><span class="s">Example worker</span>
+<span class="na">After</span><span class="o">=</span><span class="s">network.target</span>
+
+<span class="k">[Service]</span>
+<span class="na">Type</span><span class="o">=</span><span class="s">simple</span>
+<span class="na">User</span><span class="o">=</span><span class="s">worker</span>
+<span class="na">WorkingDirectory</span><span class="o">=</span><span class="s">/opt/example</span>
+<span class="na">ExecStart</span><span class="o">=</span><span class="s">/opt/example/worker</span>
+<span class="na">Restart</span><span class="o">=</span><span class="s">on-failure</span>
+
+<span class="k">[Install]</span>
+<span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+</code></pre></div>
+<p>After creating or changing a unit:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>example
+systemctl<span class="w"> </span>status<span class="w"> </span>example
+</code></pre></div>
+<p><code>daemon-reload</code> rereads unit files. It does not restart services by itself.</p>
+<h2 id="process-lifecycle-and-exit-status">Process lifecycle and exit status<a aria-label="Link to this section" class="g-anchor" href="#process-lifecycle-and-exit-status">#</a></h2>
+<p>A process starts when another process creates it. On Linux, the usual sequence is:</p>
+<ol>
+<li>The parent calls <code>fork</code> or <code>clone</code> to create a child.</li>
+<li>The child calls <code>execve</code> to replace its memory image with a new program.</li>
+<li>The program runs and eventually calls <code>exit</code> with a status.</li>
+<li>The parent calls <code>wait</code> or <code>waitpid</code> to collect the status.</li>
+</ol>
+<p>A process that has exited but whose parent has not collected its status is a zombie. It uses a process table slot but no CPU or memory. A zombie is not a sign of a runaway process. It is a sign that the parent is not reaping children. If a service leaves many zombies, investigate the service, not the zombies.</p>
+<p>An orphan is a process whose parent exited first. It is adopted by PID 1 or by a subreaper, which is responsible for reaping it.</p>
+<p>Inspect process states and parentage:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ps<span class="w"> </span>-eo<span class="w"> </span>pid,ppid,stat,user,comm<span class="w"> </span>--sort<span class="o">=</span>ppid
+ps<span class="w"> </span>-eo<span class="w"> </span>stat,comm<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'$1 ~ /^Z/ {print}'</span>
+pstree<span class="w"> </span>-ap
+</code></pre></div>
+<p>The <code>STAT</code> field uses codes such as <code>R</code> for running, <code>S</code> for interruptible sleep, <code>D</code> for uninterruptible sleep, <code>T</code> for stopped, <code>Z</code> for zombie and <code>I</code> for idle kernel thread. A process in <code>D</code> state is usually waiting on I/O and cannot be killed until the I/O completes.</p>
+<p>Exit status is a small integer from 0 to 255. Zero means success. The meaning of non-zero values is defined by the program. Shells expose the last status through <code>$?</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>/etc/passwd
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'status=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+ls<span class="w"> </span>/does-not-exist
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'status=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+</code></pre></div>
+<p>A pipeline reports the status of its last command unless <code>pipefail</code> is enabled. That detail matters in scripts.</p>
+<h2 id="resource-limits-and-cgroups">Resource limits and cgroups<a aria-label="Link to this section" class="g-anchor" href="#resource-limits-and-cgroups">#</a></h2>
+<p>Traditional Unix limits are set per process with <code>ulimit</code> or <code>prlimit</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">ulimit</span><span class="w"> </span>-a
+<span class="nb">ulimit</span><span class="w"> </span>-n
+<span class="nb">ulimit</span><span class="w"> </span>-u
+prlimit<span class="w"> </span>--pid<span class="w"> </span><span class="nv">$$</span>
+prlimit<span class="w"> </span>--pid<span class="w"> </span><span class="nv">$$</span><span class="w"> </span>--nofile<span class="o">=</span><span class="m">4096</span>
+</code></pre></div>
+<p><code>ulimit -n</code> is the open file descriptor limit. <code>ulimit -u</code> is the process limit. A shell can lower limits for its children, but raising a hard limit usually requires privilege. Systemd services can set limits in their unit files.</p>
+<p>Control groups, or cgroups, organize processes and account for or limit resources. systemd uses cgroups to track services, slices and user sessions.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemd-cgls
+systemd-cgtop
+cat<span class="w"> </span>/proc/<span class="nv">$$</span>/cgroup
+</code></pre></div>
+<p><code>systemd-cgls</code> shows the cgroup tree. <code>systemd-cgtop</code> shows resource use by cgroup. On a modern system, the cgroup version is usually v2, mounted at <code>/sys/fs/cgroup</code>.</p>
+<p>A systemd unit can set resource controls:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="k">[Service]</span>
+<span class="na">MemoryMax</span><span class="o">=</span><span class="s">512M</span>
+<span class="na">CPUQuota</span><span class="o">=</span><span class="s">50%</span>
+<span class="na">TasksMax</span><span class="o">=</span><span class="s">100</span>
+</code></pre></div>
+<p>These limits apply to the service's cgroup. They are more reliable than a shell <code>ulimit</code> for long-running services.</p>
+<h2 id="process-inspection-tools">Process inspection tools<a aria-label="Link to this section" class="g-anchor" href="#process-inspection-tools">#</a></h2>
+<p><code>ps</code> and <code>top</code> are the starting point. The following tools answer more specific questions.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Tool</th>
+<th>Question</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pgrep</code></td>
+<td>Which PIDs match a name or pattern?</td>
+</tr>
+<tr>
+<td><code>pstree</code></td>
+<td>How are processes related?</td>
+</tr>
+<tr>
+<td><code>lsof</code></td>
+<td>Which files, sockets and devices does a process have open?</td>
+</tr>
+<tr>
+<td><code>fuser</code></td>
+<td>Which process is using this file, mount or port?</td>
+</tr>
+<tr>
+<td><code>strace</code></td>
+<td>Which system calls is a process making?</td>
+</tr>
+<tr>
+<td><code>ltrace</code></td>
+<td>Which library calls is a process making?</td>
+</tr>
+<tr>
+<td><code>pidstat</code></td>
+<td>How much CPU, memory and I/O is each process using over time?</td>
+</tr>
+<tr>
+<td><code>iostat</code></td>
+<td>How busy are the block devices?</td>
+</tr>
+<tr>
+<td><code>iotop</code></td>
+<td>Which processes are doing disk I/O?</td>
+</tr>
+</tbody>
+</table></div>
+<p>Examples:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">pgrep<span class="w"> </span>-a<span class="w"> </span>ssh
+lsof<span class="w"> </span>-p<span class="w"> </span><span class="nv">$$</span>
+lsof<span class="w"> </span>-i<span class="w"> </span>:22
+fuser<span class="w"> </span>-v<span class="w"> </span>/var/log/syslog
+strace<span class="w"> </span>-p<span class="w"> </span><span class="m">1234</span><span class="w"> </span>-f<span class="w"> </span>-e<span class="w"> </span><span class="nv">trace</span><span class="o">=</span>file
+strace<span class="w"> </span>-c<span class="w"> </span>ls<span class="w"> </span>/
+</code></pre></div>
+<p><code>strace</code> can slow a process significantly and may be blocked by security policy. Use it for short diagnostic sessions. <code>lsof -i :22</code> shows processes with a socket on port 22. <code>fuser</code> is useful before unmounting a filesystem.</p>
+<p>The <code>/proc</code> filesystem exposes per-process state:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/proc/<span class="nv">$$</span>/status
+cat<span class="w"> </span>/proc/<span class="nv">$$</span>/limits
+cat<span class="w"> </span>/proc/<span class="nv">$$</span>/environ<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\0'</span><span class="w"> </span><span class="s1">'\n'</span>
+ls<span class="w"> </span>-l<span class="w"> </span>/proc/<span class="nv">$$</span>/fd
+readlink<span class="w"> </span>/proc/<span class="nv">$$</span>/exe
+</code></pre></div>
+<p>These files are generated by the kernel. Reading another user's process information may be restricted by <code>hidepid</code> mount options or security modules.</p>
+<h2 id="nice-values-and-scheduling">Nice values and scheduling<a aria-label="Link to this section" class="g-anchor" href="#nice-values-and-scheduling">#</a></h2>
+<p>The scheduler decides which runnable process gets CPU time. Nice values influence that decision. The range is usually -20 to 19. Lower values mean higher priority. Only root can set negative values.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nice<span class="w"> </span>-n<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="nb">command</span>
+renice<span class="w"> </span><span class="m">10</span><span class="w"> </span>-p<span class="w"> </span><span class="m">1234</span>
+ionice<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-n<span class="w"> </span><span class="m">7</span><span class="w"> </span>-p<span class="w"> </span><span class="m">1234</span>
+</code></pre></div>
+<p><code>ionice</code> adjusts I/O priority on supported schedulers. It is not a guarantee. A process can still wait on a slow disk.</p>
+<p>Do not use <code>renice</code> to fix a design problem. If a service is consistently starving others, investigate its workload, limits and concurrency.</p>
+<h2 id="timers-and-targets">Timers and targets<a aria-label="Link to this section" class="g-anchor" href="#timers-and-targets">#</a></h2>
+<p>systemd timers schedule work without cron. A timer unit activates a service unit.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>list-timers<span class="w"> </span>--all
+systemctl<span class="w"> </span>status<span class="w"> </span>apt-daily.timer
+systemctl<span class="w"> </span>cat<span class="w"> </span>apt-daily.timer
+</code></pre></div>
+<p>A simple pair looks like this:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="c1"># /etc/systemd/system/lab-report.timer</span>
+<span class="k">[Unit]</span>
+<span class="na">Description</span><span class="o">=</span><span class="s">Run the lab report daily</span>
+
+<span class="k">[Timer]</span>
+<span class="na">OnCalendar</span><span class="o">=</span><span class="s">daily</span>
+<span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+
+<span class="k">[Install]</span>
+<span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+</code></pre></div>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="c1"># /etc/systemd/system/lab-report.service</span>
+<span class="k">[Unit]</span>
+<span class="na">Description</span><span class="o">=</span><span class="s">Build the lab report</span>
+
+<span class="k">[Service]</span>
+<span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/local/bin/lab-report.sh</span>
+</code></pre></div>
+<p>Enable and start the timer:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>lab-report.timer
+systemctl<span class="w"> </span>list-timers<span class="w"> </span>lab-report.timer
+journalctl<span class="w"> </span>-u<span class="w"> </span>lab-report.service<span class="w"> </span>--no-pager
+</code></pre></div>
+<p><code>Persistent=true</code> runs a missed job after the machine boots. <code>OnCalendar=daily</code> is a simple schedule. Use <code>systemd-analyze calendar</code> to test expressions.</p>
+<p>Targets group units into states. The default target is roughly the old runlevel.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>get-default
+systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>target
+systemctl<span class="w"> </span>isolate<span class="w"> </span>multi-user.target
+systemctl<span class="w"> </span>isolate<span class="w"> </span>graphical.target
+</code></pre></div>
+<p>Do not isolate targets on a remote system unless you understand which services will stop.</p>
+<h2 id="service-hardening">Service hardening<a aria-label="Link to this section" class="g-anchor" href="#service-hardening">#</a></h2>
+<p>systemd can restrict a service even if the application has no sandbox of its own.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="k">[Service]</span>
+<span class="na">User</span><span class="o">=</span><span class="s">app</span>
+<span class="na">Group</span><span class="o">=</span><span class="s">app</span>
+<span class="na">NoNewPrivileges</span><span class="o">=</span><span class="s">true</span>
+<span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
+<span class="na">ProtectSystem</span><span class="o">=</span><span class="s">strict</span>
+<span class="na">ProtectHome</span><span class="o">=</span><span class="s">true</span>
+<span class="na">ReadWritePaths</span><span class="o">=</span><span class="s">/var/lib/app</span>
+<span class="na">ProtectKernelTunables</span><span class="o">=</span><span class="s">true</span>
+<span class="na">ProtectKernelModules</span><span class="o">=</span><span class="s">true</span>
+<span class="na">ProtectControlGroups</span><span class="o">=</span><span class="s">true</span>
+<span class="na">RestrictAddressFamilies</span><span class="o">=</span><span class="s">AF_UNIX AF_INET AF_INET6</span>
+</code></pre></div>
+<p>These options are not universal. Some applications need access to <code>/home</code>, raw sockets or kernel interfaces. Add restrictions one at a time, restart the service and test. A service that starts is not necessarily a service that works.</p>
+<p>Inspect the effective sandbox:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>show<span class="w"> </span>app<span class="w"> </span>-p<span class="w"> </span>User<span class="w"> </span>-p<span class="w"> </span>Group<span class="w"> </span>-p<span class="w"> </span>NoNewPrivileges<span class="w"> </span>-p<span class="w"> </span>ProtectSystem
+systemd-analyze<span class="w"> </span>security<span class="w"> </span>app
+</code></pre></div>
+<p><code>systemd-analyze security</code> gives a rough exposure score and explains which directives are missing. Use it as a prompt for review, not as a compliance certificate.</p>
+<h2 id="kernel-modules-and-sysctl">Kernel modules and sysctl<a aria-label="Link to this section" class="g-anchor" href="#kernel-modules-and-sysctl">#</a></h2>
+<p>The kernel can load code at runtime as modules. Drivers, filesystems and networking features are often modules.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsmod
+modinfo<span class="w"> </span>ext4
+modinfo<span class="w"> </span>-p<span class="w"> </span>e1000e
+sudo<span class="w"> </span>modprobe<span class="w"> </span>dummy
+lsmod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>dummy
+sudo<span class="w"> </span>modprobe<span class="w"> </span>-r<span class="w"> </span>dummy
+</code></pre></div>
+<p><code>lsmod</code> shows loaded modules and their reference counts. <code>modinfo</code> shows metadata and parameters. <code>modprobe</code> loads a module and its dependencies. <code>modprobe -r</code> removes it if nothing is using it.</p>
+<p>Persistent module configuration belongs in <code>/etc/modules-load.d/</code> and <code>/etc/modprobe.d/</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/modules-load.d/*.conf
+ls<span class="w"> </span>/etc/modprobe.d
+</code></pre></div>
+<p>A file in <code>modules-load.d</code> lists modules to load at boot. A file in <code>modprobe.d</code> sets options or blacklists a module. Do not unload a storage or network module on a live system. The device may stop working immediately.</p>
+<p>Kernel tunables are exposed through <code>sysctl</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sysctl<span class="w"> </span>-a
+sysctl<span class="w"> </span>net.ipv4.ip_forward
+sysctl<span class="w"> </span>vm.swappiness
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+</code></pre></div>
+<p><code>sysctl -a</code> lists every tunable and can be very long. Query one key at a time. A change with <code>-w</code> lasts until reboot.</p>
+<p>Persistent settings belong in <code>/etc/sysctl.d/</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="c1"># /etc/sysctl.d/99-lab.conf</span>
+<span class="na">net.ipv4.ip_forward</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1</span>
+<span class="na">vm.swappiness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+</code></pre></div>
+<p>Apply and verify:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>sysctl<span class="w"> </span>--system
+sysctl<span class="w"> </span>net.ipv4.ip_forward
+</code></pre></div>
+<p>A tunable can improve one workload and harm another. Change one value, measure, and document why. Kernel hardening guides often set many values at once; understand each one before copying a list.</p>
+<h2 id="lab-observe-a-service">Lab: observe a service<a aria-label="Link to this section" class="g-anchor" href="#lab-observe-a-service">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>status<span class="w"> </span>ssh<span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span><span class="w"> </span>--no-pager
+ps<span class="w"> </span>-o<span class="w"> </span>pid,ppid,user,stat,cmd<span class="w"> </span>-C<span class="w"> </span>sshd
+</code></pre></div>
+<p>Then answer:</p>
+<ol>
+<li>Is the SSH service active and enabled?</li>
+<li>Which user owns the SSH daemon processes?</li>
+<li>What is the parent PID of the daemon?</li>
+<li>Which log entries appeared most recently?</li>
+<li>What happens to the service state if you run <code>sudo systemctl stop ssh</code> in a disposable lab?</li>
+</ol>
+<p>Do not stop SSH on a remote machine unless you have another way to regain access.</p>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Using <code>kill -9</code> as a first response.</li>
+<li>Confusing <code>start</code> with <code>enable</code>.</li>
+<li>Editing a package unit file instead of creating an override.</li>
+<li>Forgetting <code>daemon-reload</code> after changing a unit.</li>
+<li>Assuming a process is healthy because it is running.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Read a process tree and process states.</li>
+<li>Inspect CPU, memory and load.</li>
+<li>Manage foreground and background jobs.</li>
+<li>Send the right signal for the situation.</li>
+<li>Inspect, start, enable and troubleshoot a systemd service.</li>
+</ul>
+<p>Next you will manage software, storage and the boot process.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 06 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/05-users-permissions-sudo.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 05</span><strong>Users, Permissions and Sudo</strong></a><a class="g-chapter-card" href="../foundations/07-packages-storage-boot.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 07</span><strong>Packages, Storage and Boot</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#the-process-model" data-toc-link>The process model</a><a class="g-toc-link depth-2" href="#inspect-resource-use" data-toc-link>Inspect resource use</a><a class="g-toc-link depth-2" href="#jobs-in-an-interactive-shell" data-toc-link>Jobs in an interactive shell</a><a class="g-toc-link depth-2" href="#signals" data-toc-link>Signals</a><a class="g-toc-link depth-2" href="#process-control-quick-reference" data-toc-link>Process control quick reference</a><a class="g-toc-link depth-2" href="#the-proc-filesystem" data-toc-link>The /proc filesystem</a><a class="g-toc-link depth-2" href="#systemd-services" data-toc-link>systemd services</a><a class="g-toc-link depth-2" href="#read-service-logs" data-toc-link>Read service logs</a><a class="g-toc-link depth-2" href="#unit-files" data-toc-link>Unit files</a><a class="g-toc-link depth-2" href="#process-lifecycle-and-exit-status" data-toc-link>Process lifecycle and exit status</a><a class="g-toc-link depth-2" href="#resource-limits-and-cgroups" data-toc-link>Resource limits and cgroups</a><a class="g-toc-link depth-2" href="#process-inspection-tools" data-toc-link>Process inspection tools</a><a class="g-toc-link depth-2" href="#nice-values-and-scheduling" data-toc-link>Nice values and scheduling</a><a class="g-toc-link depth-2" href="#timers-and-targets" data-toc-link>Timers and targets</a><a class="g-toc-link depth-2" href="#service-hardening" data-toc-link>Service hardening</a><a class="g-toc-link depth-2" href="#kernel-modules-and-sysctl" data-toc-link>Kernel modules and sysctl</a><a class="g-toc-link depth-2" href="#lab-observe-a-service" data-toc-link>Lab: observe a service</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 06 / 19 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

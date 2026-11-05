@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 8 of 10. Read interfaces, routes, DNS, ports and SSH, then test connectivity from the shell.">
+  <title>Part 08: Networking from the Command Line | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html" aria-current="page"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 08</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 08</p>
+        <h1>Networking from the Command Line</h1>
+        <p class="g-deck">Read interfaces, routes, DNS, ports and SSH, then test connectivity from the shell.</p>
+        <div class="g-chapter-meta">
+          <span>19 min read</span>
+          <span>18 sections</span>
+          <span>37 code blocks</span>
+          <span>Part 08 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>18 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#interfaces-and-addresses" data-toc-link>Interfaces and addresses</a><a class="g-toc-link depth-2" href="#routes" data-toc-link>Routes</a><a class="g-toc-link depth-2" href="#name-resolution" data-toc-link>Name resolution</a><a class="g-toc-link depth-2" href="#ports-and-sockets" data-toc-link>Ports and sockets</a><a class="g-toc-link depth-2" href="#test-connectivity" data-toc-link>Test connectivity</a><a class="g-toc-link depth-2" href="#download-files-with-curl-and-wget" data-toc-link>Download files with curl and wget</a><a class="g-toc-link depth-2" href="#ssh-essentials" data-toc-link>SSH essentials</a><a class="g-toc-link depth-2" href="#firewalls-in-one-minute" data-toc-link>Firewalls in one minute</a><a class="g-toc-link depth-2" href="#addressing-prefixes-and-subnetting" data-toc-link>Addressing, prefixes and subnetting</a><a class="g-toc-link depth-2" href="#dhcp-and-persistent-network-configuration" data-toc-link>DHCP and persistent network configuration</a><a class="g-toc-link depth-2" href="#packet-capture-and-port-inspection" data-toc-link>Packet capture and port inspection</a><a class="g-toc-link depth-2" href="#firewalls-beyond-ufw" data-toc-link>Firewalls beyond ufw</a><a class="g-toc-link depth-2" href="#ssh-tunnels-and-hardening" data-toc-link>SSH tunnels and hardening</a><a class="g-toc-link depth-2" href="#dns-and-network-performance" data-toc-link>DNS and network performance</a><a class="g-toc-link depth-2" href="#network-command-quick-reference" data-toc-link>Network command quick reference</a><a class="g-toc-link depth-2" href="#lab-map-your-own-host" data-toc-link>Lab: map your own host</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>Linux treats networking as a set of interfaces, addresses, routes, sockets and name resolution rules. You do not need to memorize every protocol to operate a system, but you do need to answer basic questions: what address is this host using, where does traffic go, which process is listening, and can I reach the other side?</p>
+<h2 id="interfaces-and-addresses">Interfaces and addresses<a aria-label="Link to this section" class="g-anchor" href="#interfaces-and-addresses">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>link
+ip<span class="w"> </span>addr
+ip<span class="w"> </span>-brief<span class="w"> </span>addr
+</code></pre></div>
+<p>An interface is a network device. <code>lo</code> is the loopback interface, usually <code>127.0.0.1</code> and <code>::1</code>. <code>eth0</code>, <code>ens18</code> or <code>enp0s3</code> are common wired interface names. Wi-Fi interfaces often start with <code>wl</code>.</p>
+<p>An address belongs to an interface. A host can have multiple IPv4 and IPv6 addresses. <code>ip addr</code> shows the address, prefix length and state.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>addr<span class="w"> </span>show<span class="w"> </span>dev<span class="w"> </span>eth0
+ip<span class="w"> </span>-6<span class="w"> </span>addr
+</code></pre></div>
+<p>Bring an interface up or down only when you understand the impact:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>dev<span class="w"> </span>eth0<span class="w"> </span>up
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>dev<span class="w"> </span>eth0<span class="w"> </span>down
+</code></pre></div>
+<p>On a remote system, bringing down the interface you are connected through will end your session.</p>
+<h2 id="routes">Routes<a aria-label="Link to this section" class="g-anchor" href="#routes">#</a></h2>
+<p>A route tells the kernel where to send a packet.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>route
+ip<span class="w"> </span>-6<span class="w"> </span>route
+ip<span class="w"> </span>route<span class="w"> </span>get<span class="w"> </span><span class="m">1</span>.1.1.1
+</code></pre></div>
+<p>The default route, marked <code>default</code>, is the path to the internet or another network. A more specific route wins over a less specific one. <code>ip route get</code> shows the route the kernel would choose for a destination.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.20.0.0/16<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.1.1
+sudo<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>del<span class="w"> </span><span class="m">10</span>.20.0.0/16
+</code></pre></div>
+<p>Routes added with <code>ip</code> are temporary unless you configure them persistently in the network manager. Test carefully before changing the default route.</p>
+<h2 id="name-resolution">Name resolution<a aria-label="Link to this section" class="g-anchor" href="#name-resolution">#</a></h2>
+<p>DNS turns names into addresses. Linux uses the resolver configuration in <code>/etc/resolv.conf</code>, often managed by systemd-resolved or NetworkManager.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/resolv.conf
+resolvectl<span class="w"> </span>status
+getent<span class="w"> </span>hosts<span class="w"> </span>example.com
+dig<span class="w"> </span>example.com
+dig<span class="w"> </span>+short<span class="w"> </span>example.com
+</code></pre></div>
+<p><code>getent hosts</code> uses the same name service switch path as normal applications. <code>dig</code> queries DNS directly and shows the full response. If <code>ping example.com</code> fails but <code>ping 1.1.1.1</code> works, name resolution is the first suspect.</p>
+<p>The hosts file can override DNS:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/hosts
+</code></pre></div>
+<p>Be careful when editing it. A stale entry can make a service unreachable even when DNS is healthy.</p>
+<h2 id="ports-and-sockets">Ports and sockets<a aria-label="Link to this section" class="g-anchor" href="#ports-and-sockets">#</a></h2>
+<p>A socket is an endpoint for communication. A listening socket waits for incoming connections.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ss<span class="w"> </span>-tulpn
+ss<span class="w"> </span>-tan
+ss<span class="w"> </span>-tulpn<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">':22'</span>
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-t</code></td>
+<td>TCP</td>
+</tr>
+<tr>
+<td><code>-u</code></td>
+<td>UDP</td>
+</tr>
+<tr>
+<td><code>-l</code></td>
+<td>Listening sockets</td>
+</tr>
+<tr>
+<td><code>-p</code></td>
+<td>Show the process, when permitted</td>
+</tr>
+<tr>
+<td><code>-n</code></td>
+<td>Do not resolve names</td>
+</tr>
+<tr>
+<td><code>-a</code></td>
+<td>All sockets</td>
+</tr>
+</tbody>
+</table></div>
+<p>The local address <code>0.0.0.0:22</code> means the service listens on every IPv4 interface. <code>127.0.0.1:5432</code> means it listens only on loopback. That difference matters for exposure.</p>
+<p><code>lsof -i</code> and <code>fuser</code> can also identify processes using a port, but <code>ss</code> is usually faster and more direct.</p>
+<h2 id="test-connectivity">Test connectivity<a aria-label="Link to this section" class="g-anchor" href="#test-connectivity">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">1</span>.1.1.1
+ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>example.com
+traceroute<span class="w"> </span>example.com
+curl<span class="w"> </span>-I<span class="w"> </span>https://example.com
+curl<span class="w"> </span>-v<span class="w"> </span>https://example.com
+</code></pre></div>
+<p><code>ping</code> tests ICMP reachability, not whether a particular service is available. Many networks block ICMP. <code>traceroute</code> shows the path, subject to filtering. <code>curl -I</code> fetches response headers and is a quick way to test an HTTP endpoint.</p>
+<p>For a TCP port without a dedicated client, use a short timeout:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">timeout<span class="w"> </span><span class="m">3</span><span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'&lt;/dev/tcp/example.com/443'</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>open
+</code></pre></div>
+<p>This is a shell feature, not a replacement for a proper network scanner. Use it only on systems you are authorized to test.</p>
+<h2 id="download-files-with-curl-and-wget">Download files with curl and wget<a aria-label="Link to this section" class="g-anchor" href="#download-files-with-curl-and-wget">#</a></h2>
+<p><code>curl</code> and <code>wget</code> both fetch content over HTTP and HTTPS. <code>curl</code> is a general request tool. <code>wget</code> is optimized for downloading files and resuming interrupted transfers.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">curl<span class="w"> </span>-fLO<span class="w"> </span>https://example.com/releases/tool-1.2.3.tar.gz
+curl<span class="w"> </span>-fL<span class="w"> </span>-o<span class="w"> </span>tool.tar.gz<span class="w"> </span>https://example.com/releases/tool-1.2.3.tar.gz
+curl<span class="w"> </span>-C<span class="w"> </span>-<span class="w"> </span>-O<span class="w"> </span>https://example.com/releases/tool-1.2.3.tar.gz
+curl<span class="w"> </span>-I<span class="w"> </span>https://example.com
+
+wget<span class="w"> </span>https://example.com/releases/tool-1.2.3.tar.gz
+wget<span class="w"> </span>-c<span class="w"> </span>https://example.com/releases/tool-1.2.3.tar.gz
+wget<span class="w"> </span>-O<span class="w"> </span>tool.tar.gz<span class="w"> </span><span class="s1">'https://example.com/download?id=42'</span>
+wget<span class="w"> </span>--spider<span class="w"> </span>https://example.com
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-f</code></td>
+<td>Fail on HTTP errors instead of saving an error page</td>
+</tr>
+<tr>
+<td><code>-L</code></td>
+<td>Follow redirects</td>
+</tr>
+<tr>
+<td><code>-O</code></td>
+<td>Use the remote filename in <code>curl</code>; choose a filename in <code>wget</code></td>
+</tr>
+<tr>
+<td><code>-o</code></td>
+<td>Write to a chosen filename in <code>curl</code></td>
+</tr>
+<tr>
+<td><code>-C -</code></td>
+<td>Resume a partial download in <code>curl</code></td>
+</tr>
+<tr>
+<td><code>-c</code></td>
+<td>Continue a partial download in <code>wget</code></td>
+</tr>
+<tr>
+<td><code>--spider</code></td>
+<td>Check that a URL exists without saving it in <code>wget</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>After a download, verify the checksum or signature from a source you trust:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sha256sum<span class="w"> </span>tool-1.2.3.tar.gz
+gpg<span class="w"> </span>--verify<span class="w"> </span>tool-1.2.3.tar.gz.sig<span class="w"> </span>tool-1.2.3.tar.gz
+</code></pre></div>
+<p>HTTPS protects the transfer, not the publisher. A valid TLS connection to a compromised site still delivers malicious content. Never pipe a download directly into a shell:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">curl<span class="w"> </span>-fsSL<span class="w"> </span>https://example.com/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+</code></pre></div>
+<p>Download the script, read it, verify it, then run it. If credentials are required, use a header or an authenticated configuration file with restrictive permissions. Do not put secrets in a URL that will appear in shell history and logs.</p>
+<h2 id="ssh-essentials">SSH essentials<a aria-label="Link to this section" class="g-anchor" href="#ssh-essentials">#</a></h2>
+<p>SSH provides encrypted remote shells and file transfer.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ssh<span class="w"> </span>user@host
+ssh<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span><span class="w"> </span>user@host
+ssh<span class="w"> </span>-i<span class="w"> </span>~/.ssh/lab_key<span class="w"> </span>user@host
+</code></pre></div>
+<p>Generate a key pair:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-a<span class="w"> </span><span class="m">100</span><span class="w"> </span>-C<span class="w"> </span><span class="s1">'lab key'</span>
+</code></pre></div>
+<p>The private key stays on your machine. The public key goes to the remote account's <code>~/.ssh/authorized_keys</code>. <code>ssh-copy-id</code> automates the first copy:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ssh-copy-id<span class="w"> </span>-i<span class="w"> </span>~/.ssh/lab_key.pub<span class="w"> </span>user@host
+</code></pre></div>
+<p>A per-host configuration in <code>~/.ssh/config</code> keeps options readable:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">Host lab
+    HostName 192.0.2.10
+    User alice
+    Port 2222
+    IdentityFile ~/.ssh/lab_key
+</code></pre></div>
+<p>Then <code>ssh lab</code> uses those settings. File transfer:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">scp<span class="w"> </span>report.txt<span class="w"> </span>lab:/tmp/
+scp<span class="w"> </span>lab:/var/log/syslog<span class="w"> </span>./syslog-copy
+</code></pre></div>
+<p>For interactive file transfer, <code>sftp lab</code> works over the same SSH connection.</p>
+<h2 id="firewalls-in-one-minute">Firewalls in one minute<a aria-label="Link to this section" class="g-anchor" href="#firewalls-in-one-minute">#</a></h2>
+<p>A firewall decides which traffic is allowed. On Ubuntu, <code>ufw</code> is a common front end:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>ufw<span class="w"> </span>status<span class="w"> </span>verbose
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">22</span>/tcp
+sudo<span class="w"> </span>ufw<span class="w"> </span><span class="nb">enable</span>
+</code></pre></div>
+<p>On systems using nftables directly:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>nft<span class="w"> </span>list<span class="w"> </span>ruleset
+</code></pre></div>
+<p>Before enabling a firewall on a remote host, allow your SSH port. Otherwise you can lock yourself out. A firewall rule is only one layer; services should also bind to the right interface and use authentication.</p>
+<h2 id="addressing-prefixes-and-subnetting">Addressing, prefixes and subnetting<a aria-label="Link to this section" class="g-anchor" href="#addressing-prefixes-and-subnetting">#</a></h2>
+<p>An IPv4 address is 32 bits, usually written as four decimal octets. A prefix length says how many leading bits identify the network.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">192.168.1.10/24
+</code></pre></div>
+<p><code>/24</code> means the first 24 bits are the network and the last 8 bits identify the host. The network address is <code>192.168.1.0</code>, the usable range is usually <code>192.168.1.1</code> to <code>192.168.1.254</code>, and the broadcast address is <code>192.168.1.255</code>.</p>
+<p>Private IPv4 ranges are not routed on the public internet:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Range</th>
+<th>Common use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>10.0.0.0/8</code></td>
+<td>Large private networks</td>
+</tr>
+<tr>
+<td><code>172.16.0.0/12</code></td>
+<td>Private networks</td>
+</tr>
+<tr>
+<td><code>192.168.0.0/16</code></td>
+<td>Home and small office networks</td>
+</tr>
+<tr>
+<td><code>127.0.0.0/8</code></td>
+<td>Loopback</td>
+</tr>
+<tr>
+<td><code>169.254.0.0/16</code></td>
+<td>Link-local, often a sign of failed DHCP</td>
+</tr>
+</tbody>
+</table></div>
+<p>IPv6 addresses are 128 bits and written in hexadecimal with colons. <code>::</code> compresses one run of zero groups. <code>::1</code> is loopback. Link-local addresses begin with <code>fe80::</code> and are scoped to an interface.</p>
+<p>Useful address tools:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ipcalc<span class="w"> </span><span class="m">192</span>.168.1.10/24
+ip<span class="w"> </span>-brief<span class="w"> </span>addr
+ip<span class="w"> </span>-6<span class="w"> </span>addr
+ip<span class="w"> </span>route<span class="w"> </span>get<span class="w"> </span><span class="m">8</span>.8.8.8
+</code></pre></div>
+<p><code>ipcalc</code> may need to be installed. It shows the network, broadcast, host range and mask. <code>ip route get</code> shows which interface and source address the kernel would use for a destination.</p>
+<p>A host can have multiple addresses on one interface. That is normal for IPv4 and IPv6, for aliases and for containers. Do not assume one interface equals one address.</p>
+<h2 id="dhcp-and-persistent-network-configuration">DHCP and persistent network configuration<a aria-label="Link to this section" class="g-anchor" href="#dhcp-and-persistent-network-configuration">#</a></h2>
+<p>DHCP assigns addresses, routes and DNS settings automatically. A DHCP client usually runs at boot and renews the lease periodically.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>-brief<span class="w"> </span>addr
+networkctl<span class="w"> </span>status
+resolvectl<span class="w"> </span>status
+</code></pre></div>
+<p>A <code>169.254.x.x</code> address often means the DHCP server did not respond. Check the link, the switch, the DHCP service and the lease logs.</p>
+<p>Persistent configuration depends on the distribution and the network manager:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Stack</th>
+<th>Typical configuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NetworkManager</td>
+<td><code>nmcli</code>, <code>nmtui</code>, <code>/etc/NetworkManager/</code></td>
+</tr>
+<tr>
+<td>systemd-networkd</td>
+<td><code>/etc/systemd/network/*.network</code></td>
+</tr>
+<tr>
+<td>netplan</td>
+<td><code>/etc/netplan/*.yaml</code>, often with NetworkManager or networkd as a backend</td>
+</tr>
+<tr>
+<td>ifupdown</td>
+<td><code>/etc/network/interfaces</code></td>
+</tr>
+<tr>
+<td>Red Hat family</td>
+<td><code>/etc/sysconfig/network-scripts/</code> or NetworkManager keyfiles</td>
+</tr>
+</tbody>
+</table></div>
+<p>Inspect before editing:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nmcli<span class="w"> </span>device<span class="w"> </span>status
+nmcli<span class="w"> </span>connection<span class="w"> </span>show
+networkctl<span class="w"> </span>list
+cat<span class="w"> </span>/etc/netplan/*.yaml
+</code></pre></div>
+<p>Netplan applies YAML configuration:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>netplan<span class="w"> </span>try
+sudo<span class="w"> </span>netplan<span class="w"> </span>apply
+</code></pre></div>
+<p><code>netplan try</code> applies the change with a rollback timer. Use it on remote systems so a mistake does not immediately lock you out.</p>
+<p>Do not edit a file owned by a network manager and expect the manager to ignore it. Changes may be overwritten at the next boot. Use the manager's own tooling.</p>
+<h2 id="packet-capture-and-port-inspection">Packet capture and port inspection<a aria-label="Link to this section" class="g-anchor" href="#packet-capture-and-port-inspection">#</a></h2>
+<p><code>tcpdump</code> captures packets. It is the command-line workhorse for checking what is actually on the wire.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>any<span class="w"> </span>-nn
+sudo<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>eth0<span class="w"> </span>-nn<span class="w"> </span>port<span class="w"> </span><span class="m">22</span>
+sudo<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>eth0<span class="w"> </span>-nn<span class="w"> </span>host<span class="w"> </span><span class="m">192</span>.0.2.10
+sudo<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>eth0<span class="w"> </span>-nn<span class="w"> </span>-c<span class="w"> </span><span class="m">20</span><span class="w"> </span>-w<span class="w"> </span>capture.pcap
+sudo<span class="w"> </span>tcpdump<span class="w"> </span>-r<span class="w"> </span>capture.pcap<span class="w"> </span>-nn
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Filter</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>host 192.0.2.10</code></td>
+<td>Traffic to or from one host</td>
+</tr>
+<tr>
+<td><code>src host 192.0.2.10</code></td>
+<td>Traffic from one host</td>
+</tr>
+<tr>
+<td><code>dst port 443</code></td>
+<td>Traffic to one port</td>
+</tr>
+<tr>
+<td><code>tcp</code></td>
+<td>TCP traffic only</td>
+</tr>
+<tr>
+<td><code>udp</code></td>
+<td>UDP traffic only</td>
+</tr>
+<tr>
+<td><code>icmp</code></td>
+<td>ICMP traffic only</td>
+</tr>
+<tr>
+<td><code>port 53</code></td>
+<td>DNS traffic, usually</td>
+</tr>
+<tr>
+<td><code>net 10.0.0.0/8</code></td>
+<td>Traffic to or from a network</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>-nn</code> disables name and port resolution, which keeps output fast and unambiguous. <code>-c</code> limits the packet count. <code>-w</code> writes a pcap file. <code>-r</code> reads one.</p>
+<p><code>tshark</code> provides protocol decoding and display filters:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tshark<span class="w"> </span>-r<span class="w"> </span>capture.pcap
+tshark<span class="w"> </span>-r<span class="w"> </span>capture.pcap<span class="w"> </span>-Y<span class="w"> </span><span class="s1">'http.request'</span>
+tshark<span class="w"> </span>-r<span class="w"> </span>capture.pcap<span class="w"> </span>-T<span class="w"> </span>fields<span class="w"> </span>-e<span class="w"> </span>ip.src<span class="w"> </span>-e<span class="w"> </span>ip.dst<span class="w"> </span>-e<span class="w"> </span>tcp.dstport
+</code></pre></div>
+<p><code>nmap</code> is a network scanner. Use it only on systems you own or have explicit written permission to test.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nmap<span class="w"> </span>-sn<span class="w"> </span><span class="m">192</span>.0.2.0/24
+nmap<span class="w"> </span>-sT<span class="w"> </span>-p<span class="w"> </span><span class="m">22</span>,80,443<span class="w"> </span><span class="m">192</span>.0.2.10
+nmap<span class="w"> </span>-sV<span class="w"> </span>-p<span class="w"> </span><span class="m">22</span>,80,443<span class="w"> </span><span class="m">192</span>.0.2.10
+</code></pre></div>
+<p><code>-sn</code> is a host discovery scan. <code>-sT</code> uses a full TCP connection. <code>-sV</code> tries to identify service versions. Scans generate traffic and logs. Authorization comes before curiosity.</p>
+<h2 id="firewalls-beyond-ufw">Firewalls beyond ufw<a aria-label="Link to this section" class="g-anchor" href="#firewalls-beyond-ufw">#</a></h2>
+<p><code>ufw</code> is a friendly front end. Underneath, Linux uses netfilter. On modern systems, <code>nftables</code> is the default framework. Some systems still use <code>iptables</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>ufw<span class="w"> </span>status<span class="w"> </span>numbered
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span>from<span class="w"> </span><span class="m">192</span>.0.2.0/24<span class="w"> </span>to<span class="w"> </span>any<span class="w"> </span>port<span class="w"> </span><span class="m">22</span><span class="w"> </span>proto<span class="w"> </span>tcp
+sudo<span class="w"> </span>ufw<span class="w"> </span>delete<span class="w"> </span><span class="m">2</span>
+sudo<span class="w"> </span>nft<span class="w"> </span>list<span class="w"> </span>ruleset
+sudo<span class="w"> </span>iptables<span class="w"> </span>-L<span class="w"> </span>-n<span class="w"> </span>-v
+</code></pre></div>
+<p><code>ufw status numbered</code> shows rule numbers for deletion. <code>nft list ruleset</code> prints the current nftables rules. <code>iptables -L -n -v</code> prints the legacy or compatibility view, depending on the system.</p>
+<p>A firewall policy needs a default stance:</p>
+<ul>
+<li>Drop or reject inbound traffic that is not explicitly allowed.</li>
+<li>Allow established and related connections.</li>
+<li>Allow only the services that should be reachable.</li>
+<li>Restrict management access by source network when possible.</li>
+<li>Log denied traffic sparingly, or the logs become noise.</li>
+</ul>
+<p>Before enabling a firewall on a remote host, allow your SSH source and port. Test from a second session. Keep a console or recovery path open.</p>
+<h2 id="ssh-tunnels-and-hardening">SSH tunnels and hardening<a aria-label="Link to this section" class="g-anchor" href="#ssh-tunnels-and-hardening">#</a></h2>
+<p>SSH can forward ports and create tunnels.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ssh<span class="w"> </span>-L<span class="w"> </span><span class="m">8080</span>:127.0.0.1:80<span class="w"> </span>user@host
+ssh<span class="w"> </span>-R<span class="w"> </span><span class="m">9000</span>:127.0.0.1:3000<span class="w"> </span>user@host
+ssh<span class="w"> </span>-D<span class="w"> </span><span class="m">1080</span><span class="w"> </span>user@host
+</code></pre></div>
+<p><code>-L</code> forwards a local port to a remote destination. <code>-R</code> forwards a remote port to a local destination. <code>-D</code> starts a SOCKS proxy. These features are powerful and should be used within policy.</p>
+<p>A per-host configuration keeps commands short:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">Host lab
+    HostName 192.0.2.10
+    User alice
+    Port 2222
+    IdentityFile ~/.ssh/lab_key
+    ServerAliveInterval 30
+</code></pre></div>
+<p>Then:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ssh<span class="w"> </span>lab
+scp<span class="w"> </span>report.txt<span class="w"> </span>lab:/tmp/
+</code></pre></div>
+<p>Server hardening starts with <code>/etc/ssh/sshd_config</code> and drop-in files under <code>/etc/ssh/sshd_config.d/</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+AllowUsers alice
+MaxAuthTries 3
+</code></pre></div>
+<p>Validate before restarting:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>sshd<span class="w"> </span>-t
+sudo<span class="w"> </span>systemctl<span class="w"> </span>reload<span class="w"> </span>ssh
+</code></pre></div>
+<p>Keep your current session open while testing a new SSH configuration. If the new configuration rejects you, the old session is your way back in.</p>
+<h2 id="dns-and-network-performance">DNS and network performance<a aria-label="Link to this section" class="g-anchor" href="#dns-and-network-performance">#</a></h2>
+<p>DNS problems often look like general network failures. Test name resolution separately from connectivity.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getent<span class="w"> </span>hosts<span class="w"> </span>example.com
+dig<span class="w"> </span>example.com
+dig<span class="w"> </span>+short<span class="w"> </span>example.com
+dig<span class="w"> </span>@1.1.1.1<span class="w"> </span>example.com
+resolvectl<span class="w"> </span>query<span class="w"> </span>example.com
+</code></pre></div>
+<p><code>getent hosts</code> uses the system resolver path. <code>dig</code> queries DNS directly. <code>dig @server</code> tests a specific resolver. <code>resolvectl query</code> uses systemd-resolved when it is active.</p>
+<p>If an IP address works but a hostname does not, check <code>/etc/resolv.conf</code>, the resolver manager, <code>/etc/hosts</code> and the DNS server. If both fail, check the interface, route and firewall.</p>
+<p>Network statistics:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ss<span class="w"> </span>-s
+ip<span class="w"> </span>-s<span class="w"> </span>link
+ip<span class="w"> </span>-s<span class="w"> </span>link<span class="w"> </span>show<span class="w"> </span>dev<span class="w"> </span>eth0
+mtr<span class="w"> </span>example.com
+</code></pre></div>
+<p><code>ss -s</code> summarizes sockets. <code>ip -s link</code> shows interface counters, including errors and drops. <code>mtr</code> combines traceroute and ping over time. A few dropped packets may be normal. A growing error count is not.</p>
+<h2 id="network-command-quick-reference">Network command quick reference<a aria-label="Link to this section" class="g-anchor" href="#network-command-quick-reference">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Task</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Show addresses</td>
+<td><code>ip -brief addr</code></td>
+</tr>
+<tr>
+<td>Show routes</td>
+<td><code>ip route</code></td>
+</tr>
+<tr>
+<td>Query DNS</td>
+<td><code>dig +short example.com</code>, <code>getent hosts example.com</code></td>
+</tr>
+<tr>
+<td>List listening sockets</td>
+<td><code>ss -tulpn</code></td>
+</tr>
+<tr>
+<td>Test reachability</td>
+<td><code>ping -c 4 example.com</code></td>
+</tr>
+<tr>
+<td>Test an HTTP endpoint</td>
+<td><code>curl -I https://example.com</code></td>
+</tr>
+<tr>
+<td>Trace a path</td>
+<td><code>traceroute example.com</code></td>
+</tr>
+<tr>
+<td>Capture traffic</td>
+<td><code>sudo tcpdump -i any -nn</code></td>
+</tr>
+<tr>
+<td>Check NetworkManager</td>
+<td><code>nmcli device status</code></td>
+</tr>
+<tr>
+<td>Legacy interface view</td>
+<td><code>ifconfig</code>, replaced by <code>ip</code></td>
+</tr>
+<tr>
+<td>Legacy socket view</td>
+<td><code>netstat -tulnp</code>, replaced by <code>ss</code></td>
+</tr>
+<tr>
+<td>Legacy DNS query</td>
+<td><code>nslookup example.com</code>, replaced by <code>dig</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><code>ifconfig</code>, <code>netstat</code> and <code>nslookup</code> still appear in older guides and may be installed for compatibility. Prefer <code>ip</code>, <code>ss</code> and <code>dig</code> or <code>getent</code>. If a legacy command is missing, install the package that provides it only when you have a reason. Do not add tools just to follow an old tutorial.</p>
+<h2 id="lab-map-your-own-host">Lab: map your own host<a aria-label="Link to this section" class="g-anchor" href="#lab-map-your-own-host">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>-brief<span class="w"> </span>addr
+ip<span class="w"> </span>route
+cat<span class="w"> </span>/etc/resolv.conf
+getent<span class="w"> </span>hosts<span class="w"> </span>example.com
+ss<span class="w"> </span>-tulpn
+ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">127</span>.0.0.1
+curl<span class="w"> </span>-I<span class="w"> </span>https://example.com
+</code></pre></div>
+<p>Then answer:</p>
+<ol>
+<li>Which interface has the default route?</li>
+<li>Which DNS resolver is configured?</li>
+<li>Which TCP ports are listening on all interfaces?</li>
+<li>Which services are listening only on loopback?</li>
+<li>Does <code>example.com</code> resolve to an IPv4 address, an IPv6 address or both?</li>
+</ol>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Confusing a listening port with a reachable service.</li>
+<li>Editing DNS settings without checking which resolver manager owns the file.</li>
+<li>Enabling a firewall before allowing SSH.</li>
+<li>Using <code>ping</code> as proof that an application is healthy.</li>
+<li>Copying a private SSH key to a remote host.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Read interface, address and route information.</li>
+<li>Diagnose a DNS problem separately from a connectivity problem.</li>
+<li>Identify listening sockets and their processes.</li>
+<li>Test HTTP and SSH connectivity.</li>
+<li>Make a basic firewall change without locking yourself out.</li>
+</ul>
+<p>Next you will turn these commands into reusable Bash scripts.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 08 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/07-packages-storage-boot.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 07</span><strong>Packages, Storage and Boot</strong></a><a class="g-chapter-card" href="../foundations/09-bash-scripting-foundations.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 09</span><strong>Bash Scripting Foundations</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#interfaces-and-addresses" data-toc-link>Interfaces and addresses</a><a class="g-toc-link depth-2" href="#routes" data-toc-link>Routes</a><a class="g-toc-link depth-2" href="#name-resolution" data-toc-link>Name resolution</a><a class="g-toc-link depth-2" href="#ports-and-sockets" data-toc-link>Ports and sockets</a><a class="g-toc-link depth-2" href="#test-connectivity" data-toc-link>Test connectivity</a><a class="g-toc-link depth-2" href="#download-files-with-curl-and-wget" data-toc-link>Download files with curl and wget</a><a class="g-toc-link depth-2" href="#ssh-essentials" data-toc-link>SSH essentials</a><a class="g-toc-link depth-2" href="#firewalls-in-one-minute" data-toc-link>Firewalls in one minute</a><a class="g-toc-link depth-2" href="#addressing-prefixes-and-subnetting" data-toc-link>Addressing, prefixes and subnetting</a><a class="g-toc-link depth-2" href="#dhcp-and-persistent-network-configuration" data-toc-link>DHCP and persistent network configuration</a><a class="g-toc-link depth-2" href="#packet-capture-and-port-inspection" data-toc-link>Packet capture and port inspection</a><a class="g-toc-link depth-2" href="#firewalls-beyond-ufw" data-toc-link>Firewalls beyond ufw</a><a class="g-toc-link depth-2" href="#ssh-tunnels-and-hardening" data-toc-link>SSH tunnels and hardening</a><a class="g-toc-link depth-2" href="#dns-and-network-performance" data-toc-link>DNS and network performance</a><a class="g-toc-link depth-2" href="#network-command-quick-reference" data-toc-link>Network command quick reference</a><a class="g-toc-link depth-2" href="#lab-map-your-own-host" data-toc-link>Lab: map your own host</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 08 / 18 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

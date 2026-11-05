@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Chapter 24 of the 0XMAP Linux for Hackers field guide. Turn audit rules and osquery into a practical host monitoring loop.">
+  <title>Chapter 24: Host-based Monitoring: auditd and osquery | 0XMAP Linux Field Guide</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Chapter 24</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Chapter navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Chapters</p>
+      <p class="g-sidebar-count">30 chapters / 5 sections</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close chapter menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">01</span><span>Foundations</span></div><ol><li><a class="g-nav-link" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html" ><span class="g-nav-num">01</span><span class="g-nav-title">Why Linux matters</span></a></li><li><a class="g-nav-link" href="../chapters/02-basic-file-navigation-in-linux.html" ><span class="g-nav-num">02</span><span class="g-nav-title">File navigation</span></a></li><li><a class="g-nav-link" href="../chapters/03-understanding-linux-file-permissions.html" ><span class="g-nav-num">03</span><span class="g-nav-title">File permissions</span></a></li><li><a class="g-nav-link" href="../chapters/04-users-groups-and-privilege-escalation-basics.html" ><span class="g-nav-num">04</span><span class="g-nav-title">Users and groups</span></a></li><li><a class="g-nav-link" href="../chapters/05-linux-package-managers-and-dependency-abuse.html" ><span class="g-nav-num">05</span><span class="g-nav-title">Package managers</span></a></li><li><a class="g-nav-link" href="../chapters/06-introduction-to-bash-scripting.html" ><span class="g-nav-num">06</span><span class="g-nav-title">Bash scripting</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">02</span><span>Shell and scheduling</span></div><ol><li><a class="g-nav-link" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" ><span class="g-nav-num">07</span><span class="g-nav-title">Bash variables</span></a></li><li><a class="g-nav-link" href="../chapters/08-environment-variables-and-bashrc-abuse.html" ><span class="g-nav-num">08</span><span class="g-nav-title">Shell startup abuse</span></a></li><li><a class="g-nav-link" href="../chapters/09-processes-services-and-enumeration.html" ><span class="g-nav-num">09</span><span class="g-nav-title">Processes and services</span></a></li><li><a class="g-nav-link" href="../chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html" ><span class="g-nav-num">10</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link" href="../chapters/11-ssh-access-and-abuse.html" ><span class="g-nav-num">11</span><span class="g-nav-title">SSH access and abuse</span></a></li><li><a class="g-nav-link" href="../chapters/12-file-permissions-and-privilege-escalation-basics.html" ><span class="g-nav-num">12</span><span class="g-nav-title">Permissions to privilege</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">03</span><span>Access and network</span></div><ol><li><a class="g-nav-link" href="../chapters/13-environment-variables-and-path-hijacking.html" ><span class="g-nav-num">13</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link" href="../chapters/14-logs-and-system-auditing.html" ><span class="g-nav-num">14</span><span class="g-nav-title">Logs and auditing</span></a></li><li><a class="g-nav-link" href="../chapters/15-networking-fundamentals-for-hackers.html" ><span class="g-nav-num">15</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link" href="../chapters/16-firewalls-and-packet-filtering.html" ><span class="g-nav-num">16</span><span class="g-nav-title">Firewalls</span></a></li><li><a class="g-nav-link" href="../chapters/17-ssh-and-tunneling.html" ><span class="g-nav-num">17</span><span class="g-nav-title">SSH tunneling</span></a></li><li><a class="g-nav-link" href="../chapters/18-linux-kernel-and-exploit-basics.html" ><span class="g-nav-num">18</span><span class="g-nav-title">Kernel exploits</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">04</span><span>Persistence and isolation</span></div><ol><li><a class="g-nav-link" href="../chapters/19-linux-persistence-techniques.html" ><span class="g-nav-num">19</span><span class="g-nav-title">Persistence</span></a></li><li><a class="g-nav-link" href="../chapters/20-linux-services-and-daemon-exploitation.html" ><span class="g-nav-num">20</span><span class="g-nav-title">Service exploitation</span></a></li><li><a class="g-nav-link" href="../chapters/21-linux-capabilities-and-exploitation.html" ><span class="g-nav-num">21</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link" href="../chapters/22-advanced-persistence.html" ><span class="g-nav-num">22</span><span class="g-nav-title">Advanced persistence</span></a></li><li><a class="g-nav-link" href="../chapters/23-containers-and-docker-exploitation.html" ><span class="g-nav-num">23</span><span class="g-nav-title">Containers</span></a></li><li><a class="g-nav-link" href="../chapters/24-host-based-monitoring-auditd-and-osquery.html"  aria-current="page"><span class="g-nav-num">24</span><span class="g-nav-title">Host monitoring</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">05</span><span>Defense and workflow</span></div><ol><li><a class="g-nav-link" href="../chapters/25-linux-forensics-and-incident-response.html" ><span class="g-nav-num">25</span><span class="g-nav-title">Forensics and IR</span></a></li><li><a class="g-nav-link" href="../chapters/26-automating-linux-privilege-escalation-checks.html" ><span class="g-nav-num">26</span><span class="g-nav-title">Privilege automation</span></a></li><li><a class="g-nav-link" href="../chapters/27-linux-hardening-and-monitoring.html" ><span class="g-nav-num">27</span><span class="g-nav-title">Hardening and monitoring</span></a></li><li><a class="g-nav-link" href="../chapters/28-network-sniffing-and-packet-capture.html" ><span class="g-nav-num">28</span><span class="g-nav-title">Packet capture</span></a></li><li><a class="g-nav-link" href="../chapters/29-linux-memory-analysis-and-credential-hunting.html" ><span class="g-nav-num">29</span><span class="g-nav-title">Memory analysis</span></a></li><li><a class="g-nav-link" href="../chapters/30-building-your-linux-hacking-workflow.html" ><span class="g-nav-num">30</span><span class="g-nav-title">Workflow</span></a></li></ol></section>
+  </nav>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Authorized labs and systems only. Read in order or use the menu to jump.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#section-persistence">Section 04</a><span>/</span>
+          <span>Chapter 24</span>
+        </nav>
+        <p class="g-kicker">Section 04 / Persistence and isolation</p>
+        <h1>Host-based Monitoring: auditd and osquery</h1>
+        <p class="g-deck">Turn audit rules and osquery into a practical host monitoring loop.</p>
+        <div class="g-chapter-meta">
+          <span>6 min read</span>
+          <span>10 sections</span>
+          <span>7 code blocks</span>
+          <span>Chapter 24 / 30</span>
+        </div>
+        <div class="g-chapter-actions"><a class="g-btn ghost" data-next-chapter href="../chapters/25-linux-forensics-and-incident-response.html">Next chapter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>10 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-why-host-based-monitoring" data-toc-link>1. Why Host-based Monitoring?</a><a class="g-toc-link depth-2" href="#2-auditd-quick-start" data-toc-link>2. auditd - Quick Start</a><a class="g-toc-link depth-2" href="#3-osquery-quick-start" data-toc-link>3. osquery - Quick Start</a><a class="g-toc-link depth-2" href="#4-detection-use-cases-and-rules" data-toc-link>4. Detection Use-Cases &amp; Rules</a><a class="g-toc-link depth-2" href="#5-tuning-and-performance" data-toc-link>5. Tuning &amp; Performance</a><a class="g-toc-link depth-2" href="#6-practical-tasks-lab" data-toc-link>6. Practical Tasks (lab)</a><a class="g-toc-link depth-2" href="#7-defensive-recommendations" data-toc-link>7. Defensive Recommendations</a><a class="g-toc-link depth-2" href="#advanced-ebpf-runtime-security-and-detection-engineering" data-toc-link>Advanced: eBPF runtime security and detection engineering</a><a class="g-toc-link depth-2" href="#8-references" data-toc-link>8. References</a></nav>
+</details>
+      <div class="g-prose"><h2 id="objective">Objective<a aria-label="Link to this section" class="g-anchor" href="#objective">#</a></h2>
+<p>Introduce host-based monitoring using <code>auditd</code> (kernel auditing) and <code>osquery</code> (SQL-based endpoint visibility). Learn quick deployment, common rules to watch for compromise, and basic detection use-cases. All examples are for authorized lab environments and production hardening.</p>
+<hr/>
+<h2 id="1-why-host-based-monitoring">1. Why Host-based Monitoring?<a aria-label="Link to this section" class="g-anchor" href="#1-why-host-based-monitoring">#</a></h2>
+<p>Network logs are useful, but attackers often leave traces on the host. <code>auditd</code> provides kernel-level audit events (file access, execs, attrib changes). <code>osquery</code> gives flexible querying of system state (processes, packages, scheduled jobs) and is great for continuous monitoring and hunting.</p>
+<hr/>
+<h2 id="2-auditd-quick-start">2. auditd - Quick Start<a aria-label="Link to this section" class="g-anchor" href="#2-auditd-quick-start">#</a></h2>
+<p>Install and enable <code>auditd</code> (Debian/Ubuntu):</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>auditd<span class="w"> </span>audispd-plugins<span class="w"> </span>-y
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>auditd
+</code></pre></div>
+<p>Basic commands:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">auditctl<span class="w"> </span>-l<span class="w">            </span><span class="c1"># list current rules</span>
+ausearch<span class="w"> </span>-m<span class="w"> </span>EXECVE<span class="w">     </span><span class="c1"># search exec events</span>
+ausearch<span class="w"> </span>-f<span class="w"> </span>/etc/passwd<span class="w">  </span><span class="c1"># file access events</span>
+ausearch<span class="w"> </span>-ts<span class="w"> </span>recent<span class="w">   </span><span class="c1"># recent events</span>
+aureport<span class="w"> </span>-x<span class="w">            </span><span class="c1"># summary of executed commands</span>
+</code></pre></div>
+<p>Add example rules (lab/test):</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Watch for changes to passwd/shadow</span>
+sudo<span class="w"> </span>auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/passwd<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>passwd_changes
+sudo<span class="w"> </span>auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/shadow<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>shadow_changes
+
+<span class="c1"># Log executions of su/sudo</span>
+sudo<span class="w"> </span>auditctl<span class="w"> </span>-a<span class="w"> </span>always,exit<span class="w"> </span>-F<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>b64<span class="w"> </span>-S<span class="w"> </span>execve<span class="w"> </span>-F<span class="w"> </span><span class="nv">path</span><span class="o">=</span>/usr/bin/sudo<span class="w"> </span>-k<span class="w"> </span>sudo_exec
+</code></pre></div>
+<p>Logs are in <code>/var/log/audit/audit.log</code> and can be forwarded to SIEM.</p>
+<hr/>
+<h2 id="3-osquery-quick-start">3. osquery - Quick Start<a aria-label="Link to this section" class="g-anchor" href="#3-osquery-quick-start">#</a></h2>
+<p>Install osquery (packages available for many distros). Basic usage:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Interactive shell</span>
+osqueryi
+
+<span class="c1"># Example queries</span>
+osqueryi<span class="w"> </span><span class="s2">"SELECT pid, name, path, cmdline FROM processes WHERE on_disk = 0;"</span>
+osqueryi<span class="w"> </span><span class="s2">"SELECT name, path FROM crontab WHERE user != 'root';"</span>
+</code></pre></div>
+<p>osquery can run scheduled queries and return results to a central logger.</p>
+<hr/>
+<h2 id="4-detection-use-cases-and-rules">4. Detection Use-Cases &amp; Rules<a aria-label="Link to this section" class="g-anchor" href="#4-detection-use-cases-and-rules">#</a></h2>
+<ul>
+<li>Watch for new systemd unit files in <code>/etc/systemd/system</code> or <code>~/.config/systemd/user</code>.
+<ul>
+<li><code>auditd</code> rule on <code>/etc/systemd/system</code> and <code>/lib/systemd/system</code>.</li>
+</ul>
+</li>
+<li>Detect creation of <code>authorized_keys</code> or changes to <code>~/.ssh/authorized_keys</code>.</li>
+<li>Alert on executions of suspicious binaries (<code>execve</code> events where cmdline contains <code>bash -i</code> or <code>nc</code>).</li>
+<li>Monitor unexpected network listeners: <code>osquery</code> query on <code>listening_ports</code> table.</li>
+</ul>
+<p>Example osquery query for listening ports:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">sql</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-sql"><span class="k">SELECT</span><span class="w"> </span><span class="n">pid</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="p">,</span><span class="w"> </span><span class="n">process_name</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">listening_ports</span><span class="p">;</span>
+</code></pre></div>
+<hr/>
+<h2 id="5-tuning-and-performance">5. Tuning &amp; Performance<a aria-label="Link to this section" class="g-anchor" href="#5-tuning-and-performance">#</a></h2>
+<ul>
+<li>Keep audit rules focused to avoid performance/saturation. Use keys (<code>-k</code>) to filter.</li>
+<li>Use osquery packs for scheduled queries and limit frequency.</li>
+<li>Forward logs to SIEM or ELK for aggregation and alerting.</li>
+</ul>
+<hr/>
+<h2 id="6-practical-tasks-lab">6. Practical Tasks (lab)<a aria-label="Link to this section" class="g-anchor" href="#6-practical-tasks-lab">#</a></h2>
+<ol>
+<li>Install <code>auditd</code> and add a rule to watch <code>/etc/passwd</code>. Check <code>/var/log/audit/audit.log</code> after making a test edit.</li>
+<li>Install <code>osquery</code> and run queries to list scheduled tasks and listening ports.</li>
+<li>Create an osquery schedule to run a query every minute and inspect results.</li>
+<li>Configure auditd to log execve events for <code>/usr/bin/sudo</code> and generate a report with <code>ausearch</code>/<code>aureport</code>.</li>
+</ol>
+<hr/>
+<h2 id="7-defensive-recommendations">7. Defensive Recommendations<a aria-label="Link to this section" class="g-anchor" href="#7-defensive-recommendations">#</a></h2>
+<ul>
+<li>Centralize host logs to SIEM.</li>
+<li>Baseline outputs from osquery and alert on deviations.</li>
+<li>Use FIM alongside auditd for integrity checks.</li>
+<li>Regularly review and prune audit rules to retain signal.</li>
+</ul>
+<hr/>
+<h2 id="advanced-ebpf-runtime-security-and-detection-engineering">Advanced: eBPF runtime security and detection engineering<a aria-label="Link to this section" class="g-anchor" href="#advanced-ebpf-runtime-security-and-detection-engineering">#</a></h2>
+<p><code>auditd</code> and <code>osquery</code> remain useful, but they are polling-based or rule-based
+and can be blinded by a rootkit. eBPF gives the defender programmable
+visibility into syscalls, process execution, network events and kernel
+functions with lower overhead. The same primitives are also an attack surface,
+so treat BPF access as privileged.</p>
+<p>Tool roles:</p>
+<ul>
+<li>Falco: syscall-driven rules and alerts for process, file and network
+behavior.</li>
+<li>Tetragon: eBPF-based process, file and network observability with
+enforcement options.</li>
+<li>Tracee: runtime detection and forensics from eBPF events.</li>
+<li>bpftrace: ad-hoc tracing for hypothesis-driven investigation.</li>
+<li>Cilium: eBPF networking and policy, including Kubernetes.</li>
+</ul>
+<p>Useful bpftrace checks:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">'tracepoint:syscalls:sys_enter_execve { printf("%s -&gt; %s\n", comm, str(args-&gt;filename)); }'</span>
+sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">'tracepoint:syscalls:sys_enter_memfd_create { printf("%s created a memfd\n", comm); }'</span>
+sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">'kprobe:__x64_sys_bpf { printf("%s called bpf cmd=%d\n", comm, arg1); }'</span>
+</code></pre></div>
+<p>Falco rule shape:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">yaml</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-yaml"><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">rule</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Shell Spawned by Web Server</span>
+<span class="w">  </span><span class="nt">desc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A web server process spawned an interactive shell</span>
+<span class="w">  </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">spawned_process and proc.pname in (nginx, apache2, httpd) and proc.name in (sh, bash)</span>
+<span class="w">  </span><span class="nt">output</span><span class="p">:</span><span class="w"> </span><span class="s">"shell</span><span class="nv"> </span><span class="s">spawned</span><span class="nv"> </span><span class="s">by</span><span class="nv"> </span><span class="s">web</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">(user=%user.name</span><span class="nv"> </span><span class="s">command=%proc.cmdline</span><span class="nv"> </span><span class="s">parent=%proc.pname)"</span>
+<span class="w">  </span><span class="nt">priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">WARNING</span>
+</code></pre></div>
+<p>Detection priorities:</p>
+<ul>
+<li><code>execve</code> from a web server, database or container entrypoint.</li>
+<li><code>memfd_create</code> followed by <code>fexecve</code>, a common fileless execution pattern.</li>
+<li><code>ptrace</code>, <code>process_vm_readv</code> and <code>/proc/*/mem</code> access against sensitive
+processes.</li>
+<li><code>bpf</code> syscalls from unexpected processes, and new pinned programs in
+<code>/sys/fs/bpf</code>.</li>
+<li><code>setuid</code>, <code>capset</code>, <code>unshare</code>, <code>nsenter</code> and mount operations from non-admin
+processes.</li>
+</ul>
+<p>Engineering notes:</p>
+<ul>
+<li>Baseline normal behavior first; a noisy rule that nobody reads is worse than
+no rule.</li>
+<li>Map detections to MITRE ATT&amp;CK and include the process tree, user, container
+and command line.</li>
+<li>Forward events with OpenTelemetry, Vector or Fluent Bit; keep raw events for
+investigation.</li>
+<li>Test with <code>bpftrace</code> before writing a permanent Falco or Tetragon rule.</li>
+<li>Remember that eBPF requires a modern kernel, BTF and privileges; it is not
+available in every restricted container.</li>
+</ul>
+<h2 id="8-references">8. References<a aria-label="Link to this section" class="g-anchor" href="#8-references">#</a></h2>
+<ul>
+<li><code>man auditctl</code>, <code>man ausearch</code>, <code>osquery</code> docs and packs.</li>
+<li>Deploy guides for production <code>auditd</code> and osquery fleet management (FleetDM).</li>
+</ul>
+<hr/>
+<p> Ethics &amp; Safety: Use these tools on systems you control or are authorized to monitor.</p>
+<hr/>
+</div>
+      <p class="g-source-note">Chapter 24 of the Linux for Hackers guide. Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+      <nav class="g-chapter-nav" aria-label="Chapter navigation"><a class="g-chapter-card" href="../chapters/23-containers-and-docker-exploitation.html" data-prev-chapter><span class="g-chapter-card-label">Previous / Chapter 23</span><strong>Containers and Docker Exploitation</strong></a><a class="g-chapter-card" href="../chapters/25-linux-forensics-and-incident-response.html" data-next-chapter><span class="g-chapter-card-label">Next / Chapter 25</span><strong>Linux Forensics and Incident Response Basics</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-why-host-based-monitoring" data-toc-link>1. Why Host-based Monitoring?</a><a class="g-toc-link depth-2" href="#2-auditd-quick-start" data-toc-link>2. auditd - Quick Start</a><a class="g-toc-link depth-2" href="#3-osquery-quick-start" data-toc-link>3. osquery - Quick Start</a><a class="g-toc-link depth-2" href="#4-detection-use-cases-and-rules" data-toc-link>4. Detection Use-Cases &amp; Rules</a><a class="g-toc-link depth-2" href="#5-tuning-and-performance" data-toc-link>5. Tuning &amp; Performance</a><a class="g-toc-link depth-2" href="#6-practical-tasks-lab" data-toc-link>6. Practical Tasks (lab)</a><a class="g-toc-link depth-2" href="#7-defensive-recommendations" data-toc-link>7. Defensive Recommendations</a><a class="g-toc-link depth-2" href="#advanced-ebpf-runtime-security-and-detection-engineering" data-toc-link>Advanced: eBPF runtime security and detection engineering</a><a class="g-toc-link depth-2" href="#8-references" data-toc-link>8. References</a></nav>
+    <div class="g-toc-foot">Chapter 24 / 10 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

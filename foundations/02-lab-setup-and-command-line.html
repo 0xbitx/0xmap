@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 2 of 10. Choose a safe lab, read the prompt and learn how commands, help and exit codes fit together.">
+  <title>Part 02: Lab Setup and the Command Line | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html" aria-current="page"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 02</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 02</p>
+        <h1>Lab Setup and the Command Line</h1>
+        <p class="g-deck">Choose a safe lab, read the prompt and learn how commands, help and exit codes fit together.</p>
+        <div class="g-chapter-meta">
+          <span>18 min read</span>
+          <span>17 sections</span>
+          <span>27 code blocks</span>
+          <span>Part 02 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>17 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#choose-a-lab" data-toc-link>Choose a lab</a><a class="g-toc-link depth-2" href="#use-a-container-as-a-disposable-lab" data-toc-link>Use a container as a disposable lab</a><a class="g-toc-link depth-2" href="#know-your-prompt" data-toc-link>Know your prompt</a><a class="g-toc-link depth-2" href="#the-anatomy-of-a-command" data-toc-link>The anatomy of a command</a><a class="g-toc-link depth-2" href="#get-help-without-guessing" data-toc-link>Get help without guessing</a><a class="g-toc-link depth-2" href="#exit-status-and-command-chaining" data-toc-link>Exit status and command chaining</a><a class="g-toc-link depth-2" href="#quoting-and-expansion" data-toc-link>Quoting and expansion</a><a class="g-toc-link depth-2" href="#redirection-and-pipes" data-toc-link>Redirection and pipes</a><a class="g-toc-link depth-2" href="#terminal-habits" data-toc-link>Terminal habits</a><a class="g-toc-link depth-2" href="#manual-sections-and-command-discovery" data-toc-link>Manual sections and command discovery</a><a class="g-toc-link depth-2" href="#startup-files-and-environment" data-toc-link>Startup files and environment</a><a class="g-toc-link depth-2" href="#aliases-functions-and-history" data-toc-link>Aliases, functions and history</a><a class="g-toc-link depth-2" href="#how-the-shell-parses-a-command" data-toc-link>How the shell parses a command</a><a class="g-toc-link depth-2" href="#more-redirection" data-toc-link>More redirection</a><a class="g-toc-link depth-2" href="#lab-build-a-workspace" data-toc-link>Lab: build a workspace</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>You do not need a dedicated server to learn Linux. You need a safe environment that you can break, rebuild and snapshot. This part covers the lab choices, the shape of a command line, and the habits that make the terminal predictable.</p>
+<h2 id="choose-a-lab">Choose a lab<a aria-label="Link to this section" class="g-anchor" href="#choose-a-lab">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Option</th>
+<th>Good for</th>
+<th>Trade-offs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Virtual machine</td>
+<td>Full Linux install, snapshots, networking</td>
+<td>Uses RAM and disk</td>
+</tr>
+<tr>
+<td>WSL2 on Windows</td>
+<td>Fast access to a Linux userland</td>
+<td>Some kernel and service differences</td>
+</tr>
+<tr>
+<td>Cloud instance</td>
+<td>Remote access and realistic networking</td>
+<td>Costs money, needs careful scope</td>
+</tr>
+<tr>
+<td>Live USB</td>
+<td>Hardware testing and recovery</td>
+<td>Changes are lost unless persisted</td>
+</tr>
+<tr>
+<td>Container</td>
+<td>Disposable command practice</td>
+<td>Not a full init or kernel environment</td>
+</tr>
+</tbody>
+</table></div>
+<p>For this handbook, a virtual machine is the best default. Install a Debian or Ubuntu server image, give it at least two CPU cores and 4 GB of RAM, and take a snapshot before you change anything important.</p>
+<p>If you use a container, remember that it shares the host kernel. Container root is not automatically host root, but a misconfigured container can still expose the host. Keep the lab isolated.</p>
+<h2 id="use-a-container-as-a-disposable-lab">Use a container as a disposable lab<a aria-label="Link to this section" class="g-anchor" href="#use-a-container-as-a-disposable-lab">#</a></h2>
+<p>A container is the fastest way to get a Linux userland on Windows, macOS or Linux. Install Docker Desktop or Docker Engine, then start an Ubuntu container:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/linux-lab"</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>linux-lab<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--hostname<span class="w"> </span>linux-lab<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cpus<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--memory<span class="w"> </span>4g<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/linux-lab:/data"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>ubuntu:24.04<span class="w"> </span>bash
+</code></pre></div>
+<p>This starts an interactive container with a stable name, a hostname, two CPU cores, 4 GB of memory and a bind mount for files you want to keep. The <code>--rm</code> flag deletes the container when you exit. The host directory survives.</p>
+<p>On Windows, run the command from WSL2 or use a path that Docker Desktop is allowed to share.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Flag</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--rm</code></td>
+<td>Delete the container when it exits</td>
+</tr>
+<tr>
+<td><code>-it</code></td>
+<td>Attach an interactive terminal</td>
+</tr>
+<tr>
+<td><code>--name linux-lab</code></td>
+<td>Give the container a stable name</td>
+</tr>
+<tr>
+<td><code>--hostname linux-lab</code></td>
+<td>Set the hostname inside the container</td>
+</tr>
+<tr>
+<td><code>--cpus 2</code></td>
+<td>Limit the container to two CPU cores</td>
+</tr>
+<tr>
+<td><code>--memory 4g</code></td>
+<td>Limit the container to 4 GB of memory</td>
+</tr>
+<tr>
+<td><code>-v "$HOME/linux-lab:/data"</code></td>
+<td>Mount a host directory at <code>/data</code></td>
+</tr>
+<tr>
+<td><code>-p 127.0.0.1:8080:80</code></td>
+<td>Publish a container port on loopback only</td>
+</tr>
+<tr>
+<td><code>--env TZ=UTC</code></td>
+<td>Set an environment variable</td>
+</tr>
+<tr>
+<td><code>ubuntu:24.04 bash</code></td>
+<td>Use this image and run Bash</td>
+</tr>
+</tbody>
+</table></div>
+<p>Inspect and manage the lab:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">docker<span class="w"> </span>ps
+docker<span class="w"> </span>ps<span class="w"> </span>-a
+docker<span class="w"> </span>start<span class="w"> </span>linux-lab
+docker<span class="w"> </span>attach<span class="w"> </span>linux-lab
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>linux-lab<span class="w"> </span>bash
+docker<span class="w"> </span>stop<span class="w"> </span>linux-lab
+docker<span class="w"> </span>rm<span class="w"> </span>linux-lab
+docker<span class="w"> </span>system<span class="w"> </span>df
+docker<span class="w"> </span>system<span class="w"> </span>prune
+</code></pre></div>
+<p>With <code>--rm</code>, there is no stopped container to restart after you exit. Remove <code>--rm</code> when you want a persistent container that you can stop and start later. <code>docker exec</code> is often safer than <code>docker attach</code> because it starts a second shell and does not disturb the container's main process.</p>
+<p>Never mount <code>/var/run/docker.sock</code> into a lab container. The Docker socket is the control plane for the host daemon. A container that can reach it can start privileged containers, mount host paths and usually take over the host. Avoid <code>--privileged</code>, <code>--pid=host</code>, <code>--network=host</code> and bind mounts of <code>/</code>, <code>/etc</code>, <code>/var</code> or your entire home directory. Publish ports on <code>127.0.0.1</code> unless you intentionally want other machines to connect.</p>
+<p>A container shares the host kernel and usually does not run a full init system. Use a virtual machine for kernel modules, firewalls, boot troubleshooting and systemd service exercises. Use the container for command practice, file work and disposable experiments.</p>
+<h2 id="know-your-prompt">Know your prompt<a aria-label="Link to this section" class="g-anchor" href="#know-your-prompt">#</a></h2>
+<p>A typical prompt looks like this:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">alex@lab:~$
+</code></pre></div>
+<p>It usually contains:</p>
+<ul>
+<li><code>alex</code>: the current user.</li>
+<li><code>lab</code>: the hostname.</li>
+<li><code>~</code>: the current directory, where <code>~</code> means your home directory.</li>
+<li><code>$</code>: a normal user prompt. A <code>#</code> usually means root.</li>
+</ul>
+<p>The prompt is generated by the shell. You can change it later, but for now read it as a status line: who you are, where you are and how much privilege you have.</p>
+<h2 id="the-anatomy-of-a-command">The anatomy of a command<a aria-label="Link to this section" class="g-anchor" href="#the-anatomy-of-a-command">#</a></h2>
+<p>Most commands follow this shape:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">command [options] [arguments]
+</code></pre></div>
+<p>For example:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>/var/log
+</code></pre></div>
+<ul>
+<li><code>ls</code> is the command.</li>
+<li><code>-la</code> combines two short options: <code>-l</code> for a long listing and <code>-a</code> to include hidden files.</li>
+<li><code>/var/log</code> is the argument, in this case the directory to list.</li>
+</ul>
+<p>Long options often use two hyphens:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>--all<span class="w"> </span>--human-readable<span class="w"> </span>/var/log
+</code></pre></div>
+<p>Options change behavior. Arguments tell the command what to act on. Read the manual when the difference is unclear.</p>
+<h2 id="get-help-without-guessing">Get help without guessing<a aria-label="Link to this section" class="g-anchor" href="#get-help-without-guessing">#</a></h2>
+<p>Linux ships with documentation. Use it before copying random commands from the internet.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">man<span class="w"> </span>ls
+ls<span class="w"> </span>--help
+apropos<span class="w"> </span><span class="s2">"list files"</span>
+info<span class="w"> </span>coreutils
+</code></pre></div>
+<p><code>man</code> opens the manual page in a pager. Use <code>Up</code>, <code>Down</code>, <code>PageUp</code>, <code>PageDown</code>, <code>/</code> to search and <code>q</code> to quit. The synopsis at the top shows the accepted options. The description explains each one. The examples at the bottom are often the fastest way to learn.</p>
+<p><code>--help</code> is usually shorter and works even when man pages are not installed. <code>apropos</code> searches manual page descriptions. If it returns nothing, the manual database may need to be rebuilt with <code>mandb</code>.</p>
+<p>Some systems include <code>tldr</code>, a community-maintained collection of practical examples. It is useful, but it is not a substitute for the real manual.</p>
+<h2 id="exit-status-and-command-chaining">Exit status and command chaining<a aria-label="Link to this section" class="g-anchor" href="#exit-status-and-command-chaining">#</a></h2>
+<p>Every command returns an exit status. <code>0</code> means success. A non-zero value means failure, and the meaning depends on the program.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>/etc/passwd
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+ls<span class="w"> </span>/does-not-exist
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+</code></pre></div>
+<p>The special variable <code>$?</code> holds the status of the previous command. You can chain commands based on that status:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/tmp/lab
+</code></pre></div>
+<p><code>&amp;&amp;</code> runs the second command only if the first succeeds. <code>||</code> runs the second command only if the first fails. A semicolon runs both regardless.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>-q<span class="w"> </span>root<span class="w"> </span>/etc/passwd<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"root entry found"</span>
+grep<span class="w"> </span>-q<span class="w"> </span>missing<span class="w"> </span>/etc/passwd<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"entry not found"</span>
+</code></pre></div>
+<p>This is the beginning of shell logic. Later you will use the same idea in scripts.</p>
+<h2 id="quoting-and-expansion">Quoting and expansion<a aria-label="Link to this section" class="g-anchor" href="#quoting-and-expansion">#</a></h2>
+<p>The shell expands certain characters before a command runs. The three common quoting forms behave differently:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Form</th>
+<th>Behavior</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'single'</code></td>
+<td>Literal text, no expansion</td>
+<td><code>echo '$HOME'</code></td>
+</tr>
+<tr>
+<td><code>"double"</code></td>
+<td>Expands variables and command substitution</td>
+<td><code>echo "$HOME"</code></td>
+</tr>
+<tr>
+<td><code>backslash</code></td>
+<td>Escapes the next character</td>
+<td><code>echo \$HOME</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Use double quotes by default for variables. Use single quotes when you want the exact text. Use backslash when you need one special character to be literal.</p>
+<p>Command substitution runs a command and inserts its output:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">today</span><span class="o">=</span><span class="k">$(</span>date<span class="w"> </span>+%F<span class="k">)</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'Today is %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$today</span><span class="s2">"</span>
+</code></pre></div>
+<p>The <code>$(...)</code> form is easier to read and nest than backticks.</p>
+<h2 id="redirection-and-pipes">Redirection and pipes<a aria-label="Link to this section" class="g-anchor" href="#redirection-and-pipes">#</a></h2>
+<p>Programs read from standard input and write to standard output and standard error. The shell can redirect those streams.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Operator</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&gt;</code></td>
+<td>Write standard output to a file, replacing it</td>
+</tr>
+<tr>
+<td><code>&gt;&gt;</code></td>
+<td>Append standard output to a file</td>
+</tr>
+<tr>
+<td><code>2&gt;</code></td>
+<td>Write standard error to a file</td>
+</tr>
+<tr>
+<td><code>2&gt;&amp;1</code></td>
+<td>Send standard error to the same place as standard output</td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td>Read standard input from a file</td>
+</tr>
+<tr>
+<td><code>|</code></td>
+<td>Send standard output to another command</td>
+</tr>
+</tbody>
+</table></div>
+<p>Examples:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>/etc<span class="w"> </span>&gt;<span class="w"> </span>/tmp/etc-list.txt
+grep<span class="w"> </span>root<span class="w"> </span>/etc/passwd<span class="w"> </span>&gt;<span class="w"> </span>/tmp/root-entry.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>/tmp/grep-errors.txt
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'one\ntwo\nthree\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>wc<span class="w"> </span>-l
+</code></pre></div>
+<p>A pipe connects commands into a small data-processing pipeline. This is one of the most important ideas in the shell. You will use it constantly.</p>
+<h2 id="terminal-habits">Terminal habits<a aria-label="Link to this section" class="g-anchor" href="#terminal-habits">#</a></h2>
+<ul>
+<li>Use <code>Tab</code> to complete paths and command names. It reduces typos.</li>
+<li>Use <code>Ctrl+R</code> to search your command history.</li>
+<li>Use <code>Ctrl+C</code> to interrupt the foreground command.</li>
+<li>Use <code>Ctrl+D</code> to send end-of-file or exit an interactive shell.</li>
+<li>Use <code>Ctrl+L</code> to clear the screen without losing your place.</li>
+<li>Use <code>history</code> to review previous commands.</li>
+<li>Use <code>!!</code> to repeat the last command, and <code>!$</code> for its last argument.</li>
+</ul>
+<p>Be careful with <code>!!</code> and sudo. Read the command before you run it again.</p>
+<h2 id="manual-sections-and-command-discovery">Manual sections and command discovery<a aria-label="Link to this section" class="g-anchor" href="#manual-sections-and-command-discovery">#</a></h2>
+<p>Manual pages are organized into numbered sections. The same name can appear in more than one section with different meanings.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Section</th>
+<th>Contents</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>User commands</td>
+<td><code>man 1 ls</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>System calls</td>
+<td><code>man 2 open</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Library functions</td>
+<td><code>man 3 printf</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Device files</td>
+<td><code>man 4 tty</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>File formats and configuration</td>
+<td><code>man 5 passwd</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Miscellaneous concepts</td>
+<td><code>man 7 signal</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>System administration commands</td>
+<td><code>man 8 mount</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>If you are not sure where a command lives, ask the system:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">type</span><span class="w"> </span>-a<span class="w"> </span>ls
+<span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span>ls
+which<span class="w"> </span>ls
+whereis<span class="w"> </span>ls
+whatis<span class="w"> </span>ls
+</code></pre></div>
+<p><code>type -a</code> reports every definition the shell knows about, including aliases and functions. <code>command -v</code> prints the path or builtin name the shell would use. <code>which</code> searches <code>PATH</code> but may not see functions or builtins. <code>whereis</code> finds binaries, source and manual pages. <code>whatis</code> prints the one-line manual description.</p>
+<p>Manual pages can be searched by keyword:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">apropos<span class="w"> </span><span class="s1">'copy files'</span>
+man<span class="w"> </span>-k<span class="w"> </span><span class="s1">'copy files'</span>
+</code></pre></div>
+<p>If <code>apropos</code> returns nothing, the manual database may be missing. Rebuild it with <code>sudo mandb</code> on Debian or Ubuntu.</p>
+<h2 id="startup-files-and-environment">Startup files and environment<a aria-label="Link to this section" class="g-anchor" href="#startup-files-and-environment">#</a></h2>
+<p>The shell reads configuration files when it starts. The exact files depend on the shell and on whether the session is a login shell, an interactive shell or a script.</p>
+<p>For Bash, the common files are:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>File</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/etc/profile</code></td>
+<td>System-wide login shell settings</td>
+</tr>
+<tr>
+<td><code>/etc/bash.bashrc</code></td>
+<td>System-wide interactive Bash settings on Debian and Ubuntu</td>
+</tr>
+<tr>
+<td><code>~/.profile</code></td>
+<td>Per-user login shell settings</td>
+</tr>
+<tr>
+<td><code>~/.bash_profile</code></td>
+<td>Per-user login shell settings, if present</td>
+</tr>
+<tr>
+<td><code>~/.bash_login</code></td>
+<td>Alternative login file, read if <code>.bash_profile</code> is absent</td>
+</tr>
+<tr>
+<td><code>~/.bashrc</code></td>
+<td>Per-user interactive Bash settings</td>
+</tr>
+</tbody>
+</table></div>
+<p>Bash reads only the first of <code>~/.bash_profile</code>, <code>~/.bash_login</code> or <code>~/.profile</code> that exists for a login shell. Interactive non-login shells usually read <code>~/.bashrc</code>. Scripts normally read neither, unless they source a file explicitly.</p>
+<p>This is why environment changes can appear inconsistent. A variable exported in <code>~/.bashrc</code> may not exist in a systemd service, a cron job or a non-interactive SSH command. Put system-wide environment settings in the right place for the service manager, not in a shell startup file.</p>
+<p>Inspect the environment:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">env
+printenv
+printenv<span class="w"> </span>PATH
+<span class="nb">set</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">MY_LAB</span><span class="o">=</span>foundations
+printenv<span class="w"> </span>MY_LAB
+</code></pre></div>
+<p><code>env</code> and <code>printenv</code> show exported variables. <code>set</code> also shows shell variables and functions. <code>export</code> marks a variable for child processes. A variable can exist in your shell and still be invisible to a program if it was never exported.</p>
+<p>Common variables worth understanding:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HOME</code></td>
+<td>Your home directory</td>
+</tr>
+<tr>
+<td><code>USER</code></td>
+<td>Your username</td>
+</tr>
+<tr>
+<td><code>PATH</code></td>
+<td>Search order for commands</td>
+</tr>
+<tr>
+<td><code>PWD</code></td>
+<td>Current working directory</td>
+</tr>
+<tr>
+<td><code>OLDPWD</code></td>
+<td>Previous working directory</td>
+</tr>
+<tr>
+<td><code>SHELL</code></td>
+<td>Configured login shell</td>
+</tr>
+<tr>
+<td><code>LANG</code>, <code>LC_*</code></td>
+<td>Locale and character handling</td>
+</tr>
+<tr>
+<td><code>TERM</code></td>
+<td>Terminal type</td>
+</tr>
+<tr>
+<td><code>EDITOR</code>, <code>VISUAL</code></td>
+<td>Preferred text editor</td>
+</tr>
+<tr>
+<td><code>TMPDIR</code></td>
+<td>Preferred temporary directory</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="aliases-functions-and-history">Aliases, functions and history<a aria-label="Link to this section" class="g-anchor" href="#aliases-functions-and-history">#</a></h2>
+<p>An alias is a short name for a command line. It is expanded by the interactive shell before the command runs.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">alias</span><span class="w"> </span><span class="nv">ll</span><span class="o">=</span><span class="s1">'ls -la'</span>
+<span class="nb">alias</span>
+<span class="nb">unalias</span><span class="w"> </span>ll
+</code></pre></div>
+<p>Aliases are convenient but fragile. They are not available to scripts by default, and they do not accept arguments in the same way as a function. For anything more complex, use a function.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkcd<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span>mkdir<span class="w"> </span>-p<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span>
+<span class="o">}</span>
+mkcd<span class="w"> </span>~/linux-foundations/lab02
+</code></pre></div>
+<p>A function runs in the current shell, so <code>cd</code> inside it changes your directory. That is useful for workflow helpers. Put functions in <code>~/.bashrc</code> or a separate file that you source.</p>
+<p>History is a working memory aid:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">history</span>
+<span class="nb">history</span><span class="w"> </span><span class="m">20</span>
+<span class="nb">history</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>ssh
+!!<span class="w"> </span>
+!$<span class="w"> </span>
+!42
+</code></pre></div>
+<p><code>!!</code> repeats the previous command. <code>!$</code> inserts the last argument of the previous command. <code>!42</code> runs history entry 42. Be careful with <code>sudo !!</code>. Read the command before repeating it with elevated privilege.</p>
+<p>Useful history settings in <code>~/.bashrc</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">HISTSIZE</span><span class="o">=</span><span class="m">5000</span>
+<span class="nv">HISTFILESIZE</span><span class="o">=</span><span class="m">20000</span>
+<span class="nv">HISTCONTROL</span><span class="o">=</span>ignoreboth
+<span class="nb">shopt</span><span class="w"> </span>-s<span class="w"> </span>histappend
+</code></pre></div>
+<p><code>ignoreboth</code> avoids storing duplicate lines and lines that begin with a space. <code>histappend</code> appends to the history file instead of overwriting it when a shell exits.</p>
+<h2 id="how-the-shell-parses-a-command">How the shell parses a command<a aria-label="Link to this section" class="g-anchor" href="#how-the-shell-parses-a-command">#</a></h2>
+<p>The shell performs several expansions before a program starts. A simplified order is:</p>
+<ol>
+<li>Split the input into tokens using quoting rules.</li>
+<li>Expand aliases in interactive shells.</li>
+<li>Expand braces, such as <code>{a,b}</code>.</li>
+<li>Expand tilde, such as <code>~</code> and <code>~user</code>.</li>
+<li>Expand parameters and variables, such as <code>$HOME</code>.</li>
+<li>Perform command substitution, such as <code>$(date)</code>.</li>
+<li>Perform arithmetic expansion, such as <code>$((2 + 2))</code>.</li>
+<li>Split unquoted results into words.</li>
+<li>Expand glob patterns, such as <code>*.conf</code>.</li>
+<li>Remove quote characters.</li>
+<li>Run the command with the resulting arguments.</li>
+</ol>
+<p>The order explains many surprises. A variable containing spaces becomes several arguments if you leave it unquoted. A glob inside quotes stays literal. A command substitution that outputs a newline can change the argument count.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">name</span><span class="o">=</span><span class="s1">'two words'</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'[%s]\n'</span><span class="w"> </span><span class="nv">$name</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'[%s]\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span>
+</code></pre></div>
+<p>The first <code>printf</code> receives two arguments. The second receives one. This is one of the most important quoting lessons in shell work.</p>
+<h2 id="more-redirection">More redirection<a aria-label="Link to this section" class="g-anchor" href="#more-redirection">#</a></h2>
+<p>The basic redirection operators are only the start. The shell can also feed a command from a here document or a here string.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">line one</span>
+<span class="s">line two</span>
+<span class="s">EOF</span>
+
+grep<span class="w"> </span>root<span class="w"> </span><span class="o">&lt;&lt;&lt;</span><span class="w"> </span><span class="s1">'root:x:0:0:root:/root:/bin/bash'</span>
+</code></pre></div>
+<p>A quoted here document delimiter, such as <code>'EOF'</code>, prevents variable expansion. An unquoted delimiter allows it. Here strings are convenient for a single line of input.</p>
+<p>Discard output or errors:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">command</span><span class="w"> </span>&gt;<span class="w"> </span>/dev/null
+<span class="nb">command</span><span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>/dev/null
+<span class="nb">command</span><span class="w"> </span>&gt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+</code></pre></div>
+<p><code>/dev/null</code> is a device that discards everything written to it. Redirecting both streams is common when a script only cares about the exit status.</p>
+<p>Send output to a file and the terminal at the same time:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">command</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>output.txt
+<span class="nb">command</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>output.txt
+</code></pre></div>
+<p>Append both standard output and standard error to one file:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">command</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>combined.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+</code></pre></div>
+<p>Order matters. In <code>&gt; file 2&gt;&amp;1</code>, standard error is pointed at the same place standard output currently points. In <code>2&gt;&amp;1 &gt; file</code>, standard error still points at the terminal because the order is reversed.</p>
+<h2 id="lab-build-a-workspace">Lab: build a workspace<a aria-label="Link to this section" class="g-anchor" href="#lab-build-a-workspace">#</a></h2>
+<p>Create a small workspace and practice the basic operations:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/linux-foundations/lab01
+<span class="nb">cd</span><span class="w"> </span>~/linux-foundations/lab01
+<span class="nb">pwd</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'alpha\nbeta\ngamma\n'</span><span class="w"> </span>&gt;<span class="w"> </span>words.txt
+ls<span class="w"> </span>-la
+wc<span class="w"> </span>-l<span class="w"> </span>words.txt
+cat<span class="w"> </span>words.txt
+grep<span class="w"> </span>beta<span class="w"> </span>words.txt
+</code></pre></div>
+<p>Now test exit status:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>alpha<span class="w"> </span>words.txt
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+grep<span class="w"> </span>missing<span class="w"> </span>words.txt
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+</code></pre></div>
+<p>Finally, read the manual for a command you use every day:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">man<span class="w"> </span>ls
+</code></pre></div>
+<p>Search for the <code>-h</code> option and the <code>-t</code> option. Write one sentence explaining what each does.</p>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Running a command as root before reading what it does.</li>
+<li>Forgetting that <code>&gt;</code> overwrites a file.</li>
+<li>Using <code>rm -rf</code> with a variable that turned out to be empty.</li>
+<li>Assuming <code>--help</code> and the man page always say the same thing.</li>
+<li>Copying a command with curly quotes or hidden Unicode characters.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Start a safe Linux lab and take a snapshot.</li>
+<li>Read a shell prompt.</li>
+<li>Break a command into command, options and arguments.</li>
+<li>Find help with <code>man</code> and <code>--help</code>.</li>
+<li>Chain commands with <code>&amp;&amp;</code> and <code>||</code>.</li>
+<li>Redirect output and build a simple pipeline.</li>
+</ul>
+<p>Next you will put the filesystem under your control.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 02 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/01-linux-mental-model.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 01</span><strong>Linux Mental Model</strong></a><a class="g-chapter-card" href="../foundations/03-files-and-filesystem.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 03</span><strong>Files, Directories and the Filesystem</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#choose-a-lab" data-toc-link>Choose a lab</a><a class="g-toc-link depth-2" href="#use-a-container-as-a-disposable-lab" data-toc-link>Use a container as a disposable lab</a><a class="g-toc-link depth-2" href="#know-your-prompt" data-toc-link>Know your prompt</a><a class="g-toc-link depth-2" href="#the-anatomy-of-a-command" data-toc-link>The anatomy of a command</a><a class="g-toc-link depth-2" href="#get-help-without-guessing" data-toc-link>Get help without guessing</a><a class="g-toc-link depth-2" href="#exit-status-and-command-chaining" data-toc-link>Exit status and command chaining</a><a class="g-toc-link depth-2" href="#quoting-and-expansion" data-toc-link>Quoting and expansion</a><a class="g-toc-link depth-2" href="#redirection-and-pipes" data-toc-link>Redirection and pipes</a><a class="g-toc-link depth-2" href="#terminal-habits" data-toc-link>Terminal habits</a><a class="g-toc-link depth-2" href="#manual-sections-and-command-discovery" data-toc-link>Manual sections and command discovery</a><a class="g-toc-link depth-2" href="#startup-files-and-environment" data-toc-link>Startup files and environment</a><a class="g-toc-link depth-2" href="#aliases-functions-and-history" data-toc-link>Aliases, functions and history</a><a class="g-toc-link depth-2" href="#how-the-shell-parses-a-command" data-toc-link>How the shell parses a command</a><a class="g-toc-link depth-2" href="#more-redirection" data-toc-link>More redirection</a><a class="g-toc-link depth-2" href="#lab-build-a-workspace" data-toc-link>Lab: build a workspace</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 02 / 17 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

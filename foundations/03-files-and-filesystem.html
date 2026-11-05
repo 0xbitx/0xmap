@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 3 of 10. Navigate the hierarchy and create, copy, link, find and remove files without breaking the tree.">
+  <title>Part 03: Files, Directories and the Filesystem | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html" aria-current="page"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 03</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 03</p>
+        <h1>Files, Directories and the Filesystem</h1>
+        <p class="g-deck">Navigate the hierarchy and create, copy, link, find and remove files without breaking the tree.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>18 sections</span>
+          <span>30 code blocks</span>
+          <span>Part 03 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>18 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#absolute-and-relative-paths" data-toc-link>Absolute and relative paths</a><a class="g-toc-link depth-2" href="#list-and-inspect-files" data-toc-link>List and inspect files</a><a class="g-toc-link depth-2" href="#create-copy-move-and-remove" data-toc-link>Create, copy, move and remove</a><a class="g-toc-link depth-2" href="#globbing" data-toc-link>Globbing</a><a class="g-toc-link depth-2" href="#hard-links-and-symbolic-links" data-toc-link>Hard links and symbolic links</a><a class="g-toc-link depth-2" href="#find-files" data-toc-link>Find files</a><a class="g-toc-link depth-2" href="#work-with-spaces-and-odd-names" data-toc-link>Work with spaces and odd names</a><a class="g-toc-link depth-2" href="#filesystems-and-mount-points" data-toc-link>Filesystems and mount points</a><a class="g-toc-link depth-2" href="#measure-directory-usage" data-toc-link>Measure directory usage</a><a class="g-toc-link depth-2" href="#archives-and-compression" data-toc-link>Archives and compression</a><a class="g-toc-link depth-2" href="#copy-trees-and-make-backups" data-toc-link>Copy trees and make backups</a><a class="g-toc-link depth-2" href="#metadata-attributes-and-extended-attributes" data-toc-link>Metadata, attributes and extended attributes</a><a class="g-toc-link depth-2" href="#locate-files-quickly" data-toc-link>Locate files quickly</a><a class="g-toc-link depth-2" href="#safe-deletion-and-recovery" data-toc-link>Safe deletion and recovery</a><a class="g-toc-link depth-2" href="#batch-commands-with-xargs" data-toc-link>Batch commands with xargs</a><a class="g-toc-link depth-2" href="#lab-map-a-small-tree" data-toc-link>Lab: map a small tree</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>The Linux filesystem is a single tree. Disks, partitions and network shares are attached to that tree at mount points. Once you understand paths, file types and links, most navigation and file management becomes predictable.</p>
+<h2 id="absolute-and-relative-paths">Absolute and relative paths<a aria-label="Link to this section" class="g-anchor" href="#absolute-and-relative-paths">#</a></h2>
+<p>An absolute path starts at <code>/</code> and does not depend on your current directory:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">/etc/ssh/sshd_config
+</code></pre></div>
+<p>A relative path starts from your current directory:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">ssh/sshd_config
+</code></pre></div>
+<p>The special path components are:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.</code></td>
+<td>Current directory</td>
+</tr>
+<tr>
+<td><code>..</code></td>
+<td>Parent directory</td>
+</tr>
+<tr>
+<td><code>~</code></td>
+<td>Your home directory</td>
+</tr>
+<tr>
+<td><code>~user</code></td>
+<td>Another user's home directory</td>
+</tr>
+<tr>
+<td><code>/</code></td>
+<td>Filesystem root</td>
+</tr>
+</tbody>
+</table></div>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">pwd</span>
+<span class="nb">cd</span><span class="w"> </span>/var/log
+<span class="nb">pwd</span>
+<span class="nb">cd</span><span class="w"> </span>..
+<span class="nb">pwd</span>
+<span class="nb">cd</span><span class="w"> </span>~
+<span class="nb">pwd</span>
+</code></pre></div>
+<p><code>cd -</code> returns to the previous directory. That is useful when you are moving between two locations.</p>
+<h2 id="list-and-inspect-files">List and inspect files<a aria-label="Link to this section" class="g-anchor" href="#list-and-inspect-files">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls
+ls<span class="w"> </span>-l
+ls<span class="w"> </span>-la
+ls<span class="w"> </span>-lh
+ls<span class="w"> </span>-R
+</code></pre></div>
+<p><code>-l</code> gives a long listing, <code>-a</code> includes hidden entries, <code>-h</code> makes sizes human readable, and <code>-R</code> recurses into directories. On a long listing, the first character tells you the file type:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Character</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-</code></td>
+<td>Regular file</td>
+</tr>
+<tr>
+<td><code>d</code></td>
+<td>Directory</td>
+</tr>
+<tr>
+<td><code>l</code></td>
+<td>Symbolic link</td>
+</tr>
+<tr>
+<td><code>c</code></td>
+<td>Character device</td>
+</tr>
+<tr>
+<td><code>b</code></td>
+<td>Block device</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>Socket</td>
+</tr>
+<tr>
+<td><code>p</code></td>
+<td>Named pipe</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>file</code> identifies content by inspecting its header, and <code>stat</code> shows metadata such as inode, size, permissions and timestamps:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">file<span class="w"> </span>/etc/passwd
+file<span class="w"> </span>/bin/ls
+stat<span class="w"> </span>/etc/passwd
+</code></pre></div>
+<p>The inode is the filesystem's internal record for a file. A filename is a directory entry that points to an inode. This distinction matters when you study hard links.</p>
+<h2 id="create-copy-move-and-remove">Create, copy, move and remove<a aria-label="Link to this section" class="g-anchor" href="#create-copy-move-and-remove">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/linux-foundations/lab02/notes
+<span class="nb">cd</span><span class="w"> </span>~/linux-foundations/lab02
+touch<span class="w"> </span>notes/empty.txt
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'first line\n'</span><span class="w"> </span>&gt;<span class="w"> </span>notes/first.txt
+cp<span class="w"> </span>notes/first.txt<span class="w"> </span>notes/copy.txt
+mv<span class="w"> </span>notes/copy.txt<span class="w"> </span>notes/renamed.txt
+ls<span class="w"> </span>-la<span class="w"> </span>notes
+rm<span class="w"> </span>notes/renamed.txt
+rmdir<span class="w"> </span>notes/empty-dir
+</code></pre></div>
+<p>Use <code>mkdir -p</code> to create a path and any missing parents. Use <code>cp -r</code> for directories, <code>cp -a</code> to preserve attributes, and <code>mv</code> to rename or move. <code>rm</code> deletes files. There is no recycle bin on the command line, so check the path before pressing Enter.</p>
+<p>A safe pattern is to list the target before deleting it:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>/tmp/example
+rm<span class="w"> </span>-r<span class="w"> </span>/tmp/example
+</code></pre></div>
+<p>For interactive confirmation, use <code>rm -i</code>. For directories, <code>rm -r</code> removes contents recursively. <code>rmdir</code> only removes empty directories.</p>
+<h2 id="globbing">Globbing<a aria-label="Link to this section" class="g-anchor" href="#globbing">#</a></h2>
+<p>The shell expands wildcard patterns before the command runs:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>*</code></td>
+<td>Any number of characters</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>Exactly one character</td>
+</tr>
+<tr>
+<td><code>[abc]</code></td>
+<td>One character from the set</td>
+</tr>
+<tr>
+<td><code>[a-z]</code></td>
+<td>One character in the range</td>
+</tr>
+<tr>
+<td><code>[!abc]</code></td>
+<td>One character not in the set</td>
+</tr>
+</tbody>
+</table></div>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>/etc/*.conf
+ls<span class="w"> </span>/etc/<span class="o">[</span>a-c<span class="o">]</span>*.conf
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span>/etc/*.d
+</code></pre></div>
+<p>Quote a glob when you want the command to receive the literal pattern:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'*.conf'</span>
+</code></pre></div>
+<p>Globs are expanded by the shell, not by <code>ls</code> or <code>grep</code>. That is why an unmatched pattern can pass through unchanged.</p>
+<h2 id="hard-links-and-symbolic-links">Hard links and symbolic links<a aria-label="Link to this section" class="g-anchor" href="#hard-links-and-symbolic-links">#</a></h2>
+<p>A hard link is another directory entry for the same inode. Both names refer to the same file data. Deleting one name does not delete the data until the last hard link is gone.</p>
+<p>A symbolic link, or symlink, is a small file that contains a path to another file. If the target is removed, the symlink remains but becomes broken.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">printf</span><span class="w"> </span><span class="s1">'shared data\n'</span><span class="w"> </span>&gt;<span class="w"> </span>original.txt
+ln<span class="w"> </span>original.txt<span class="w"> </span>hardlink.txt
+ln<span class="w"> </span>-s<span class="w"> </span>original.txt<span class="w"> </span>symlink.txt
+ls<span class="w"> </span>-li
+stat<span class="w"> </span>original.txt<span class="w"> </span>hardlink.txt<span class="w"> </span>symlink.txt
+</code></pre></div>
+<p>Hard links cannot cross filesystems and usually cannot point to directories. Symlinks can cross filesystems and can point to directories, but they depend on the target path.</p>
+<h2 id="find-files">Find files<a aria-label="Link to this section" class="g-anchor" href="#find-files">#</a></h2>
+<p><code>find</code> walks a directory tree and evaluates expressions. It is more precise than a recursive <code>ls</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/etc<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s1">'*.conf'</span>
+find<span class="w"> </span>/var/log<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-size<span class="w"> </span>+1M
+find<span class="w"> </span>~/linux-foundations<span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-name<span class="w"> </span><span class="s1">'notes'</span>
+find<span class="w"> </span>/tmp<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-mtime<span class="w"> </span>-1
+find<span class="w"> </span>.<span class="w"> </span>-name<span class="w"> </span><span class="s1">'*.txt'</span><span class="w"> </span>-print
+</code></pre></div>
+<p>Common tests:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Test</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-type f</code></td>
+<td>Regular file</td>
+</tr>
+<tr>
+<td><code>-type d</code></td>
+<td>Directory</td>
+</tr>
+<tr>
+<td><code>-type l</code></td>
+<td>Symbolic link</td>
+</tr>
+<tr>
+<td><code>-name</code></td>
+<td>Match the filename</td>
+</tr>
+<tr>
+<td><code>-iname</code></td>
+<td>Case-insensitive name match</td>
+</tr>
+<tr>
+<td><code>-size</code></td>
+<td>Match size, such as <code>+1M</code></td>
+</tr>
+<tr>
+<td><code>-mtime</code></td>
+<td>Match modification time in days</td>
+</tr>
+<tr>
+<td><code>-user</code></td>
+<td>Match owner</td>
+</tr>
+<tr>
+<td><code>-perm</code></td>
+<td>Match permission bits</td>
+</tr>
+</tbody>
+</table></div>
+<p>You can act on results with <code>-exec</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/tmp<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s1">'*.log'</span><span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-lh<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span>
+</code></pre></div>
+<p>The <code>{}</code> placeholder is replaced by each path. The escaped semicolon ends the command. Use <code>-delete</code> only after testing the same expression with <code>-print</code>.</p>
+<h2 id="work-with-spaces-and-odd-names">Work with spaces and odd names<a aria-label="Link to this section" class="g-anchor" href="#work-with-spaces-and-odd-names">#</a></h2>
+<p>Filenames can contain spaces, quotes and leading hyphens. Quote paths and use <code>--</code> to end option parsing:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/linux-foundations/odd names"</span>
+<span class="nb">cd</span><span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/linux-foundations/odd names"</span>
+touch<span class="w"> </span>--<span class="w"> </span><span class="s1">'-leading-dash.txt'</span>
+ls<span class="w"> </span>-la
+rm<span class="w"> </span>--<span class="w"> </span><span class="s1">'-leading-dash.txt'</span>
+</code></pre></div>
+<p>For scripts that process arbitrary filenames, use null-delimited tools:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>.<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-print0<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>-d<span class="w"> </span><span class="s1">''</span><span class="w"> </span>file<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'file: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<p>This avoids breaking on spaces and newlines.</p>
+<h2 id="filesystems-and-mount-points">Filesystems and mount points<a aria-label="Link to this section" class="g-anchor" href="#filesystems-and-mount-points">#</a></h2>
+<p>A directory tree can contain several filesystems. Each filesystem has its own rules, features and free space. The root directory <code>/</code> is not special in the way Windows drive letters are. It is simply the top of one mounted filesystem, and other filesystems are attached below it.</p>
+<p>Common Linux filesystems include:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Filesystem</th>
+<th>Strengths</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ext4</td>
+<td>Mature, fast, widely supported</td>
+<td>Good default for general use</td>
+</tr>
+<tr>
+<td>XFS</td>
+<td>Large files and parallel I/O</td>
+<td>Common on Red Hat family systems</td>
+</tr>
+<tr>
+<td>Btrfs</td>
+<td>Snapshots, subvolumes, checksums</td>
+<td>More complex to operate</td>
+</tr>
+<tr>
+<td>ZFS</td>
+<td>Snapshots, checksums, pooling</td>
+<td>Usually installed separately</td>
+</tr>
+<tr>
+<td>tmpfs</td>
+<td>Memory backed, fast, temporary</td>
+<td>Lost at reboot</td>
+</tr>
+<tr>
+<td>NFS</td>
+<td>Shared over the network</td>
+<td>Depends on network and server</td>
+</tr>
+<tr>
+<td>FAT32, exFAT</td>
+<td>Interoperability with other systems</td>
+<td>Limited permissions and metadata</td>
+</tr>
+</tbody>
+</table></div>
+<p>Inspect what is mounted and how much space is free:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">findmnt
+df<span class="w"> </span>-h
+df<span class="w"> </span>-i
+lsblk<span class="w"> </span>-f
+</code></pre></div>
+<p><code>df -h</code> reports filesystem usage in human-readable units. <code>df -i</code> reports inode usage. A filesystem can have free space and still be unable to create files if it has run out of inodes.</p>
+<p><code>lsblk -f</code> shows block devices, their filesystems, labels and mount points. It is a quick way to see which disk backs which directory.</p>
+<h2 id="measure-directory-usage">Measure directory usage<a aria-label="Link to this section" class="g-anchor" href="#measure-directory-usage">#</a></h2>
+<p><code>du</code> reports how much space a directory tree consumes.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">du<span class="w"> </span>-sh<span class="w"> </span>/var/log
+du<span class="w"> </span>-h<span class="w"> </span>--max-depth<span class="o">=</span><span class="m">1</span><span class="w"> </span>/var<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-h
+du<span class="w"> </span>-ah<span class="w"> </span>~/linux-foundations<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-h<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span>
+</code></pre></div>
+<p><code>-s</code> summarizes instead of listing every file. <code>-h</code> makes sizes readable. <code>--max-depth=1</code> limits the walk. Sorting by size turns the output into a useful report.</p>
+<p><code>du</code> and <code>df</code> can disagree. <code>du</code> walks visible files. <code>df</code> asks the filesystem. A deleted file that is still open continues to consume space until the last process closes it. Find those files with:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsof<span class="w"> </span>+L1
+</code></pre></div>
+<h2 id="archives-and-compression">Archives and compression<a aria-label="Link to this section" class="g-anchor" href="#archives-and-compression">#</a></h2>
+<p>An archive combines many files into one. Compression reduces size. Linux treats them as separate steps, although many tools combine them.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tar<span class="w"> </span>-cvf<span class="w"> </span>archive.tar<span class="w"> </span>notes/
+tar<span class="w"> </span>-tf<span class="w"> </span>archive.tar
+tar<span class="w"> </span>-xvf<span class="w"> </span>archive.tar
+tar<span class="w"> </span>-czvf<span class="w"> </span>archive.tar.gz<span class="w"> </span>notes/
+tar<span class="w"> </span>-xzvf<span class="w"> </span>archive.tar.gz
+tar<span class="w"> </span>-cJvf<span class="w"> </span>archive.tar.xz<span class="w"> </span>notes/
+tar<span class="w"> </span>-xJvf<span class="w"> </span>archive.tar.xz
+</code></pre></div>
+<p>The common flags are:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Flag</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-c</code></td>
+<td>Create an archive</td>
+</tr>
+<tr>
+<td><code>-x</code></td>
+<td>Extract an archive</td>
+</tr>
+<tr>
+<td><code>-t</code></td>
+<td>List contents</td>
+</tr>
+<tr>
+<td><code>-v</code></td>
+<td>Verbose output</td>
+</tr>
+<tr>
+<td><code>-f</code></td>
+<td>Use the next argument as the archive file</td>
+</tr>
+<tr>
+<td><code>-z</code></td>
+<td>Compress with gzip</td>
+</tr>
+<tr>
+<td><code>-j</code></td>
+<td>Compress with bzip2</td>
+</tr>
+<tr>
+<td><code>-J</code></td>
+<td>Compress with xz</td>
+</tr>
+</tbody>
+</table></div>
+<p>Always list an archive before extracting it, especially if it came from someone else. <code>tar -tf</code> does not write files. Extraction can overwrite existing files, so extract into an empty directory first when you are unsure.</p>
+<p>Single-file compression tools are also common:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">gzip<span class="w"> </span>file.txt
+gunzip<span class="w"> </span>file.txt.gz
+xz<span class="w"> </span>file.txt
+unxz<span class="w"> </span>file.txt.xz
+zip<span class="w"> </span>archive.zip<span class="w"> </span>file.txt
+unzip<span class="w"> </span>-l<span class="w"> </span>archive.zip
+unzip<span class="w"> </span>archive.zip
+</code></pre></div>
+<p><code>gzip</code> and <code>xz</code> replace the original file by default. Use <code>-k</code> to keep it. <code>zip</code> and <code>unzip</code> are common for interoperability, but they store Unix permissions and ownership differently from <code>tar</code>.</p>
+<h2 id="copy-trees-and-make-backups">Copy trees and make backups<a aria-label="Link to this section" class="g-anchor" href="#copy-trees-and-make-backups">#</a></h2>
+<p><code>cp -a</code> preserves permissions, timestamps and links. <code>rsync</code> is better for repeated copies because it transfers only changes.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cp<span class="w"> </span>-a<span class="w"> </span>notes<span class="w"> </span>notes-backup
+rsync<span class="w"> </span>-av<span class="w"> </span>--delete<span class="w"> </span>notes/<span class="w"> </span>notes-backup/
+rsync<span class="w"> </span>-av<span class="w"> </span>--dry-run<span class="w"> </span>notes/<span class="w"> </span>remote:/backup/notes/
+rsync<span class="w"> </span>-av<span class="w"> </span>notes/<span class="w"> </span>remote:/backup/notes/
+</code></pre></div>
+<p>The trailing slash matters. <code>notes/</code> means the contents of the directory. <code>notes</code> means the directory itself. A dry run shows what would change without writing anything. Review it before using <code>--delete</code>.</p>
+<p><code>rsync</code> is not a backup by itself. A backup needs a separate copy, a retention plan and a tested restore. A mirror that deletes files when the source deletes them is a synchronization tool, not a historical archive.</p>
+<h2 id="metadata-attributes-and-extended-attributes">Metadata, attributes and extended attributes<a aria-label="Link to this section" class="g-anchor" href="#metadata-attributes-and-extended-attributes">#</a></h2>
+<p><code>stat</code> shows more than <code>ls -l</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">stat<span class="w"> </span>notes/first.txt
+stat<span class="w"> </span>-c<span class="w"> </span><span class="s1">'%n %s bytes %U:%G %a %y'</span><span class="w"> </span>notes/first.txt
+</code></pre></div>
+<p>The format string is useful in scripts. <code>%n</code> is the name, <code>%s</code> the size, <code>%U</code> the owner, <code>%G</code> the group, <code>%a</code> the octal mode and <code>%y</code> the modification time.</p>
+<p>Some filesystems support extended attributes:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">setfattr<span class="w"> </span>-n<span class="w"> </span>user.comment<span class="w"> </span>-v<span class="w"> </span><span class="s1">'lab notes'</span><span class="w"> </span>notes/first.txt
+getfattr<span class="w"> </span>-d<span class="w"> </span>notes/first.txt
+</code></pre></div>
+<p>Extended attributes store small pieces of metadata. They are used by ACLs, SELinux labels and some backup tools. Not every filesystem or mount option supports them.</p>
+<p>File attributes are a separate mechanism:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsattr<span class="w"> </span>notes/first.txt
+sudo<span class="w"> </span>chattr<span class="w"> </span>+i<span class="w"> </span>notes/first.txt
+sudo<span class="w"> </span>chattr<span class="w"> </span>-i<span class="w"> </span>notes/first.txt
+</code></pre></div>
+<p>The immutable attribute, <code>+i</code>, prevents modification, deletion and renaming even for root until the attribute is removed. Use it deliberately. It can protect a critical file, and it can also confuse you when a normal edit fails.</p>
+<h2 id="locate-files-quickly">Locate files quickly<a aria-label="Link to this section" class="g-anchor" href="#locate-files-quickly">#</a></h2>
+<p><code>find</code> is precise but walks the tree every time. <code>locate</code> uses a prebuilt database and is much faster, but the database may be stale.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>updatedb
+locate<span class="w"> </span>sshd_config
+locate<span class="w"> </span>-i<span class="w"> </span>readme
+</code></pre></div>
+<p><code>tree</code> prints a directory as a tree when it is installed:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tree<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span><span class="w"> </span>~/linux-foundations
+tree<span class="w"> </span>-a<span class="w"> </span>-L<span class="w"> </span><span class="m">1</span><span class="w"> </span>/etc
+</code></pre></div>
+<p>If <code>tree</code> is missing, <code>find</code> can approximate it:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>~/linux-foundations<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">3</span><span class="w"> </span>-print
+</code></pre></div>
+<h2 id="safe-deletion-and-recovery">Safe deletion and recovery<a aria-label="Link to this section" class="g-anchor" href="#safe-deletion-and-recovery">#</a></h2>
+<p>The command line has no recycle bin. Before a recursive delete, print the target and confirm the path:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">target</span><span class="o">=</span>~/linux-foundations/lab02/archive
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'target: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$target</span><span class="s2">"</span>
+find<span class="w"> </span><span class="s2">"</span><span class="nv">$target</span><span class="s2">"</span><span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">2</span><span class="w"> </span>-print
+rm<span class="w"> </span>-r<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$target</span><span class="s2">"</span>
+</code></pre></div>
+<p>Use <code>--</code> before a path that might begin with a hyphen. Never build a destructive command from an unvalidated variable. A empty variable in <code>rm -rf "$dir"/*</code> is safer than in <code>rm -rf $dir/*</code>, but both deserve a check.</p>
+<p>If you delete a file by accident, stop writing to that filesystem. Recovery chances drop as new data overwrites the blocks. Restore from a backup or snapshot when possible. Tools such as <code>testdisk</code> and <code>photorec</code> can help, but they are not a substitute for backups.</p>
+<h2 id="batch-commands-with-xargs">Batch commands with xargs<a aria-label="Link to this section" class="g-anchor" href="#batch-commands-with-xargs">#</a></h2>
+<p>Some commands do not accept a long list of files on the command line. <code>xargs</code> reads items from standard input and runs a command with them.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span>a.txt<span class="w"> </span>b.txt<span class="w"> </span>c.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="nb">printf</span><span class="w"> </span><span class="s1">'file: %s\n'</span>
+find<span class="w"> </span>/var/log<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s1">'*.log'</span><span class="w"> </span>-print0<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-0<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span>ls<span class="w"> </span>-lh
+find<span class="w"> </span>/tmp<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s1">'*.tmp'</span><span class="w"> </span>-print0<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-0<span class="w"> </span>-r<span class="w"> </span>rm<span class="w"> </span>--
+</code></pre></div>
+<p><code>-n 1</code> passes one item per command. <code>-0</code> expects null-separated input, which is the safe form for arbitrary filenames. <code>-r</code> avoids running the command when the input is empty. The <code>--</code> before <code>rm</code> ends option parsing.</p>
+<p>Without <code>-0</code>, filenames with spaces or quotes can be split incorrectly. A filename could even be interpreted as an option. Use <code>find -print0 | xargs -0</code> or a <code>while read</code> loop.</p>
+<p><code>xargs -P</code> runs commands in parallel:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>~/linux-foundations<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s1">'*.txt'</span><span class="w"> </span>-print0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-0<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span>-P<span class="w"> </span><span class="m">4</span><span class="w"> </span>gzip
+</code></pre></div>
+<p>Parallel jobs are faster on large batches but harder to read and debug. Start with one job, confirm the command is correct, then increase parallelism.</p>
+<h2 id="lab-map-a-small-tree">Lab: map a small tree<a aria-label="Link to this section" class="g-anchor" href="#lab-map-a-small-tree">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/linux-foundations/lab02/<span class="o">{</span>docs,logs,archive<span class="o">}</span>
+<span class="nb">cd</span><span class="w"> </span>~/linux-foundations/lab02
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'alpha\n'</span><span class="w"> </span>&gt;<span class="w"> </span>docs/a.txt
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'beta\n'</span><span class="w"> </span>&gt;<span class="w"> </span>docs/b.txt
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'gamma\n'</span><span class="w"> </span>&gt;<span class="w"> </span>logs/c.log
+ln<span class="w"> </span>-s<span class="w"> </span>../docs/a.txt<span class="w"> </span>logs/a-link.txt
+find<span class="w"> </span>.<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">3</span><span class="w"> </span>-printf<span class="w"> </span><span class="s1">'%y %p -&gt; %l\n'</span>
+</code></pre></div>
+<p>Then:</p>
+<ol>
+<li>Copy <code>docs/a.txt</code> to <code>archive/a-copy.txt</code>.</li>
+<li>Rename <code>docs/b.txt</code> to <code>docs/b-renamed.txt</code>.</li>
+<li>Create a hard link to <code>archive/a-copy.txt</code>.</li>
+<li>Use <code>stat</code> to compare the inode numbers.</li>
+<li>Remove the original <code>docs/a.txt</code> and check whether the hard link still works.</li>
+<li>Check whether the symlink in <code>logs</code> is now broken.</li>
+</ol>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Using <code>rm -rf</code> with a path you have not listed first.</li>
+<li>Forgetting that <code>cp</code> on a directory needs <code>-r</code>.</li>
+<li>Assuming a symlink is a copy. It is a pointer.</li>
+<li>Running <code>find /</code> without narrowing the search.</li>
+<li>Forgetting to quote paths that contain spaces.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Explain absolute and relative paths.</li>
+<li>Read a long listing and identify file types.</li>
+<li>Create, copy, move, link and remove files safely.</li>
+<li>Use globs and <code>find</code> to locate files.</li>
+<li>Explain the difference between hard links and symbolic links.</li>
+</ul>
+<p>Next you will read, search and edit file contents.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 03 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/02-lab-setup-and-command-line.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 02</span><strong>Lab Setup and the Command Line</strong></a><a class="g-chapter-card" href="../foundations/04-reading-searching-editing.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 04</span><strong>Reading, Searching and Editing Files</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#absolute-and-relative-paths" data-toc-link>Absolute and relative paths</a><a class="g-toc-link depth-2" href="#list-and-inspect-files" data-toc-link>List and inspect files</a><a class="g-toc-link depth-2" href="#create-copy-move-and-remove" data-toc-link>Create, copy, move and remove</a><a class="g-toc-link depth-2" href="#globbing" data-toc-link>Globbing</a><a class="g-toc-link depth-2" href="#hard-links-and-symbolic-links" data-toc-link>Hard links and symbolic links</a><a class="g-toc-link depth-2" href="#find-files" data-toc-link>Find files</a><a class="g-toc-link depth-2" href="#work-with-spaces-and-odd-names" data-toc-link>Work with spaces and odd names</a><a class="g-toc-link depth-2" href="#filesystems-and-mount-points" data-toc-link>Filesystems and mount points</a><a class="g-toc-link depth-2" href="#measure-directory-usage" data-toc-link>Measure directory usage</a><a class="g-toc-link depth-2" href="#archives-and-compression" data-toc-link>Archives and compression</a><a class="g-toc-link depth-2" href="#copy-trees-and-make-backups" data-toc-link>Copy trees and make backups</a><a class="g-toc-link depth-2" href="#metadata-attributes-and-extended-attributes" data-toc-link>Metadata, attributes and extended attributes</a><a class="g-toc-link depth-2" href="#locate-files-quickly" data-toc-link>Locate files quickly</a><a class="g-toc-link depth-2" href="#safe-deletion-and-recovery" data-toc-link>Safe deletion and recovery</a><a class="g-toc-link depth-2" href="#batch-commands-with-xargs" data-toc-link>Batch commands with xargs</a><a class="g-toc-link depth-2" href="#lab-map-a-small-tree" data-toc-link>Lab: map a small tree</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 03 / 18 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

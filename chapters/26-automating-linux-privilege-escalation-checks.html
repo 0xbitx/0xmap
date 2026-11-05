@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Chapter 26 of the 0XMAP Linux for Hackers field guide. Use LinPEAS, LSE and custom checks to reproduce a repeatable enumeration pass.">
+  <title>Chapter 26: Automating Linux Privilege Escalation Checks | 0XMAP Linux Field Guide</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Chapter 26</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Chapter navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Chapters</p>
+      <p class="g-sidebar-count">30 chapters / 5 sections</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close chapter menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">01</span><span>Foundations</span></div><ol><li><a class="g-nav-link" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html" ><span class="g-nav-num">01</span><span class="g-nav-title">Why Linux matters</span></a></li><li><a class="g-nav-link" href="../chapters/02-basic-file-navigation-in-linux.html" ><span class="g-nav-num">02</span><span class="g-nav-title">File navigation</span></a></li><li><a class="g-nav-link" href="../chapters/03-understanding-linux-file-permissions.html" ><span class="g-nav-num">03</span><span class="g-nav-title">File permissions</span></a></li><li><a class="g-nav-link" href="../chapters/04-users-groups-and-privilege-escalation-basics.html" ><span class="g-nav-num">04</span><span class="g-nav-title">Users and groups</span></a></li><li><a class="g-nav-link" href="../chapters/05-linux-package-managers-and-dependency-abuse.html" ><span class="g-nav-num">05</span><span class="g-nav-title">Package managers</span></a></li><li><a class="g-nav-link" href="../chapters/06-introduction-to-bash-scripting.html" ><span class="g-nav-num">06</span><span class="g-nav-title">Bash scripting</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">02</span><span>Shell and scheduling</span></div><ol><li><a class="g-nav-link" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" ><span class="g-nav-num">07</span><span class="g-nav-title">Bash variables</span></a></li><li><a class="g-nav-link" href="../chapters/08-environment-variables-and-bashrc-abuse.html" ><span class="g-nav-num">08</span><span class="g-nav-title">Shell startup abuse</span></a></li><li><a class="g-nav-link" href="../chapters/09-processes-services-and-enumeration.html" ><span class="g-nav-num">09</span><span class="g-nav-title">Processes and services</span></a></li><li><a class="g-nav-link" href="../chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html" ><span class="g-nav-num">10</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link" href="../chapters/11-ssh-access-and-abuse.html" ><span class="g-nav-num">11</span><span class="g-nav-title">SSH access and abuse</span></a></li><li><a class="g-nav-link" href="../chapters/12-file-permissions-and-privilege-escalation-basics.html" ><span class="g-nav-num">12</span><span class="g-nav-title">Permissions to privilege</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">03</span><span>Access and network</span></div><ol><li><a class="g-nav-link" href="../chapters/13-environment-variables-and-path-hijacking.html" ><span class="g-nav-num">13</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link" href="../chapters/14-logs-and-system-auditing.html" ><span class="g-nav-num">14</span><span class="g-nav-title">Logs and auditing</span></a></li><li><a class="g-nav-link" href="../chapters/15-networking-fundamentals-for-hackers.html" ><span class="g-nav-num">15</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link" href="../chapters/16-firewalls-and-packet-filtering.html" ><span class="g-nav-num">16</span><span class="g-nav-title">Firewalls</span></a></li><li><a class="g-nav-link" href="../chapters/17-ssh-and-tunneling.html" ><span class="g-nav-num">17</span><span class="g-nav-title">SSH tunneling</span></a></li><li><a class="g-nav-link" href="../chapters/18-linux-kernel-and-exploit-basics.html" ><span class="g-nav-num">18</span><span class="g-nav-title">Kernel exploits</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">04</span><span>Persistence and isolation</span></div><ol><li><a class="g-nav-link" href="../chapters/19-linux-persistence-techniques.html" ><span class="g-nav-num">19</span><span class="g-nav-title">Persistence</span></a></li><li><a class="g-nav-link" href="../chapters/20-linux-services-and-daemon-exploitation.html" ><span class="g-nav-num">20</span><span class="g-nav-title">Service exploitation</span></a></li><li><a class="g-nav-link" href="../chapters/21-linux-capabilities-and-exploitation.html" ><span class="g-nav-num">21</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link" href="../chapters/22-advanced-persistence.html" ><span class="g-nav-num">22</span><span class="g-nav-title">Advanced persistence</span></a></li><li><a class="g-nav-link" href="../chapters/23-containers-and-docker-exploitation.html" ><span class="g-nav-num">23</span><span class="g-nav-title">Containers</span></a></li><li><a class="g-nav-link" href="../chapters/24-host-based-monitoring-auditd-and-osquery.html" ><span class="g-nav-num">24</span><span class="g-nav-title">Host monitoring</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">05</span><span>Defense and workflow</span></div><ol><li><a class="g-nav-link" href="../chapters/25-linux-forensics-and-incident-response.html" ><span class="g-nav-num">25</span><span class="g-nav-title">Forensics and IR</span></a></li><li><a class="g-nav-link" href="../chapters/26-automating-linux-privilege-escalation-checks.html"  aria-current="page"><span class="g-nav-num">26</span><span class="g-nav-title">Privilege automation</span></a></li><li><a class="g-nav-link" href="../chapters/27-linux-hardening-and-monitoring.html" ><span class="g-nav-num">27</span><span class="g-nav-title">Hardening and monitoring</span></a></li><li><a class="g-nav-link" href="../chapters/28-network-sniffing-and-packet-capture.html" ><span class="g-nav-num">28</span><span class="g-nav-title">Packet capture</span></a></li><li><a class="g-nav-link" href="../chapters/29-linux-memory-analysis-and-credential-hunting.html" ><span class="g-nav-num">29</span><span class="g-nav-title">Memory analysis</span></a></li><li><a class="g-nav-link" href="../chapters/30-building-your-linux-hacking-workflow.html" ><span class="g-nav-num">30</span><span class="g-nav-title">Workflow</span></a></li></ol></section>
+  </nav>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Authorized labs and systems only. Read in order or use the menu to jump.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#section-defense">Section 05</a><span>/</span>
+          <span>Chapter 26</span>
+        </nav>
+        <p class="g-kicker">Section 05 / Defense and workflow</p>
+        <h1>Automating Linux Privilege Escalation Checks</h1>
+        <p class="g-deck">Use LinPEAS, LSE and custom checks to reproduce a repeatable enumeration pass.</p>
+        <div class="g-chapter-meta">
+          <span>8 min read</span>
+          <span>14 sections</span>
+          <span>9 code blocks</span>
+          <span>Chapter 26 / 30</span>
+        </div>
+        <div class="g-chapter-actions"><a class="g-btn ghost" data-next-chapter href="../chapters/27-linux-hardening-and-monitoring.html">Next chapter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>14 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-why-automate-privilege-escalation" data-toc-link>1. Why Automate Privilege Escalation?</a><a class="g-toc-link depth-2" href="#2-key-tools" data-toc-link>2. Key Tools</a><a class="g-toc-link depth-3" href="#linpeas" data-toc-link>LinPEAS</a><a class="g-toc-link depth-3" href="#linux-smart-enumeration-lse" data-toc-link>Linux Smart Enumeration (LSE)</a><a class="g-toc-link depth-2" href="#3-writing-your-own-automation-script" data-toc-link>3. Writing Your Own Automation Script</a><a class="g-toc-link depth-2" href="#4-useful-one-liners" data-toc-link>4. Useful One-Liners</a><a class="g-toc-link depth-2" href="#5-privilege-escalation-targets" data-toc-link>5. Privilege Escalation Targets</a><a class="g-toc-link depth-2" href="#advanced-what-scanners-miss" data-toc-link>Advanced: What scanners miss</a><a class="g-toc-link depth-2" href="#privilege-escalation-field-checklist" data-toc-link>Privilege escalation field checklist</a><a class="g-toc-link depth-3" href="#validate-the-lead" data-toc-link>Validate the lead</a><a class="g-toc-link depth-3" href="#external-field-notes" data-toc-link>External field notes</a><a class="g-toc-link depth-2" href="#6-best-practices" data-toc-link>6. Best Practices</a><a class="g-toc-link depth-2" href="#7-challenge-lab-task" data-toc-link>7. Challenge (Lab Task)</a></nav>
+</details>
+      <div class="g-prose"><h2 id="objective">Objective<a aria-label="Link to this section" class="g-anchor" href="#objective">#</a></h2>
+<p>Learn how to automate privilege escalation checks on Linux using scripts and well-known tools like <code>linpeas</code>, <code>lse</code>, and custom Bash one-liners. Focus on collecting misconfigurations efficiently and safely during post-exploitation or pentesting.</p>
+<hr/>
+<h2 id="1-why-automate-privilege-escalation">1. Why Automate Privilege Escalation?<a aria-label="Link to this section" class="g-anchor" href="#1-why-automate-privilege-escalation">#</a></h2>
+<p>Manual enumeration is time-consuming. Automated scripts speed up information gathering by listing misconfigurations, weak permissions, and exploitable binaries.<br/>
+However, <strong>always review script outputs manually</strong> before attempting exploitation.</p>
+<hr/>
+<h2 id="2-key-tools">2. Key Tools<a aria-label="Link to this section" class="g-anchor" href="#2-key-tools">#</a></h2>
+<h3 id="linpeas">LinPEAS<a aria-label="Link to this section" class="g-anchor" href="#linpeas">#</a></h3>
+<p>LinPEAS is a popular script for privilege escalation checks.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">wget<span class="w"> </span>https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh
+chmod<span class="w"> </span>+x<span class="w"> </span>linpeas.sh
+./linpeas.sh
+</code></pre></div>
+<p>It checks for:</p>
+<ul>
+<li>SUID/SGID binaries</li>
+<li>Writable <code>/etc/passwd</code></li>
+<li>Crontabs and PATH hijacks</li>
+<li>Capabilities, Docker, NFS, and kernel exploits</li>
+</ul>
+<h3 id="linux-smart-enumeration-lse">Linux Smart Enumeration (LSE)<a aria-label="Link to this section" class="g-anchor" href="#linux-smart-enumeration-lse">#</a></h3>
+<p>A modular and cleaner enumeration tool:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">wget<span class="w"> </span>https://github.com/diego-treitos/linux-smart-enumeration/releases/latest/download/lse.sh
+chmod<span class="w"> </span>+x<span class="w"> </span>lse.sh
+./lse.sh<span class="w"> </span>-l2
+</code></pre></div>
+<p>LSE provides detailed but safe enumeration without exploit attempts.</p>
+<hr/>
+<h2 id="3-writing-your-own-automation-script">3. Writing Your Own Automation Script<a aria-label="Link to this section" class="g-anchor" href="#3-writing-your-own-automation-script">#</a></h2>
+<p>You can build your own script combining simple commands:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/bin/bash</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"[*] User info:"</span>
+id
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"[*] Sudo permissions:"</span>
+sudo<span class="w"> </span>-l
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"[*] SUID binaries:"</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"[*] Writable /etc files:"</span>
+find<span class="w"> </span>/etc<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p>Save as <code>enum.sh</code> and run with:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">bash<span class="w"> </span>enum.sh<span class="w"> </span>&gt;<span class="w"> </span>results.txt
+</code></pre></div>
+<hr/>
+<h2 id="4-useful-one-liners">4. Useful One-Liners<a aria-label="Link to this section" class="g-anchor" href="#4-useful-one-liners">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w">       </span><span class="c1"># Find SUID binaries</span>
+sudo<span class="w"> </span>-l<span class="w">                                      </span><span class="c1"># Check sudo permissions</span>
+cat<span class="w"> </span>/etc/passwd<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>sh$<span class="w">                   </span><span class="c1"># Users with shell access</span>
+getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w">                      </span><span class="c1"># List files with capabilities</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/root<span class="w">                                 </span><span class="c1"># Try if root directory is accessible</span>
+</code></pre></div>
+<hr/>
+<h2 id="5-privilege-escalation-targets">5. Privilege Escalation Targets<a aria-label="Link to this section" class="g-anchor" href="#5-privilege-escalation-targets">#</a></h2>
+<ul>
+<li>Misconfigured <code>sudo</code> rules (e.g., NOPASSWD)</li>
+<li>Writable scripts executed as root (cron/systemd)</li>
+<li>SUID binaries allowing command execution</li>
+<li>Files with dangerous capabilities (<code>setcap cap_setuid+ep</code>)</li>
+<li>Weak environment variable paths</li>
+</ul>
+<hr/>
+<h2 id="advanced-what-scanners-miss">Advanced: What scanners miss<a aria-label="Link to this section" class="g-anchor" href="#advanced-what-scanners-miss">#</a></h2>
+<p>Automated enumerators are good at finding known patterns and bad at
+understanding context. Recent privilege escalation bugs often live in trusted
+update or helper paths that scanners do not model.</p>
+<p>Recent examples:</p>
+<ul>
+<li>CVE-2025-32463: sudo before 1.9.17p1 could load <code>/etc/nsswitch.conf</code> from a
+user-controlled directory when <code>--chroot</code> was used, leading to root.</li>
+<li>CVE-2025-32462: a sudoers host mismatch could let listed users run commands
+on unintended machines.</li>
+<li>CVE-2024-48990 and CVE-2024-11003: needrestart before 3.8 could execute code
+as root through <code>PYTHONPATH</code> or unsafe library input.</li>
+<li>CVE-2021-4034 (PwnKit) in polkit's <code>pkexec</code> is still found on unpatched
+images.</li>
+<li>CVE-2023-4911 (Looney Tunables) in the glibc dynamic loader affected many
+distributions.</li>
+</ul>
+<p>Check versions and patch state:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>-V<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+dpkg-query<span class="w"> </span>-W<span class="w"> </span>sudo<span class="w"> </span>needrestart<span class="w"> </span>policykit-1<span class="w"> </span>libc6<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+rpm<span class="w"> </span>-q<span class="w"> </span>sudo<span class="w"> </span>needrestart<span class="w"> </span>polkit<span class="w"> </span>glibc<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p>Manual validation:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>-l
+getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+capsh<span class="w"> </span>--print
+find<span class="w"> </span>/<span class="w"> </span>-xdev<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager
+</code></pre></div>
+<p>Use <code>pspy</code> to watch short-lived root processes and timers that a one-shot scan
+misses:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">./pspy64<span class="w"> </span>-pf<span class="w"> </span>-i<span class="w"> </span><span class="m">1000</span>
+</code></pre></div>
+<p>Workflow:</p>
+<ol>
+<li>Enumerate versions and patch levels, not just binaries.</li>
+<li>Map each finding to a concrete precondition check.</li>
+<li>Validate with a non-destructive proof in a snapshot.</li>
+<li>Record false positives and why they are not exploitable.</li>
+<li>Patch or remove the helper, then re-test.</li>
+</ol>
+<p>Do not run unknown exploit binaries on a host you do not own. A scanner finding
+is a hypothesis, not a compromise.</p>
+<h2 id="privilege-escalation-field-checklist">Privilege escalation field checklist<a aria-label="Link to this section" class="g-anchor" href="#privilege-escalation-field-checklist">#</a></h2>
+<p>Use scanner output as an index, not as a conclusion. The table below covers the
+surfaces that most often turn a low-privileged shell into root, including areas
+that are easy to miss in a one-shot scan.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Surface</th>
+<th>What to check</th>
+<th>Starting point</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sudo</td>
+<td><code>NOPASSWD</code>, <code>ALL</code>, wildcard rules, shell escapes, <code>env_keep</code></td>
+<td><code>sudo -l</code></td>
+</tr>
+<tr>
+<td>SUID and SGID</td>
+<td>writable binaries, unexpected owners, GTFOBins entries</td>
+<td><code>find / -xdev \( -perm -4000 -o -perm -2000 \)</code></td>
+</tr>
+<tr>
+<td>Capabilities</td>
+<td><code>cap_setuid</code>, <code>cap_setgid</code>, <code>cap_dac_override</code>, <code>cap_sys_admin</code>, <code>cap_sys_ptrace</code></td>
+<td><code>getcap -r /</code></td>
+</tr>
+<tr>
+<td>Scheduled jobs</td>
+<td>writable scripts, relative commands, wildcard expansion</td>
+<td><code>crontab -l</code>, <code>systemctl list-timers --all</code></td>
+</tr>
+<tr>
+<td>Writable system files</td>
+<td><code>passwd</code>, <code>shadow</code>, <code>sudoers</code>, PAM, profile, <code>ld.so.preload</code></td>
+<td><code>find /etc -xdev -writable</code></td>
+</tr>
+<tr>
+<td>PATH and environment</td>
+<td>writable PATH directory, <code>LD_PRELOAD</code>, <code>LD_LIBRARY_PATH</code>, <code>PYTHONPATH</code>, <code>BASH_ENV</code>, <code>EDITOR</code>, <code>PAGER</code></td>
+<td><code>echo "$PATH"</code>, <code>env</code></td>
+</tr>
+<tr>
+<td>Services</td>
+<td>writable unit or binary, root execution, unsafe <code>ExecStart</code></td>
+<td><code>systemctl list-units --type=service</code></td>
+</tr>
+<tr>
+<td>NFS</td>
+<td><code>no_root_squash</code>, writable exports, UID/GID mapping</td>
+<td><code>showmount -e &lt;host&gt;</code>, <code>cat /etc/exports</code></td>
+</tr>
+<tr>
+<td>Containers</td>
+<td>docker group, socket mount, privileged mode, host namespaces</td>
+<td><code>docker info</code>, <code>capsh --print</code></td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>patch level, exposed modules, missing mitigations</td>
+<td><code>uname -r</code>, <code>sysctl kernel.kptr_restrict</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Two surfaces deserve extra attention. If an NFS export is writable and allows
+<code>no_root_squash</code>, root on the client can place a SUID binary that executes as
+root on the server. If the Docker socket or <code>docker</code> group is exposed, treat it
+as root: a privileged container can mount the host filesystem.</p>
+<p>A compact collection pass:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">id
+sudo<span class="w"> </span>-l
+sudo<span class="w"> </span>-V<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+capsh<span class="w"> </span>--print
+
+find<span class="w"> </span>/<span class="w"> </span>-xdev<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="se">\(</span><span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-o<span class="w"> </span>-perm<span class="w"> </span>-2000<span class="w"> </span><span class="se">\)</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-printf<span class="w"> </span><span class="s1">'%m %u %g %p\n'</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/etc<span class="w"> </span>-xdev<span class="w"> </span>-writable<span class="w"> </span>-printf<span class="w"> </span><span class="s1">'%m %u %g %p\n'</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$PATH</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">'\n'</span>
+
+crontab<span class="w"> </span>-l<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/cron.*<span class="w"> </span>/etc/cron.d<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+systemctl<span class="w"> </span>list-timers<span class="w"> </span>--all
+systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager
+findmnt<span class="w"> </span>-o<span class="w"> </span>TARGET,SOURCE,FSTYPE,OPTIONS
+
+showmount<span class="w"> </span>-e<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+docker<span class="w"> </span>info<span class="w"> </span>--format<span class="w"> </span><span class="s1">'{{.ServerVersion}} {{.SecurityOptions}}'</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><code>find /</code> can be slow on large systems. Use <code>-xdev</code> to stay on one filesystem,
+and start with the directories that matter for the service you are targeting.</p>
+<h3 id="validate-the-lead">Validate the lead<a aria-label="Link to this section" class="g-anchor" href="#validate-the-lead">#</a></h3>
+<ul>
+<li>Reproduce the permission or configuration with <code>ls -l</code>, <code>stat</code>, <code>namei -l</code>
+and <code>systemctl cat</code>.</li>
+<li>Confirm the privileged context. A writable file is only interesting if root
+or a privileged service reads or executes it.</li>
+<li>Check the binary's documented shell escapes on
+<a class="g-external" href="https://gtfobins.github.io/" rel="noopener noreferrer" target="_blank">GTFOBins</a>, then test the exact version in a lab.</li>
+<li>Use a harmless proof, such as creating a marker file. Do not leave a root
+shell, new account or persistence behind on a client system.</li>
+<li>Record the exact command, precondition, impact and false positives, then clean
+up test files and reverse configuration changes.</li>
+</ul>
+<h3 id="external-field-notes">External field notes<a aria-label="Link to this section" class="g-anchor" href="#external-field-notes">#</a></h3>
+<p>JoramMalley's Linux privilege escalation notes are a useful topic index for the
+checks above:
+<a class="g-external" href="https://github.com/JoramMalley/Linux-privilege-escalation" rel="noopener noreferrer" target="_blank">Linux-privilege-escalation</a>.
+The repository is third-party material. Verify its commands and CVE claims
+against vendor advisories before use, and treat every technique as lab-only
+unless you have written authorization.</p>
+<h2 id="6-best-practices">6. Best Practices<a aria-label="Link to this section" class="g-anchor" href="#6-best-practices">#</a></h2>
+<ul>
+<li>Run automated tools with <strong>low noise</strong> flags to avoid detection.</li>
+<li>Redirect output to local files for review (<code>tee</code>, <code>&gt;</code>, or <code>2&gt;/dev/null</code>).</li>
+<li>Keep your custom script modular - add functions per category (users, services, permissions).</li>
+<li>Always respect legal &amp; ethical boundaries.</li>
+</ul>
+<hr/>
+<h2 id="7-challenge-lab-task">7. Challenge (Lab Task)<a aria-label="Link to this section" class="g-anchor" href="#7-challenge-lab-task">#</a></h2>
+<ol>
+<li>Run <code>linpeas.sh</code> and <code>lse.sh</code> on a lab VM.</li>
+<li>Compare results - note what each finds differently.</li>
+<li>Add one of your custom checks (like world-writable configs).</li>
+<li>Report findings in a simple table format (tool → finding → impact).</li>
+</ol>
+<hr/>
+<p> Ethics &amp; Safety: Run these tools <strong>only on systems you own or are authorized to test</strong>. Unauthorized scanning or exploitation is illegal.</p>
+<hr/>
+</div>
+      <p class="g-source-note">Chapter 26 of the Linux for Hackers guide. Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+      <nav class="g-chapter-nav" aria-label="Chapter navigation"><a class="g-chapter-card" href="../chapters/25-linux-forensics-and-incident-response.html" data-prev-chapter><span class="g-chapter-card-label">Previous / Chapter 25</span><strong>Linux Forensics and Incident Response Basics</strong></a><a class="g-chapter-card" href="../chapters/27-linux-hardening-and-monitoring.html" data-next-chapter><span class="g-chapter-card-label">Next / Chapter 27</span><strong>Linux Hardening and Monitoring</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-why-automate-privilege-escalation" data-toc-link>1. Why Automate Privilege Escalation?</a><a class="g-toc-link depth-2" href="#2-key-tools" data-toc-link>2. Key Tools</a><a class="g-toc-link depth-3" href="#linpeas" data-toc-link>LinPEAS</a><a class="g-toc-link depth-3" href="#linux-smart-enumeration-lse" data-toc-link>Linux Smart Enumeration (LSE)</a><a class="g-toc-link depth-2" href="#3-writing-your-own-automation-script" data-toc-link>3. Writing Your Own Automation Script</a><a class="g-toc-link depth-2" href="#4-useful-one-liners" data-toc-link>4. Useful One-Liners</a><a class="g-toc-link depth-2" href="#5-privilege-escalation-targets" data-toc-link>5. Privilege Escalation Targets</a><a class="g-toc-link depth-2" href="#advanced-what-scanners-miss" data-toc-link>Advanced: What scanners miss</a><a class="g-toc-link depth-2" href="#privilege-escalation-field-checklist" data-toc-link>Privilege escalation field checklist</a><a class="g-toc-link depth-3" href="#validate-the-lead" data-toc-link>Validate the lead</a><a class="g-toc-link depth-3" href="#external-field-notes" data-toc-link>External field notes</a><a class="g-toc-link depth-2" href="#6-best-practices" data-toc-link>6. Best Practices</a><a class="g-toc-link depth-2" href="#7-challenge-lab-task" data-toc-link>7. Challenge (Lab Task)</a></nav>
+    <div class="g-toc-foot">Chapter 26 / 14 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

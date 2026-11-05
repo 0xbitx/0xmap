@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 1 of 10. Build a working model of the kernel, shell, users and filesystem before you touch a command.">
+  <title>Part 01: Linux Mental Model | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html" aria-current="page"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 01</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 01</p>
+        <h1>Linux Mental Model</h1>
+        <p class="g-deck">Build a working model of the kernel, shell, users and filesystem before you touch a command.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>18 sections</span>
+          <span>14 code blocks</span>
+          <span>Part 01 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>18 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#the-four-layers" data-toc-link>The four layers</a><a class="g-toc-link depth-2" href="#the-component-stack-in-more-detail" data-toc-link>The component stack in more detail</a><a class="g-toc-link depth-2" href="#linux-and-windows-a-practical-comparison" data-toc-link>Linux and Windows: a practical comparison</a><a class="g-toc-link depth-2" href="#distributions-are-packaging-choices" data-toc-link>Distributions are packaging choices</a><a class="g-toc-link depth-2" href="#everything-is-a-file-until-it-is-not" data-toc-link>Everything is a file, until it is not</a><a class="g-toc-link depth-2" href="#the-filesystem-hierarchy" data-toc-link>The filesystem hierarchy</a><a class="g-toc-link depth-2" href="#users-groups-and-ownership" data-toc-link>Users, groups and ownership</a><a class="g-toc-link depth-2" href="#how-a-command-runs" data-toc-link>How a command runs</a><a class="g-toc-link depth-2" href="#processes-are-the-unit-of-execution" data-toc-link>Processes are the unit of execution</a><a class="g-toc-link depth-2" href="#the-shell-is-a-programming-environment" data-toc-link>The shell is a programming environment</a><a class="g-toc-link depth-2" href="#kernel-space-user-space-and-system-calls" data-toc-link>Kernel space, user space and system calls</a><a class="g-toc-link depth-2" href="#shells-terminals-and-sessions" data-toc-link>Shells, terminals and sessions</a><a class="g-toc-link depth-2" href="#mounts-namespaces-and-containers" data-toc-link>Mounts, namespaces and containers</a><a class="g-toc-link depth-2" href="#the-unix-philosophy" data-toc-link>The Unix philosophy</a><a class="g-toc-link depth-2" href="#a-study-method-that-works" data-toc-link>A study method that works</a><a class="g-toc-link depth-2" href="#lab-read-your-own-system" data-toc-link>Lab: read your own system</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>Linux is not a single program. It is a family of operating systems built around the same kernel, the same core utilities and a shared way of thinking about files, users and processes. Before you memorize commands, build a model of how the pieces fit together. Every later chapter, from permissions to containers, depends on this model.</p>
+<h2 id="the-four-layers">The four layers<a aria-label="Link to this section" class="g-anchor" href="#the-four-layers">#</a></h2>
+<p>Think of a Linux system as four layers:</p>
+<ol>
+<li><strong>Hardware.</strong> CPU, memory, disks, network cards and peripherals.</li>
+<li><strong>Kernel.</strong> The privileged core that schedules processes, manages memory, talks to hardware and enforces access control.</li>
+<li><strong>User space.</strong> Programs, libraries, services and the filesystem tree.</li>
+<li><strong>Shell.</strong> A command interpreter that lets you launch programs, connect them together and automate work.</li>
+</ol>
+<p>The kernel is the only layer that runs with full hardware privilege. User programs ask the kernel for services through system calls. When you run <code>ls</code>, the shell finds the program, the kernel starts it, and the program asks the kernel to read a directory and write the result to your terminal.</p>
+<h2 id="the-component-stack-in-more-detail">The component stack in more detail<a aria-label="Link to this section" class="g-anchor" href="#the-component-stack-in-more-detail">#</a></h2>
+<p>The four layers are easier to remember when you place the supporting pieces between the shell and the kernel:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">+------------------------------------------------------+
+| User applications: editors, browsers, servers, tools |
++------------------------------------------------------+
+| Shell: Bash, Zsh, Fish, Dash                         |
++------------------------------------------------------+
+| System utilities: ls, grep, systemctl, ip             |
++------------------------------------------------------+
+| System libraries: glibc, OpenSSL, libcurl             |
++------------------------------------------------------+
+| Linux kernel: processes, memory, files, network       |
++------------------------------------------------------+
+| Hardware: CPU, RAM, disks, network, peripherals       |
++------------------------------------------------------+
+</code></pre></div>
+<p>System utilities and libraries are part of user space, but they sit between your commands and the kernel. A program such as <code>curl</code> may use <code>libcurl</code>, the C library and several system calls. The shell is also an ordinary user-space program. It does not run inside the kernel, even though it feels like part of the operating system.</p>
+<p>Device drivers are the kernel's hardware-facing code. Some are built into the kernel image, and others are loaded as modules. A driver bug can affect the whole machine because the driver runs with kernel privilege. That is one reason kernel updates and hardware compatibility matter.</p>
+<h2 id="linux-and-windows-a-practical-comparison">Linux and Windows: a practical comparison<a aria-label="Link to this section" class="g-anchor" href="#linux-and-windows-a-practical-comparison">#</a></h2>
+<p>Linux and Windows solve similar problems with different defaults. The useful question is not which one is universally better. It is which one fits the workload, the software, the support model and the skills of the people who will operate it.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Area</th>
+<th>Linux</th>
+<th>Windows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Licensing</td>
+<td>Mostly open source, with commercial support available</td>
+<td>Commercial licenses, with some free editions</td>
+</tr>
+<tr>
+<td>Filesystem</td>
+<td>One tree with mount points, usually case-sensitive</td>
+<td>Drive letters, backslash paths, usually case-insensitive</td>
+</tr>
+<tr>
+<td>Shell</td>
+<td>Bash, Zsh, Fish and other shells with text pipelines</td>
+<td>PowerShell and Command Prompt</td>
+</tr>
+<tr>
+<td>Software</td>
+<td>Distribution repositories, packages and source builds</td>
+<td>Installers, Microsoft Store and <code>winget</code></td>
+</tr>
+<tr>
+<td>Updates</td>
+<td>Per-package updates; kernel updates may require a reboot</td>
+<td>Cumulative updates; reboots are common</td>
+</tr>
+<tr>
+<td>Permissions</td>
+<td>Owner, group, mode bits, root and capabilities</td>
+<td>ACLs, Administrator accounts and UAC</td>
+</tr>
+<tr>
+<td>Desktop</td>
+<td>Many distributions and desktop environments</td>
+<td>Broad commercial hardware and application support</td>
+</tr>
+<tr>
+<td>Servers</td>
+<td>Common for web, cloud and container platforms</td>
+<td>Common in Microsoft-centric environments</td>
+</tr>
+<tr>
+<td>Containers</td>
+<td>Native namespaces and cgroups</td>
+<td>Containers through WSL2 or a virtual machine</td>
+</tr>
+<tr>
+<td>Automation</td>
+<td>Shell scripts, systemd, Ansible and other tools</td>
+<td>PowerShell, Task Scheduler and Group Policy</td>
+</tr>
+</tbody>
+</table></div>
+<p>Linux is not automatically more secure. It has malware, vulnerable services, supply chain attacks and misconfiguration. A hardened Linux server and a hardened Windows server have more in common than either has with an ignored default install. Linux is also not free in total cost: staff time, training, support contracts and migration work are real expenses.</p>
+<p>The practical advantages of Linux are often about control and composition. You can inspect the system, replace components, automate small pieces and run the same software on a laptop, a server and a container. The practical advantages of Windows are often about commercial software, hardware support and a managed desktop experience. Learn the model behind the commands, and you can move between them without treating either system as magic.</p>
+<h2 id="distributions-are-packaging-choices">Distributions are packaging choices<a aria-label="Link to this section" class="g-anchor" href="#distributions-are-packaging-choices">#</a></h2>
+<p>A distribution combines the Linux kernel with a package manager, init system, libraries, installer and default tools. Common families include:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Family</th>
+<th>Examples</th>
+<th>Package tools</th>
+<th>Typical init</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Debian</td>
+<td>Debian, Ubuntu, Kali</td>
+<td><code>apt</code>, <code>dpkg</code></td>
+<td>systemd</td>
+</tr>
+<tr>
+<td>Red Hat</td>
+<td>Fedora, RHEL, Rocky</td>
+<td><code>dnf</code>, <code>rpm</code></td>
+<td>systemd</td>
+</tr>
+<tr>
+<td>Arch</td>
+<td>Arch, EndeavourOS</td>
+<td><code>pacman</code></td>
+<td>systemd</td>
+</tr>
+<tr>
+<td>SUSE</td>
+<td>openSUSE</td>
+<td><code>zypper</code>, <code>rpm</code></td>
+<td>systemd</td>
+</tr>
+<tr>
+<td>Alpine</td>
+<td>Alpine</td>
+<td><code>apk</code></td>
+<td>OpenRC</td>
+</tr>
+</tbody>
+</table></div>
+<p>The commands in this guide focus on Debian and Ubuntu because they are common in labs, but the concepts transfer. When a command differs, check your distribution's documentation.</p>
+<h2 id="everything-is-a-file-until-it-is-not">Everything is a file, until it is not<a aria-label="Link to this section" class="g-anchor" href="#everything-is-a-file-until-it-is-not">#</a></h2>
+<p>Linux exposes many resources through the filesystem. Regular files, directories, devices, sockets and pipes all appear as file types. This is why tools such as <code>cat</code>, <code>ls</code> and <code>stat</code> are so useful.</p>
+<p>Some things are not ordinary files:</p>
+<ul>
+<li>Processes appear under <code>/proc</code> as a view generated by the kernel.</li>
+<li>Kernel settings appear under <code>/sys</code>.</li>
+<li>Network connections are not files you can simply edit.</li>
+<li>Mounted filesystems attach one tree to another at a mount point.</li>
+</ul>
+<p>The phrase "everything is a file" is a useful simplification, not a law. Treat it as a hint about where to look, not a guarantee that every resource behaves like a text file.</p>
+<h2 id="the-filesystem-hierarchy">The filesystem hierarchy<a aria-label="Link to this section" class="g-anchor" href="#the-filesystem-hierarchy">#</a></h2>
+<p>Linux distributions follow the Filesystem Hierarchy Standard closely enough that you can move between systems with confidence.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/</code></td>
+<td>Root of the entire tree</td>
+</tr>
+<tr>
+<td><code>/bin</code>, <code>/usr/bin</code></td>
+<td>Essential and general user commands</td>
+</tr>
+<tr>
+<td><code>/sbin</code>, <code>/usr/sbin</code></td>
+<td>System administration commands</td>
+</tr>
+<tr>
+<td><code>/etc</code></td>
+<td>Host-specific configuration</td>
+</tr>
+<tr>
+<td><code>/home</code></td>
+<td>User home directories</td>
+</tr>
+<tr>
+<td><code>/root</code></td>
+<td>Home directory for the root account</td>
+</tr>
+<tr>
+<td><code>/var</code></td>
+<td>Variable data such as logs, caches and spools</td>
+</tr>
+<tr>
+<td><code>/tmp</code></td>
+<td>Temporary files, often cleared at boot</td>
+</tr>
+<tr>
+<td><code>/opt</code></td>
+<td>Optional third-party software</td>
+</tr>
+<tr>
+<td><code>/usr</code></td>
+<td>Programs, libraries and read-only data</td>
+</tr>
+<tr>
+<td><code>/dev</code></td>
+<td>Device files</td>
+</tr>
+<tr>
+<td><code>/proc</code></td>
+<td>Process and kernel information</td>
+</tr>
+<tr>
+<td><code>/sys</code></td>
+<td>Kernel and hardware interfaces</td>
+</tr>
+<tr>
+<td><code>/boot</code></td>
+<td>Kernel, initramfs and bootloader files</td>
+</tr>
+<tr>
+<td><code>/srv</code></td>
+<td>Data served by system services</td>
+</tr>
+<tr>
+<td><code>/run</code></td>
+<td>Runtime state created since boot</td>
+</tr>
+<tr>
+<td><code>/usr/local</code></td>
+<td>Locally installed software and libraries</td>
+</tr>
+<tr>
+<td><code>/lost+found</code></td>
+<td>Recovered files after repair on ext filesystems</td>
+</tr>
+<tr>
+<td><code>/mnt</code>, <code>/media</code></td>
+<td>Temporary and removable mount points</td>
+</tr>
+</tbody>
+</table></div>
+<p>On modern systems, <code>/bin</code>, <code>/sbin</code> and <code>/lib</code> are often symbolic links into <code>/usr</code>. That is normal. The important idea is that the tree is a single namespace: disks and partitions are attached somewhere inside it.</p>
+<p>Some paths are conventions rather than universal rules. Ubuntu may add <code>/snap</code>, containers often have no <code>/boot</code>, and <code>/data</code> is a common mount point but not part of the standard hierarchy. When you are unsure, read the manual page for the hierarchy on systems that provide it:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">man<span class="w"> </span>hier
+ls<span class="w"> </span>-ld<span class="w"> </span>/boot<span class="w"> </span>/srv<span class="w"> </span>/run<span class="w"> </span>/usr/local
+</code></pre></div>
+<h2 id="users-groups-and-ownership">Users, groups and ownership<a aria-label="Link to this section" class="g-anchor" href="#users-groups-and-ownership">#</a></h2>
+<p>Every process runs as a user and belongs to one or more groups. Every file has an owner, a group and a permission mode. The kernel checks those identities when a process tries to read, write or execute something.</p>
+<p>The root account, UID 0, bypasses most permission checks. That is why <code>sudo</code> is powerful and why it deserves care. A normal user should do normal work. Elevate only for the specific command that needs it.</p>
+<p>You can inspect your identity with:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">id
+whoami
+groups
+</code></pre></div>
+<p>You will return to these details in the permissions chapter. For now, remember that access is always a relationship between a process identity and a resource.</p>
+<h2 id="how-a-command-runs">How a command runs<a aria-label="Link to this section" class="g-anchor" href="#how-a-command-runs">#</a></h2>
+<p>When you type a command, several things happen:</p>
+<ol>
+<li>The shell parses the line into words, quotes, redirections and pipes.</li>
+<li>It checks whether the first word is a shell builtin, a function or an external program.</li>
+<li>For an external program, it searches the directories listed in <code>PATH</code>.</li>
+<li>The kernel creates a new process and loads the program.</li>
+<li>The program runs, writes output and returns an exit status.</li>
+<li>The shell uses that status to decide what to do next.</li>
+</ol>
+<p>You can see the search path and the shell you are using:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$SHELL</span><span class="s2">"</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$PATH</span><span class="s2">"</span>
+<span class="nb">type</span><span class="w"> </span>ls
+<span class="nb">command</span><span class="w"> </span>-v<span class="w"> </span>ls
+</code></pre></div>
+<p><code>type</code> and <code>command -v</code> are often more informative than <code>which</code>, because they know about aliases, functions and builtins.</p>
+<h2 id="processes-are-the-unit-of-execution">Processes are the unit of execution<a aria-label="Link to this section" class="g-anchor" href="#processes-are-the-unit-of-execution">#</a></h2>
+<p>A process is a running program with its own memory, file descriptors and identity. Processes have a PID, a parent PID and a state. They can be running, sleeping, stopped or waiting for input.</p>
+<p>The kernel schedules processes, enforces limits and delivers signals. A signal is a small notification that asks a process to do something, such as terminate, reload or continue. You will use signals when you manage jobs and services.</p>
+<p>Inspect the process tree with:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ps<span class="w"> </span>-ef
+ps<span class="w"> </span>aux
+top
+</code></pre></div>
+<p>The first command shows a portable full listing. The second shows BSD-style resource usage. <code>top</code> updates live. Use <code>q</code> to quit.</p>
+<h2 id="the-shell-is-a-programming-environment">The shell is a programming environment<a aria-label="Link to this section" class="g-anchor" href="#the-shell-is-a-programming-environment">#</a></h2>
+<p>The shell is not just a place to type commands. It has variables, conditionals, loops, functions, redirection and pipelines. It can run a sequence of commands, react to failures and transform text.</p>
+<p>That power is why shell scripting is part of this guide. It is also why quoting matters. The shell expands variables, globs and command substitutions before the program runs. If you do not control that expansion, spaces and special characters can change the meaning of a command.</p>
+<p>A safe habit is to quote variable expansions:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">name</span><span class="o">=</span><span class="s2">"Linux Foundations"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span>
+</code></pre></div>
+<p>The quotes keep the value as one argument even when it contains spaces.</p>
+<h2 id="kernel-space-user-space-and-system-calls">Kernel space, user space and system calls<a aria-label="Link to this section" class="g-anchor" href="#kernel-space-user-space-and-system-calls">#</a></h2>
+<p>The CPU does not treat every instruction equally. Most modern processors have at least two privilege levels. Linux uses them to separate kernel space from user space.</p>
+<ul>
+<li><strong>Kernel space</strong> runs with full hardware access. It can touch memory, devices and privileged CPU instructions.</li>
+<li><strong>User space</strong> runs ordinary programs with restricted access. A program cannot write to a disk or open a network socket by itself.</li>
+</ul>
+<p>When a user-space program needs a privileged operation, it makes a system call. The CPU switches into the kernel, performs the operation, and returns a result. Common system calls include <code>open</code>, <code>read</code>, <code>write</code>, <code>close</code>, <code>fork</code>, <code>execve</code>, <code>socket</code> and <code>mmap</code>.</p>
+<p>You can see system calls without reading kernel source:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">strace<span class="w"> </span>-c<span class="w"> </span>ls<span class="w"> </span>/
+strace<span class="w"> </span>-e<span class="w"> </span>openat<span class="w"> </span>ls<span class="w"> </span>/etc/hostname
+man<span class="w"> </span><span class="m">2</span><span class="w"> </span>open
+</code></pre></div>
+<p><code>strace -c</code> summarizes the calls a program made and the time spent in each. <code>strace -e openat</code> shows file opens. <code>man 2 open</code> opens section 2 of the manual, which documents system calls rather than shell commands.</p>
+<p>This distinction explains a lot of Linux behavior. A permission error is usually the kernel refusing a system call. A crash in a device driver can affect the whole machine because the driver runs in kernel space. A container feels isolated but still shares the host kernel, which is why kernel vulnerabilities matter.</p>
+<h2 id="shells-terminals-and-sessions">Shells, terminals and sessions<a aria-label="Link to this section" class="g-anchor" href="#shells-terminals-and-sessions">#</a></h2>
+<p>People often use the words terminal, console, shell and command line as if they were the same thing. They are separate layers:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Layer</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Terminal emulator</td>
+<td>Draws a text window and sends keystrokes, such as GNOME Terminal, Konsole, Alacritty or Windows Terminal</td>
+</tr>
+<tr>
+<td>TTY</td>
+<td>The kernel's text device or pseudo-terminal that connects a session to a program</td>
+</tr>
+<tr>
+<td>Shell</td>
+<td>Parses commands and launches programs, such as Bash, Zsh, Fish or Dash</td>
+</tr>
+<tr>
+<td>Command line</td>
+<td>The text you type and the output you receive</td>
+</tr>
+</tbody>
+</table></div>
+<p>A login shell is started when you log in. A non-login shell is started by a program or a terminal window. An interactive shell reads commands from a person. A non-interactive shell runs a script. Bash reads different startup files depending on those modes, which is why an alias can work in your terminal but fail in a cron job.</p>
+<p>Inspect the current shell and session:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$0</span><span class="s2">"</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$SHELL</span><span class="s2">"</span>
+ps<span class="w"> </span>-p<span class="w"> </span><span class="nv">$$</span><span class="w"> </span>-o<span class="w"> </span>pid,ppid,tty,cmd
+<span class="nb">shopt</span><span class="w"> </span>login_shell
+</code></pre></div>
+<p><code>$0</code> is the name used to start the current shell. <code>$SHELL</code> is your configured login shell, not necessarily the shell running this command. <code>$$</code> is the current shell's PID. <code>ps</code> shows its parent and controlling terminal. <code>shopt login_shell</code> is a Bash-specific check.</p>
+<p>A terminal multiplexer keeps a session alive when the terminal window closes. <code>tmux</code> and <code>screen</code> are common choices. They are useful on remote servers because a dropped connection does not kill your work.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tmux<span class="w"> </span>new<span class="w"> </span>-s<span class="w"> </span>study
+tmux<span class="w"> </span>attach<span class="w"> </span>-t<span class="w"> </span>study
+tmux<span class="w"> </span>ls
+</code></pre></div>
+<p>Inside tmux, <code>Ctrl+B</code> then <code>D</code> detaches. Reattach with <code>tmux attach -t study</code>. The session continues running on the server.</p>
+<h2 id="mounts-namespaces-and-containers">Mounts, namespaces and containers<a aria-label="Link to this section" class="g-anchor" href="#mounts-namespaces-and-containers">#</a></h2>
+<p>Linux has one directory tree, but that tree can be assembled from many filesystems. A mount attaches a filesystem at a directory called a mount point.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">findmnt
+findmnt<span class="w"> </span>/
+cat<span class="w"> </span>/proc/mounts
+</code></pre></div>
+<p><code>findmnt</code> prints the mount tree in a readable form. <code>/proc/mounts</code> is the kernel's current view. You will see the root filesystem, pseudo filesystems such as <code>proc</code>, <code>sysfs</code> and <code>tmpfs</code>, and possibly separate mounts for <code>/boot</code>, <code>/home</code> or <code>/var</code>.</p>
+<p>A bind mount exposes an existing directory at a second location:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/mnt/etc-copy
+sudo<span class="w"> </span>mount<span class="w"> </span>--bind<span class="w"> </span>/etc<span class="w"> </span>/mnt/etc-copy
+findmnt<span class="w"> </span>/mnt/etc-copy
+sudo<span class="w"> </span>umount<span class="w"> </span>/mnt/etc-copy
+</code></pre></div>
+<p>Bind mounts are useful for chroots, containers and recovery work. They do not copy data. Both paths point at the same underlying files.</p>
+<p>Namespaces take isolation further. A mount namespace gives a process its own view of the mount tree. PID, network, user, IPC, UTS and cgroup namespaces isolate other resources. Containers are built from namespaces plus cgroups and a layered filesystem image. They are not tiny virtual machines. They share the host kernel.</p>
+<p>Inspect namespaces on a running system:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsns
+ls<span class="w"> </span>-l<span class="w"> </span>/proc/<span class="nv">$$</span>/ns
+</code></pre></div>
+<p><code>lsns</code> lists namespaces and their processes. <code>/proc/$$/ns</code> shows the namespaces of your shell. Comparing namespace identifiers tells you whether two processes share the same view.</p>
+<h2 id="the-unix-philosophy">The Unix philosophy<a aria-label="Link to this section" class="g-anchor" href="#the-unix-philosophy">#</a></h2>
+<p>Linux inherits a design culture from Unix. The short version is:</p>
+<ul>
+<li>Write programs that do one thing well.</li>
+<li>Write programs that work together.</li>
+<li>Use text streams as a common interface.</li>
+<li>Prefer composition over a single huge program.</li>
+<li>Make behavior predictable and scriptable.</li>
+</ul>
+<p>This is why <code>grep</code>, <code>cut</code>, <code>sort</code>, <code>uniq</code>, <code>wc</code> and <code>sed</code> are small and why pipes matter. A pipeline is not a workaround. It is the intended way to solve many problems.</p>
+<p>A graphical tool can be friendlier for a one-off task, but a command-line pipeline is easier to repeat, review and automate. Learn both. Use the graphical tool when it saves time, then learn the command that does the same job.</p>
+<p>The philosophy has limits. Not every resource is text. Binary protocols, databases and performance data often need specialized tools. The point is to look for composable pieces before reaching for a giant monolith.</p>
+<h2 id="a-study-method-that-works">A study method that works<a aria-label="Link to this section" class="g-anchor" href="#a-study-method-that-works">#</a></h2>
+<p>Linux rewards deliberate practice. Reading commands is not enough. You need to run them, break things and recover.</p>
+<p>A practical loop:</p>
+<ol>
+<li><strong>Predict.</strong> Before running a command, say what you expect it to do.</li>
+<li><strong>Run.</strong> Execute it in a lab, not on a system you cannot rebuild.</li>
+<li><strong>Observe.</strong> Read the output, the exit status and the logs.</li>
+<li><strong>Explain.</strong> Write one sentence describing what happened.</li>
+<li><strong>Change one variable.</strong> Try a different option or path.</li>
+<li><strong>Break it.</strong> Cause a safe failure and read the error.</li>
+<li><strong>Recover.</strong> Undo the change and confirm the system is healthy.</li>
+<li><strong>Record.</strong> Keep a short note with the command, the result and the lesson.</li>
+</ol>
+<p>Take a virtual machine snapshot before risky work. Keep a lab notes file:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/linux-foundations/notes
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'# Linux notes'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/linux-foundations/notes/commands.md
+</code></pre></div>
+<p>When you learn a new command, record the manual section and one real example. Future you will thank present you.</p>
+<p>Avoid copying long commands you do not understand. Break them into pieces. Run the pieces separately. Read the manual for every option that changes state. That habit prevents most accidents.</p>
+<h2 id="lab-read-your-own-system">Lab: read your own system<a aria-label="Link to this section" class="g-anchor" href="#lab-read-your-own-system">#</a></h2>
+<p>Run these commands in a lab machine or a safe Linux environment. Write down what each one tells you.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">uname<span class="w"> </span>-a
+cat<span class="w"> </span>/etc/os-release
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$SHELL</span><span class="s2">"</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"</span><span class="nv">$PATH</span><span class="s2">"</span>
+id
+<span class="nb">pwd</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/
+df<span class="w"> </span>-h
+ps<span class="w"> </span>-ef<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+</code></pre></div>
+<p>Then answer:</p>
+<ul>
+<li>Which distribution and kernel version are you running?</li>
+<li>Which shell starts when you open a terminal?</li>
+<li>Which directories are on your <code>PATH</code>?</li>
+<li>Which filesystem is mounted at <code>/</code>?</li>
+<li>Which process is the parent of your shell?</li>
+</ul>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Assuming every Linux system uses the same package manager.</li>
+<li>Editing files in <code>/etc</code> without a backup or a plan.</li>
+<li>Running ordinary tasks as root because it is convenient.</li>
+<li>Treating <code>PATH</code> as a fixed list instead of a search order.</li>
+<li>Forgetting that a process identity determines what a command can access.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You are ready to continue when you can explain:</p>
+<ul>
+<li>The difference between the kernel, the shell and a distribution.</li>
+<li>Why <code>/proc</code> and <code>/sys</code> are special.</li>
+<li>What the filesystem hierarchy is for.</li>
+<li>How the shell finds and starts a command.</li>
+<li>Why users, groups and permissions are connected.</li>
+</ul>
+<p>The next part sets up a safe lab and teaches the command line itself.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 01 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../index.html#foundations"><span class="g-chapter-card-label">Handbook overview</span><strong>Back to Linux Foundations</strong></a><a class="g-chapter-card" href="../foundations/02-lab-setup-and-command-line.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 02</span><strong>Lab Setup and the Command Line</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#the-four-layers" data-toc-link>The four layers</a><a class="g-toc-link depth-2" href="#the-component-stack-in-more-detail" data-toc-link>The component stack in more detail</a><a class="g-toc-link depth-2" href="#linux-and-windows-a-practical-comparison" data-toc-link>Linux and Windows: a practical comparison</a><a class="g-toc-link depth-2" href="#distributions-are-packaging-choices" data-toc-link>Distributions are packaging choices</a><a class="g-toc-link depth-2" href="#everything-is-a-file-until-it-is-not" data-toc-link>Everything is a file, until it is not</a><a class="g-toc-link depth-2" href="#the-filesystem-hierarchy" data-toc-link>The filesystem hierarchy</a><a class="g-toc-link depth-2" href="#users-groups-and-ownership" data-toc-link>Users, groups and ownership</a><a class="g-toc-link depth-2" href="#how-a-command-runs" data-toc-link>How a command runs</a><a class="g-toc-link depth-2" href="#processes-are-the-unit-of-execution" data-toc-link>Processes are the unit of execution</a><a class="g-toc-link depth-2" href="#the-shell-is-a-programming-environment" data-toc-link>The shell is a programming environment</a><a class="g-toc-link depth-2" href="#kernel-space-user-space-and-system-calls" data-toc-link>Kernel space, user space and system calls</a><a class="g-toc-link depth-2" href="#shells-terminals-and-sessions" data-toc-link>Shells, terminals and sessions</a><a class="g-toc-link depth-2" href="#mounts-namespaces-and-containers" data-toc-link>Mounts, namespaces and containers</a><a class="g-toc-link depth-2" href="#the-unix-philosophy" data-toc-link>The Unix philosophy</a><a class="g-toc-link depth-2" href="#a-study-method-that-works" data-toc-link>A study method that works</a><a class="g-toc-link depth-2" href="#lab-read-your-own-system" data-toc-link>Lab: read your own system</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 01 / 18 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

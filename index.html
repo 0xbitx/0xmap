@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="A complete Linux for Hackers field guide with a 10 part Linux Foundations handbook and a 10 part Privilege Escalation handbook. Learn the shell, permissions, scripting, privilege escalation, persistence, networking, monitoring, forensics and workflow in the 0XMAP theme.">
+  <title>Linux for Hackers | 0XMAP Field Guide</title>
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="static/guide.css">
+</head>
+<body data-root="">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux for hackers</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="index.html#about">Guide</a>
+        <a href="index.html#foundations">Foundations</a>
+        <a href="index.html#privesc">Privilege escalation</a>
+        <a href="index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      
+      
+    </div>
+  </div>
+</header>
+  
+<div class="g-shell">
+<main class="g-main g-landing" id="main">
+  <section class="g-hero" aria-labelledby="hero-title">
+    <div class="g-hero-copy">
+      <p class="g-kicker">Linux field guide / foundations and privilege escalation</p>
+      <h1 id="hero-title">Learn the shell.<br><span>Read the system.</span></h1>
+      <p class="g-hero-sub">
+        A complete field guide to Linux for hackers. Start with the Linux
+        Foundations handbook for the fundamentals, then move through permissions,
+        scripting, services, persistence, monitoring and a repeatable security
+        workflow. The Privilege Escalation handbook adds ten focused parts on
+        sudo, SUID, capabilities, cron, PATH, environment abuse, services, NFS
+        and kernel exposure. Thirty chapters, modern attack-surface coverage and
+        every command are here.
+      </p>
+      <div class="g-actions">
+        <a class="g-btn primary lg" href="chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+        <a class="g-btn ghost lg" href="#foundations">Start with foundations</a>
+        <a class="g-btn ghost lg" href="#privesc">Open privilege escalation</a>
+        <a class="g-btn ghost lg" href="#chapters">Browse chapters</a>
+      </div>
+      <div class="g-chips" aria-label="Guide facts">
+        <span class="g-chip">30 chapters</span>
+        <span class="g-chip">10 part foundations</span>
+        <span class="g-chip">10 part privilege escalation</span>
+        <span class="g-chip">810 code examples</span>
+        <span class="g-chip">5 sections</span>
+        <span class="g-chip">2026 update</span>
+        <span class="g-chip">Offline search</span>
+      </div>
+    </div>
+    <aside class="g-manual" aria-label="Guide overview">
+      <div class="g-manual-head">
+        <span>Field manual</span>
+        <span>LFH / 30</span>
+      </div>
+      <div class="g-manual-body">
+        <p class="g-manual-kicker">Guide at a glance</p>
+        <dl class="g-manual-facts">
+          <div><dt>Chapters</dt><dd>30</dd></div>
+          <div><dt>Sections</dt><dd>5</dd></div>
+          <div><dt>Foundations</dt><dd>10 parts</dd></div>
+          <div><dt>Privilege escalation</dt><dd>10 parts</dd></div>
+          <div><dt>Code examples</dt><dd>810</dd></div>
+          <div><dt>Reading time</dt><dd>447 min</dd></div>
+        </dl>
+        <a class="g-btn primary" href="chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Open chapter 01
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+        <p class="g-manual-note">Static site. Search and copy work without a network.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="g-stats" aria-label="Guide statistics">
+    <div class="g-stat"><strong>30</strong><span>chapters</span></div>
+    <div class="g-stat"><strong>20</strong><span>handbook parts</span></div>
+    <div class="g-stat"><strong>810</strong><span>code examples</span></div>
+    <div class="g-stat"><strong>447</strong><span>reading minutes</span></div>
+  </section>
+
+  <section id="about" aria-labelledby="about-title">
+    <div class="g-section-head">
+      <div>
+        <p class="g-kicker">Inside the guide</p>
+        <h2 id="about-title">From first command to full workflow.</h2>
+        <p class="g-section-note">A structured path through the Linux skills that matter in offensive security, incident response and defensive operations.</p>
+      </div>
+    </div>
+    <div class="g-grid"><article class="g-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg><span>Shell first</span></h3><p>Start with navigation, permissions, accounts and the commands that make every later step possible.</p></article><article class="g-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v10"/><path d="M8 7h8"/><circle cx="12" cy="16" r="5"/></svg><span>Privilege paths</span></h3><p>Read ownership, SUID, capabilities, PATH, sudo and recent CVE classes as one connected escalation surface.</p></article><article class="g-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 17 8 4 8-4"/></svg><span>Persistence</span></h3><p>Compare cron, shell startup files, systemd units and generators, containers and eBPF.</p></article><article class="g-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12L16 12h5"/></svg><span>Packet level</span></h3><p>Capture live traffic with tcpdump and tshark, then turn filters and nftables rules into evidence.</p></article><article class="g-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2"/><circle cx="12" cy="12" r="3"/></svg><span>Host visibility</span></h3><p>Use auditd, osquery, eBPF runtime security and logs to see what changed and which process made the change.</p></article><article class="g-card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5V4Z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><span>Incident workflow</span></h3><p>Preserve memory and disk evidence, build a timeline, automate enumeration and finish with a repeatable process.</p></article></div>
+  </section>
+
+  <section id="foundations" aria-labelledby="foundations-title">
+    <div class="g-section-head">
+      <div>
+        <p class="g-kicker">Linux Foundations</p>
+        <h2 id="foundations-title">Start from zero. Build the base.</h2>
+        <p class="g-section-note">A 10 part companion handbook for readers who want the fundamentals alongside the main chapters. About 188 minutes. Read it in order or keep it as a reference.</p>
+      </div>
+      <a class="g-text-link" href="foundations/01-linux-mental-model.html">Start part 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+    </div>
+    <div class="g-foundation-grid"><a class="g-foundation-card" href="foundations/01-linux-mental-model.html"><span class="g-foundation-num">01</span><span class="g-foundation-body"><span class="g-foundation-title">Linux Mental Model</span><span class="g-foundation-summary">Build a working model of the kernel, shell, users and filesystem before you touch a command.</span><span class="g-foundation-meta"><span>17 min</span><span>18 sections</span><span>14 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/02-lab-setup-and-command-line.html"><span class="g-foundation-num">02</span><span class="g-foundation-body"><span class="g-foundation-title">Lab Setup and the Command Line</span><span class="g-foundation-summary">Choose a safe lab, read the prompt and learn how commands, help and exit codes fit together.</span><span class="g-foundation-meta"><span>18 min</span><span>17 sections</span><span>27 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/03-files-and-filesystem.html"><span class="g-foundation-num">03</span><span class="g-foundation-body"><span class="g-foundation-title">Files, Directories and the Filesystem</span><span class="g-foundation-summary">Navigate the hierarchy and create, copy, link, find and remove files without breaking the tree.</span><span class="g-foundation-meta"><span>17 min</span><span>18 sections</span><span>30 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/04-reading-searching-editing.html"><span class="g-foundation-num">04</span><span class="g-foundation-body"><span class="g-foundation-title">Reading, Searching and Editing Files</span><span class="g-foundation-summary">Read long files, search text, build pipelines and edit configuration with nano or vim.</span><span class="g-foundation-meta"><span>18 min</span><span>16 sections</span><span>31 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/05-users-permissions-sudo.html"><span class="g-foundation-num">05</span><span class="g-foundation-body"><span class="g-foundation-title">Users, Permissions and Sudo</span><span class="g-foundation-summary">Read UIDs, groups, modes, ACLs and sudo rules, then change access with intent.</span><span class="g-foundation-meta"><span>17 min</span><span>20 sections</span><span>30 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/06-processes-services-systemd.html"><span class="g-foundation-num">06</span><span class="g-foundation-body"><span class="g-foundation-title">Processes, Services and systemd</span><span class="g-foundation-summary">Inspect processes, manage jobs, send signals and control services with systemd.</span><span class="g-foundation-meta"><span>20 min</span><span>19 sections</span><span>36 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/07-packages-storage-boot.html"><span class="g-foundation-num">07</span><span class="g-foundation-body"><span class="g-foundation-title">Packages, Storage and Boot</span><span class="g-foundation-summary">Install software, inspect disks and mounts, and understand the boot sequence.</span><span class="g-foundation-meta"><span>25 min</span><span>19 sections</span><span>46 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/08-networking-essentials.html"><span class="g-foundation-num">08</span><span class="g-foundation-body"><span class="g-foundation-title">Networking from the Command Line</span><span class="g-foundation-summary">Read interfaces, routes, DNS, ports and SSH, then test connectivity from the shell.</span><span class="g-foundation-meta"><span>19 min</span><span>18 sections</span><span>37 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/09-bash-scripting-foundations.html"><span class="g-foundation-num">09</span><span class="g-foundation-body"><span class="g-foundation-title">Bash Scripting Foundations</span><span class="g-foundation-summary">Write readable scripts with quoting, tests, loops, functions and error handling.</span><span class="g-foundation-meta"><span>18 min</span><span>20 sections</span><span>36 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="foundations/10-logs-troubleshooting-security.html"><span class="g-foundation-num">10</span><span class="g-foundation-body"><span class="g-foundation-title">Logs, Troubleshooting and a Secure Baseline</span><span class="g-foundation-summary">Use logs and a repeatable method to diagnose failures and apply a secure baseline.</span><span class="g-foundation-meta"><span>19 min</span><span>20 sections</span><span>26 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a></div>
+  </section>
+
+  <section id="privesc" aria-labelledby="privesc-title">
+    <div class="g-section-head">
+      <div>
+        <p class="g-kicker">Privilege Escalation</p>
+        <h2 id="privesc-title">Ten surfaces between a shell and root.</h2>
+        <p class="g-section-note">A 10 part companion handbook for the escalation paths that follow enumeration. About 124 minutes. It covers sudo, SUID and SGID, capabilities, cron, writable system files, PATH, environment variables, kernel exposure, services and NFS.</p>
+      </div>
+      <a class="g-text-link" href="privesc/01-sudo-misconfigurations.html">Start part 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+    </div>
+    <div class="g-foundation-grid"><a class="g-foundation-card" href="privesc/01-sudo-misconfigurations.html"><span class="g-foundation-num">01</span><span class="g-foundation-body"><span class="g-foundation-title">Sudo Misconfigurations</span><span class="g-foundation-summary">Read sudo rules, spot shell escapes and understand the recent sudo vulnerability class.</span><span class="g-foundation-meta"><span>4 min</span><span>4 sections</span><span>2 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/02-suid-sgid-binaries.html"><span class="g-foundation-num">02</span><span class="g-foundation-body"><span class="g-foundation-title">SUID and SGID Binaries</span><span class="g-foundation-summary">Find privileged binaries, abuse GTFOBins entries and audit writable SUID files.</span><span class="g-foundation-meta"><span>7 min</span><span>6 sections</span><span>11 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/03-linux-capabilities.html"><span class="g-foundation-num">03</span><span class="g-foundation-body"><span class="g-foundation-title">Linux Capabilities</span><span class="g-foundation-summary">Map capability sets, dangerous grants and inheritance paths on files and processes.</span><span class="g-foundation-meta"><span>9 min</span><span>10 sections</span><span>21 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/04-cron-jobs.html"><span class="g-foundation-num">04</span><span class="g-foundation-body"><span class="g-foundation-title">Cron Jobs</span><span class="g-foundation-summary">Inspect system and user schedules, then test writable jobs and wildcard risks.</span><span class="g-foundation-meta"><span>12 min</span><span>7 sections</span><span>26 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/05-writable-system-files.html"><span class="g-foundation-num">05</span><span class="g-foundation-body"><span class="g-foundation-title">Writable System Files</span><span class="g-foundation-summary">Audit writable configuration, scripts and authentication files that root trusts.</span><span class="g-foundation-meta"><span>17 min</span><span>13 sections</span><span>38 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/06-path-hijacking.html"><span class="g-foundation-num">06</span><span class="g-foundation-body"><span class="g-foundation-title">PATH Hijacking</span><span class="g-foundation-summary">Trace command lookup order and test PATH assumptions in privileged jobs.</span><span class="g-foundation-meta"><span>17 min</span><span>8 sections</span><span>36 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/07-environment-variable-abuse.html"><span class="g-foundation-num">07</span><span class="g-foundation-body"><span class="g-foundation-title">Environment Variable Abuse</span><span class="g-foundation-summary">Review LD_PRELOAD, library paths, shell startup variables and interpreter search paths.</span><span class="g-foundation-meta"><span>19 min</span><span>18 sections</span><span>43 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/08-kernel-exploits.html"><span class="g-foundation-num">08</span><span class="g-foundation-body"><span class="g-foundation-title">Kernel Exploits</span><span class="g-foundation-summary">Compare historical kernel vulnerabilities, patch strategy and advisory verification.</span><span class="g-foundation-meta"><span>5 min</span><span>3 sections</span><span>0 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/09-service-misconfigurations.html"><span class="g-foundation-num">09</span><span class="g-foundation-body"><span class="g-foundation-title">Service Misconfigurations</span><span class="g-foundation-summary">Inspect unit files, writable binaries and unsafe service execution contexts.</span><span class="g-foundation-meta"><span>17 min</span><span>14 sections</span><span>38 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a><a class="g-foundation-card" href="privesc/10-nfs-misconfigurations.html"><span class="g-foundation-num">10</span><span class="g-foundation-body"><span class="g-foundation-title">NFS Misconfigurations</span><span class="g-foundation-summary">Enumerate exports and test root squash, writable shares and ownership mapping.</span><span class="g-foundation-meta"><span>17 min</span><span>8 sections</span><span>39 code blocks</span></span></span><span class="g-foundation-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a></div>
+  </section>
+
+  <section id="chapters" aria-labelledby="chapters-title">
+    <div class="g-section-head">
+      <div>
+        <p class="g-kicker">Chapters</p>
+        <h2 id="chapters-title">Thirty chapters. Five sections.</h2>
+        <p class="g-section-note">The complete guide. Read in order or jump to the surface you need.</p>
+      </div>
+      <a class="g-text-link" href="chapters/01-introduction-and-why-linux-matters-in-hacking.html">Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+    </div>
+    <section class="g-track" id="section-foundations"><div class="g-track-head"><span class="g-track-num">01</span><div><h3>Foundations</h3><p>Files, permissions, accounts and the shell.</p></div><span class="g-track-count">6 chapters</span></div><div class="g-chapter-grid"><a class="g-chapter-row" href="chapters/01-introduction-and-why-linux-matters-in-hacking.html"><span class="g-row-num">01</span><span class="g-row-main"><span class="g-row-title">Introduction and Why Linux Matters in Hacking</span><span class="g-row-summary">Set up the lab and learn why Linux sits at the center of offensive security.</span></span><span class="g-row-meta"><span>2 min</span></span></a><a class="g-chapter-row" href="chapters/02-basic-file-navigation-in-linux.html"><span class="g-row-num">02</span><span class="g-row-main"><span class="g-row-title">Basic File Navigation in Linux</span><span class="g-row-summary">Move through the filesystem and inspect files with the core navigation commands.</span></span><span class="g-row-meta"><span>2 min</span></span></a><a class="g-chapter-row" href="chapters/03-understanding-linux-file-permissions.html"><span class="g-row-num">03</span><span class="g-row-main"><span class="g-row-title">Understanding Linux File Permissions</span><span class="g-row-summary">Read permission bits, change modes and spot risky access on files and directories.</span></span><span class="g-row-meta"><span>3 min</span></span></a><a class="g-chapter-row" href="chapters/04-users-groups-and-privilege-escalation-basics.html"><span class="g-row-num">04</span><span class="g-row-main"><span class="g-row-title">Users, Groups, and Privilege Escalation Basics</span><span class="g-row-summary">Understand accounts, group membership and the first paths to higher privilege.</span></span><span class="g-row-meta"><span>3 min</span></span></a><a class="g-chapter-row" href="chapters/05-linux-package-managers-and-dependency-abuse.html"><span class="g-row-num">05</span><span class="g-row-main"><span class="g-row-title">Linux Package Managers and Dependency Abuse</span><span class="g-row-summary">Work with APT and turn package and dependency behavior into an attack surface.</span></span><span class="g-row-meta"><span>5 min</span></span></a><a class="g-chapter-row" href="chapters/06-introduction-to-bash-scripting.html"><span class="g-row-num">06</span><span class="g-row-main"><span class="g-row-title">Introduction to Bash Scripting</span><span class="g-row-summary">Build small Bash scripts and use variables, control flow and arguments with intent.</span></span><span class="g-row-meta"><span>2 min</span></span></a></div></section><section class="g-track" id="section-shell"><div class="g-track-head"><span class="g-track-num">02</span><div><h3>Shell and scheduling</h3><p>Arguments, environment, processes and scheduled execution.</p></div><span class="g-track-count">6 chapters</span></div><div class="g-chapter-grid"><a class="g-chapter-row" href="chapters/07-bash-variables-arguments-and-dynamic-scripting.html"><span class="g-row-num">07</span><span class="g-row-main"><span class="g-row-title">Bash Variables, Arguments and Dynamic Scripting</span><span class="g-row-summary">Pass data into scripts and shape commands at runtime with variables and arguments.</span></span><span class="g-row-meta"><span>3 min</span></span></a><a class="g-chapter-row" href="chapters/08-environment-variables-and-bashrc-abuse.html"><span class="g-row-num">08</span><span class="g-row-main"><span class="g-row-title">Environment Variables and .bashrc Abuse</span><span class="g-row-summary">See how shell startup files and environment variables become persistence and evasion.</span></span><span class="g-row-meta"><span>3 min</span></span></a><a class="g-chapter-row" href="chapters/09-processes-services-and-enumeration.html"><span class="g-row-num">09</span><span class="g-row-main"><span class="g-row-title">Processes, Services and Enumeration</span><span class="g-row-summary">Enumerate running processes, open services and the signals behind them.</span></span><span class="g-row-meta"><span>4 min</span></span></a><a class="g-chapter-row" href="chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html"><span class="g-row-num">10</span><span class="g-row-main"><span class="g-row-title">Cron Jobs: Scheduled Tasks and Exploitation</span><span class="g-row-summary">Read cron schedules, audit writable jobs and understand scheduled execution.</span></span><span class="g-row-meta"><span>4 min</span></span></a><a class="g-chapter-row" href="chapters/11-ssh-access-and-abuse.html"><span class="g-row-num">11</span><span class="g-row-main"><span class="g-row-title">SSH: Secure Shell Access and Abuse</span><span class="g-row-summary">Inspect SSH keys, configs and authorization files, then review the defensive controls.</span></span><span class="g-row-meta"><span>6 min</span></span></a><a class="g-chapter-row" href="chapters/12-file-permissions-and-privilege-escalation-basics.html"><span class="g-row-num">12</span><span class="g-row-main"><span class="g-row-title">File Permissions and Privilege Escalation Basics</span><span class="g-row-summary">Chain permission mistakes, SUID bits and weak ownership into privilege escalation.</span></span><span class="g-row-meta"><span>4 min</span></span></a></div></section><section class="g-track" id="section-access"><div class="g-track-head"><span class="g-track-num">03</span><div><h3>Access and network</h3><p>PATH, logs, interfaces, firewalls and remote access.</p></div><span class="g-track-count">6 chapters</span></div><div class="g-chapter-grid"><a class="g-chapter-row" href="chapters/13-environment-variables-and-path-hijacking.html"><span class="g-row-num">13</span><span class="g-row-main"><span class="g-row-title">Environment Variables and PATH Hijacking</span><span class="g-row-summary">Trace PATH resolution and learn how a writable search path becomes execution.</span></span><span class="g-row-meta"><span>2 min</span></span></a><a class="g-chapter-row" href="chapters/14-logs-and-system-auditing.html"><span class="g-row-num">14</span><span class="g-row-main"><span class="g-row-title">Logs and System Auditing</span><span class="g-row-summary">Find the logs that record access, authentication and system change.</span></span><span class="g-row-meta"><span>3 min</span></span></a><a class="g-chapter-row" href="chapters/15-networking-fundamentals-for-hackers.html"><span class="g-row-num">15</span><span class="g-row-main"><span class="g-row-title">Networking Fundamentals for Hackers</span><span class="g-row-summary">Read interfaces, routes, sockets and live connections from the command line.</span></span><span class="g-row-meta"><span>2 min</span></span></a><a class="g-chapter-row" href="chapters/16-firewalls-and-packet-filtering.html"><span class="g-row-num">16</span><span class="g-row-main"><span class="g-row-title">Firewalls and Packet Filtering (iptables and ufw)</span><span class="g-row-summary">Inspect iptables and UFW rules and think in terms of allowed and denied paths.</span></span><span class="g-row-meta"><span>6 min</span></span></a><a class="g-chapter-row" href="chapters/17-ssh-and-tunneling.html"><span class="g-row-num">17</span><span class="g-row-main"><span class="g-row-title">Secure Shell (SSH) and Tunneling Tricks</span><span class="g-row-summary">Harden SSH and build local, remote and dynamic tunnels for authorized testing.</span></span><span class="g-row-meta"><span>4 min</span></span></a><a class="g-chapter-row" href="chapters/18-linux-kernel-and-exploit-basics.html"><span class="g-row-num">18</span><span class="g-row-main"><span class="g-row-title">Linux Kernel and Exploit Basics</span><span class="g-row-summary">Check kernel exposure, evaluate exploit risk and treat kernel exploits with care.</span></span><span class="g-row-meta"><span>5 min</span></span></a></div></section><section class="g-track" id="section-persistence"><div class="g-track-head"><span class="g-track-num">04</span><div><h3>Persistence and isolation</h3><p>Persistence, daemons, capabilities, containers and monitoring.</p></div><span class="g-track-count">6 chapters</span></div><div class="g-chapter-grid"><a class="g-chapter-row" href="chapters/19-linux-persistence-techniques.html"><span class="g-row-num">19</span><span class="g-row-main"><span class="g-row-title">Linux Persistence Techniques</span><span class="g-row-summary">Compare common persistence mechanisms and the evidence each leaves behind.</span></span><span class="g-row-meta"><span>3 min</span></span></a><a class="g-chapter-row" href="chapters/20-linux-services-and-daemon-exploitation.html"><span class="g-row-num">20</span><span class="g-row-main"><span class="g-row-title">Linux Services and Daemon Exploitation</span><span class="g-row-summary">Enumerate daemons, inspect service definitions and review exposed attack surfaces.</span></span><span class="g-row-meta"><span>2 min</span></span></a><a class="g-chapter-row" href="chapters/21-linux-capabilities-and-exploitation.html"><span class="g-row-num">21</span><span class="g-row-main"><span class="g-row-title">Linux Capabilities and Exploitation (Beyond SUID)</span><span class="g-row-summary">Read capability sets, compare them with SUID and identify excessive grants.</span></span><span class="g-row-meta"><span>6 min</span></span></a><a class="g-chapter-row" href="chapters/22-advanced-persistence.html"><span class="g-row-num">22</span><span class="g-row-main"><span class="g-row-title">Advanced Persistence: systemd Timers, User Services and Kernel Modules</span><span class="g-row-summary">Inspect systemd timers, user services and kernel modules as persistence surfaces.</span></span><span class="g-row-meta"><span>7 min</span></span></a><a class="g-chapter-row" href="chapters/23-containers-and-docker-exploitation.html"><span class="g-row-num">23</span><span class="g-row-main"><span class="g-row-title">Containers and Docker Exploitation</span><span class="g-row-summary">Enumerate containers, review mounts and capabilities, and understand escape paths.</span></span><span class="g-row-meta"><span>7 min</span></span></a><a class="g-chapter-row" href="chapters/24-host-based-monitoring-auditd-and-osquery.html"><span class="g-row-num">24</span><span class="g-row-main"><span class="g-row-title">Host-based Monitoring: auditd and osquery</span><span class="g-row-summary">Turn audit rules and osquery into a practical host monitoring loop.</span></span><span class="g-row-meta"><span>6 min</span></span></a></div></section><section class="g-track" id="section-defense"><div class="g-track-head"><span class="g-track-num">05</span><div><h3>Defense and workflow</h3><p>Forensics, automation, hardening, sniffing and memory.</p></div><span class="g-track-count">6 chapters</span></div><div class="g-chapter-grid"><a class="g-chapter-row" href="chapters/25-linux-forensics-and-incident-response.html"><span class="g-row-num">25</span><span class="g-row-main"><span class="g-row-title">Linux Forensics and Incident Response Basics</span><span class="g-row-summary">Collect volatile data, preserve evidence and build a defensible timeline.</span></span><span class="g-row-meta"><span>5 min</span></span></a><a class="g-chapter-row" href="chapters/26-automating-linux-privilege-escalation-checks.html"><span class="g-row-num">26</span><span class="g-row-main"><span class="g-row-title">Automating Linux Privilege Escalation Checks</span><span class="g-row-summary">Use LinPEAS, LSE and custom checks to reproduce a repeatable enumeration pass.</span></span><span class="g-row-meta"><span>8 min</span></span></a><a class="g-chapter-row" href="chapters/27-linux-hardening-and-monitoring.html"><span class="g-row-num">27</span><span class="g-row-main"><span class="g-row-title">Linux Hardening and Monitoring</span><span class="g-row-summary">Reduce attack surface, capture audit events and keep a live record of activity.</span></span><span class="g-row-meta"><span>10 min</span></span></a><a class="g-chapter-row" href="chapters/28-network-sniffing-and-packet-capture.html"><span class="g-row-num">28</span><span class="g-row-main"><span class="g-row-title">Linux Network Sniffing and Packet Capture</span><span class="g-row-summary">Use tcpdump and tshark to capture, filter and read live traffic.</span></span><span class="g-row-meta"><span>7 min</span></span></a><a class="g-chapter-row" href="chapters/29-linux-memory-analysis-and-credential-hunting.html"><span class="g-row-num">29</span><span class="g-row-main"><span class="g-row-title">Linux Memory Analysis and Credential Hunting</span><span class="g-row-summary">Inspect procfs and live processes to find credentials and runtime evidence.</span></span><span class="g-row-meta"><span>6 min</span></span></a><a class="g-chapter-row" href="chapters/30-building-your-linux-hacking-workflow.html"><span class="g-row-num">30</span><span class="g-row-main"><span class="g-row-title">Building Your Linux Hacking Workflow</span><span class="g-row-summary">Assemble recon, automation, logging and reporting into one repeatable workflow.</span></span><span class="g-row-meta"><span>5 min</span></span></a></div></section>
+  </section>
+
+  <section class="g-ethics" aria-labelledby="ethics-title">
+    <div class="g-ethics-mark" aria-hidden="true">!</div>
+    <div>
+      <p class="g-kicker">Rules of engagement</p>
+      <h2 id="ethics-title">Build skill without causing harm.</h2>
+      <p>Every technique here belongs in a lab, a CTF, or a system you own and have written permission to test. This guide is a study resource, not a license to target someone else's machine. Read the logs, keep the notes and stay inside scope.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="g-site-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#foundations">Foundations</a>
+    <a href="index.html#privesc">Privilege escalation</a>
+    <a href="index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+</div>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="static/guide-data.js"></script>
+  <script src="static/guide.js" defer></script>
+</body>
+</html>

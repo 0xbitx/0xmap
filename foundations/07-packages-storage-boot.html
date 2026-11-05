@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 7 of 10. Install software, inspect disks and mounts, and understand the boot sequence.">
+  <title>Part 07: Packages, Storage and Boot | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html" aria-current="page"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 07</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 07</p>
+        <h1>Packages, Storage and Boot</h1>
+        <p class="g-deck">Install software, inspect disks and mounts, and understand the boot sequence.</p>
+        <div class="g-chapter-meta">
+          <span>25 min read</span>
+          <span>19 sections</span>
+          <span>46 code blocks</span>
+          <span>Part 07 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>19 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#package-managers" data-toc-link>Package managers</a><a class="g-toc-link depth-2" href="#debian-and-ubuntu-workflow" data-toc-link>Debian and Ubuntu workflow</a><a class="g-toc-link depth-2" href="#repository-trust" data-toc-link>Repository trust</a><a class="g-toc-link depth-2" href="#inspect-disks-and-space" data-toc-link>Inspect disks and space</a><a class="g-toc-link depth-2" href="#mount-points-and-fstab" data-toc-link>Mount points and fstab</a><a class="g-toc-link depth-2" href="#swap" data-toc-link>Swap</a><a class="g-toc-link depth-2" href="#the-boot-sequence" data-toc-link>The boot sequence</a><a class="g-toc-link depth-2" href="#boot-problems" data-toc-link>Boot problems</a><a class="g-toc-link depth-2" href="#beyond-apt-other-package-ecosystems" data-toc-link>Beyond apt: other package ecosystems</a><a class="g-toc-link depth-2" href="#build-software-from-source" data-toc-link>Build software from source</a><a class="g-toc-link depth-2" href="#checksums-and-signatures" data-toc-link>Checksums and signatures</a><a class="g-toc-link depth-2" href="#partitions-filesystems-and-lvm" data-toc-link>Partitions, filesystems and LVM</a><a class="g-toc-link depth-3" href="#walk-through-a-new-disk" data-toc-link>Walk through a new disk</a><a class="g-toc-link depth-2" href="#disk-health-and-i-o-errors" data-toc-link>Disk health and I/O errors</a><a class="g-toc-link depth-2" href="#bootloader-initramfs-and-recovery" data-toc-link>Bootloader, initramfs and recovery</a><a class="g-toc-link depth-2" href="#containers-and-isolated-services" data-toc-link>Containers and isolated services</a><a class="g-toc-link depth-2" href="#lab-inspect-a-safe-system" data-toc-link>Lab: inspect a safe system</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>A Linux system is more than a kernel and a shell. It has software packages, filesystems, mount points and a boot sequence. This part gives you the working knowledge to install tools, inspect disks and understand what happens between pressing the power button and reaching a login prompt.</p>
+<h2 id="package-managers">Package managers<a aria-label="Link to this section" class="g-anchor" href="#package-managers">#</a></h2>
+<p>A package manager tracks installed software, resolves dependencies, verifies signatures and records file ownership. The main families are:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Family</th>
+<th>Low-level tool</th>
+<th>High-level tool</th>
+<th>Query examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Debian</td>
+<td><code>dpkg</code></td>
+<td><code>apt</code></td>
+<td><code>apt list --installed</code>, <code>dpkg -L package</code></td>
+</tr>
+<tr>
+<td>Red Hat</td>
+<td><code>rpm</code></td>
+<td><code>dnf</code></td>
+<td><code>dnf list installed</code>, <code>rpm -ql package</code></td>
+</tr>
+<tr>
+<td>Arch</td>
+<td><code>pacman</code></td>
+<td><code>pacman</code></td>
+<td><code>pacman -Q</code>, <code>pacman -Ql package</code></td>
+</tr>
+<tr>
+<td>SUSE</td>
+<td><code>rpm</code></td>
+<td><code>zypper</code></td>
+<td><code>zypper packages --installed-only</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The high-level tool talks to repositories, downloads packages and resolves dependencies. The low-level tool works with local package files and the package database.</p>
+<h2 id="debian-and-ubuntu-workflow">Debian and Ubuntu workflow<a aria-label="Link to this section" class="g-anchor" href="#debian-and-ubuntu-workflow">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>apt<span class="w"> </span>update
+apt<span class="w"> </span>search<span class="w"> </span>nginx
+apt<span class="w"> </span>show<span class="w"> </span>nginx
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>nginx
+sudo<span class="w"> </span>apt<span class="w"> </span>upgrade
+sudo<span class="w"> </span>apt<span class="w"> </span>remove<span class="w"> </span>nginx
+sudo<span class="w"> </span>apt<span class="w"> </span>purge<span class="w"> </span>nginx
+sudo<span class="w"> </span>apt<span class="w"> </span>autoremove
+</code></pre></div>
+<p><code>apt update</code> refreshes the repository index. It does not upgrade installed packages. <code>apt upgrade</code> installs available updates. <code>apt full-upgrade</code> can also remove or add packages to resolve dependencies, so read the plan before confirming.</p>
+<p>Useful package queries:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">dpkg<span class="w"> </span>-l<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+dpkg<span class="w"> </span>-L<span class="w"> </span>nginx
+dpkg<span class="w"> </span>-S<span class="w"> </span>/usr/sbin/nginx
+apt<span class="w"> </span>list<span class="w"> </span>--upgradable
+</code></pre></div>
+<p><code>dpkg -L</code> lists files owned by an installed package. <code>dpkg -S</code> finds which package owns a path. That is useful when you are deciding whether a file is safe to change.</p>
+<p>Ubuntu can install security updates automatically. <code>unattended-upgrades</code> is useful on servers, but it does not remove the need to read logs, test services and reboot when a kernel update requires it.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>unattended-upgrades
+sudo<span class="w"> </span>dpkg-reconfigure<span class="w"> </span>unattended-upgrades
+systemctl<span class="w"> </span>status<span class="w"> </span>unattended-upgrades
+</code></pre></div>
+<p>Read the configuration before enabling it:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/apt/apt.conf.d/50unattended-upgrades
+</code></pre></div>
+<h2 id="repository-trust">Repository trust<a aria-label="Link to this section" class="g-anchor" href="#repository-trust">#</a></h2>
+<p>A package repository is configured in files under <code>/etc/apt/sources.list</code> and <code>/etc/apt/sources.list.d</code>. Each repository should have a signing key. Do not add an arbitrary repository or key just because a tutorial says so. A trusted repository can run maintainer scripts as root during installation.</p>
+<p>Before adding a third-party repository:</p>
+<ol>
+<li>Confirm the publisher and the exact URL.</li>
+<li>Check how the key is fetched and stored.</li>
+<li>Read the package's maintainer scripts if the source is unfamiliar.</li>
+<li>Prefer distribution packages when they are sufficient.</li>
+<li>Remove the repository when you no longer need it.</li>
+</ol>
+<h2 id="inspect-disks-and-space">Inspect disks and space<a aria-label="Link to this section" class="g-anchor" href="#inspect-disks-and-space">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsblk
+lsblk<span class="w"> </span>-f
+df<span class="w"> </span>-h
+df<span class="w"> </span>-i
+du<span class="w"> </span>-sh<span class="w"> </span>/var/log
+du<span class="w"> </span>-h<span class="w"> </span>--max-depth<span class="o">=</span><span class="m">1</span><span class="w"> </span>/var<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-h
+</code></pre></div>
+<p><code>lsblk</code> shows block devices and their tree. <code>df -h</code> shows filesystem usage. <code>df -i</code> shows inode usage; a filesystem can be out of inodes even when it has free space. <code>du</code> measures directory usage.</p>
+<p>A full disk is one of the most common production failures. Check both space and inodes, then find the largest directories. Do not delete random files in <code>/var</code> before you know what owns them.</p>
+<h2 id="mount-points-and-fstab">Mount points and fstab<a aria-label="Link to this section" class="g-anchor" href="#mount-points-and-fstab">#</a></h2>
+<p>A filesystem must be mounted before you can access its files. The kernel mounts the root filesystem during boot, then systemd or the init scripts mount the rest according to <code>/etc/fstab</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">findmnt
+findmnt<span class="w"> </span>/
+mount
+cat<span class="w"> </span>/etc/fstab
+</code></pre></div>
+<p>A typical fstab entry uses a UUID:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">UUID=1234-abcd /data ext4 defaults,noatime 0 2
+</code></pre></div>
+<p>The fields are: device, mount point, filesystem type, options, dump flag and fsck order. Use <code>blkid</code> to find UUIDs. Test fstab changes with <code>mount -a</code> before rebooting. A bad fstab entry can prevent the system from booting cleanly.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>blkid
+sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/data
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/sdb1<span class="w"> </span>/data
+sudo<span class="w"> </span>umount<span class="w"> </span>/data
+</code></pre></div>
+<p>Always unmount a filesystem before removing the device. <code>umount</code> fails if files are open; use <code>lsof</code> or <code>fuser</code> to find the users, then close them properly.</p>
+<p>If a filesystem was mounted read-only after an error, remount it read-write only after checking the logs and the disk:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span>remount,rw<span class="w"> </span>/data
+</code></pre></div>
+<p>A remount does not repair the underlying problem. It only changes the mount flags.</p>
+<h2 id="swap">Swap<a aria-label="Link to this section" class="g-anchor" href="#swap">#</a></h2>
+<p>Swap extends memory pressure handling by moving inactive pages to disk. It is not a replacement for enough RAM.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">swapon<span class="w"> </span>--show
+free<span class="w"> </span>-h
+cat<span class="w"> </span>/proc/swaps
+</code></pre></div>
+<p>Swap can be a partition or a swap file. A swap file is easy to create on an existing filesystem:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>fallocate<span class="w"> </span>-l<span class="w"> </span>2G<span class="w"> </span>/swapfile
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>/swapfile
+sudo<span class="w"> </span>mkswap<span class="w"> </span>/swapfile
+sudo<span class="w"> </span>swapon<span class="w"> </span>/swapfile
+swapon<span class="w"> </span>--show
+free<span class="w"> </span>-h
+</code></pre></div>
+<p><code>fallocate</code> reserves the space, <code>chmod 600</code> prevents other users from reading the file, <code>mkswap</code> writes the swap signature, and <code>swapon</code> activates it. If <code>fallocate</code> is not supported on the filesystem, use <code>dd if=/dev/zero of=/swapfile bs=1M count=2048 status=progress</code>.</p>
+<p>Make the swap file persistent by adding a line to <code>/etc/fstab</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">/swapfile none swap sw 0 0
+</code></pre></div>
+<p>Test the entry before rebooting:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>swapoff<span class="w"> </span>/swapfile
+sudo<span class="w"> </span>swapon<span class="w"> </span>-a
+swapon<span class="w"> </span>--show
+</code></pre></div>
+<p><code>swapon -a</code> activates all swap entries in <code>/etc/fstab</code>. To remove the file, disable it first:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>swapoff<span class="w"> </span>/swapfile
+sudo<span class="w"> </span>rm<span class="w"> </span>/swapfile
+</code></pre></div>
+<p>Then remove the <code>/etc/fstab</code> line. Never delete an active swap file.</p>
+<p>Check and tune swappiness:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sysctl<span class="w"> </span>vm.swappiness
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>vm.swappiness<span class="o">=</span><span class="m">10</span>
+</code></pre></div>
+<p><code>vm.swappiness</code> influences how aggressively the kernel moves anonymous pages to swap. Lower values favor keeping application memory in RAM. The right value depends on the workload. Make persistent changes in <code>/etc/sysctl.d/</code>, not only with <code>-w</code>. A swap partition uses <code>mkswap /dev/sdX</code> and <code>swapon /dev/sdX</code> instead of a file.</p>
+<h2 id="the-boot-sequence">The boot sequence<a aria-label="Link to this section" class="g-anchor" href="#the-boot-sequence">#</a></h2>
+<p>A simplified Linux boot sequence looks like this:</p>
+<ol>
+<li>Firmware initializes hardware and selects a boot device.</li>
+<li>The bootloader, often GRUB, loads the kernel and initramfs.</li>
+<li>The kernel initializes drivers and mounts the initramfs.</li>
+<li>The initramfs loads the modules needed to mount the real root filesystem.</li>
+<li>The kernel starts PID 1, usually systemd.</li>
+<li>systemd starts units until the default target is reached.</li>
+<li>A login manager or getty presents a login prompt.</li>
+</ol>
+<p>Useful inspection commands:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>get-default
+systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>target
+journalctl<span class="w"> </span>-b<span class="w"> </span>--no-pager<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span>
+journalctl<span class="w"> </span>-b<span class="w"> </span>-p<span class="w"> </span>err<span class="w"> </span>--no-pager
+dmesg<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span>
+</code></pre></div>
+<p><code>journalctl -b</code> shows the current boot. <code>-p err</code> filters to error priority and above. <code>dmesg</code> shows the kernel ring buffer, which is useful for hardware and driver messages.</p>
+<h2 id="boot-problems">Boot problems<a aria-label="Link to this section" class="g-anchor" href="#boot-problems">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Symptom</th>
+<th>First checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firmware does not find a boot device</td>
+<td>Boot order, disk detection, bootloader entry</td>
+</tr>
+<tr>
+<td>Kernel starts but root is not found</td>
+<td>Kernel command line, initramfs, disk UUID</td>
+</tr>
+<tr>
+<td>System reaches emergency mode</td>
+<td>fstab, failed mounts, filesystem errors</td>
+</tr>
+<tr>
+<td>Login prompt never appears</td>
+<td>Failed units, display manager, getty</td>
+</tr>
+<tr>
+<td>System boots slowly</td>
+<td><code>systemd-analyze</code>, <code>systemd-analyze blame</code></td>
+</tr>
+<tr>
+<td>Service fails at boot</td>
+<td><code>systemctl status</code>, <code>journalctl -u</code></td>
+</tr>
+</tbody>
+</table></div>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemd-analyze
+systemd-analyze<span class="w"> </span>blame
+systemctl<span class="w"> </span>--failed
+</code></pre></div>
+<p>Do not guess at boot repairs on a machine you cannot access physically. Know how to use a recovery shell or a live environment first.</p>
+<h2 id="beyond-apt-other-package-ecosystems">Beyond apt: other package ecosystems<a aria-label="Link to this section" class="g-anchor" href="#beyond-apt-other-package-ecosystems">#</a></h2>
+<p>Debian and Ubuntu are common in labs, but you will meet other systems. The concepts stay the same: repositories, metadata, dependencies, signatures and a local database.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>System</th>
+<th>Install</th>
+<th>Search</th>
+<th>Remove</th>
+<th>List files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Debian, Ubuntu</td>
+<td><code>apt install pkg</code></td>
+<td><code>apt search pkg</code></td>
+<td><code>apt remove pkg</code></td>
+<td><code>dpkg -L pkg</code></td>
+</tr>
+<tr>
+<td>Fedora, RHEL</td>
+<td><code>dnf install pkg</code></td>
+<td><code>dnf search pkg</code></td>
+<td><code>dnf remove pkg</code></td>
+<td><code>rpm -ql pkg</code></td>
+</tr>
+<tr>
+<td>Arch</td>
+<td><code>pacman -S pkg</code></td>
+<td><code>pacman -Ss pkg</code></td>
+<td><code>pacman -R pkg</code></td>
+<td><code>pacman -Ql pkg</code></td>
+</tr>
+<tr>
+<td>openSUSE</td>
+<td><code>zypper install pkg</code></td>
+<td><code>zypper search pkg</code></td>
+<td><code>zypper remove pkg</code></td>
+<td><code>rpm -ql pkg</code></td>
+</tr>
+<tr>
+<td>Alpine</td>
+<td><code>apk add pkg</code></td>
+<td><code>apk search pkg</code></td>
+<td><code>apk del pkg</code></td>
+<td><code>apk info -L pkg</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Refresh, upgrade and clean with the native tools:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>dnf<span class="w"> </span>check-update
+sudo<span class="w"> </span>dnf<span class="w"> </span>upgrade
+sudo<span class="w"> </span>dnf<span class="w"> </span>autoremove
+sudo<span class="w"> </span>pacman<span class="w"> </span>-Syu
+sudo<span class="w"> </span>pacman<span class="w"> </span>-Rns<span class="w"> </span>package
+sudo<span class="w"> </span>zypper<span class="w"> </span>refresh
+sudo<span class="w"> </span>zypper<span class="w"> </span>update
+sudo<span class="w"> </span>zypper<span class="w"> </span>remove<span class="w"> </span>package
+</code></pre></div>
+<p><code>dnf upgrade</code> and <code>pacman -Syu</code> refresh metadata and install updates in one step. <code>apt</code> separates <code>update</code> (refresh metadata) from <code>upgrade</code> (install). Read the transaction summary before confirming. A partial upgrade on a rolling distribution can leave the system in a mixed state.</p>
+<p>Universal package formats sit beside the distribution manager:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">snap<span class="w"> </span>list
+snap<span class="w"> </span>find<span class="w"> </span>firefox
+sudo<span class="w"> </span>snap<span class="w"> </span>install<span class="w"> </span>firefox
+flatpak<span class="w"> </span>list
+flatpak<span class="w"> </span>search<span class="w"> </span>org.example.App
+flatpak<span class="w"> </span>install<span class="w"> </span>flathub<span class="w"> </span>org.example.App
+</code></pre></div>
+<p>Snap and Flatpak packages bundle their dependencies and run with their own sandbox rules. They solve some compatibility problems and create new ones: larger downloads, duplicate libraries, different update paths and separate permission models.</p>
+<p>AppImage is a single executable file. It does not install system-wide. Treat an AppImage like any other downloaded binary: verify its source and checksum before running it.</p>
+<p>Language-specific package managers such as <code>pip</code>, <code>npm</code>, <code>gem</code> and <code>cargo</code> are useful for development. They are not a replacement for system packages when the software provides a system service. Mixing them can create duplicate versions and files that the system package manager does not track.</p>
+<h2 id="build-software-from-source">Build software from source<a aria-label="Link to this section" class="g-anchor" href="#build-software-from-source">#</a></h2>
+<p>Sometimes a package is not available, or you need a specific version. Building from source gives control but shifts responsibility for updates, dependencies and security patches to you.</p>
+<p>A typical autotools build looks like this:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tar<span class="w"> </span>-xJf<span class="w"> </span>project-1.2.3.tar.xz
+<span class="nb">cd</span><span class="w"> </span>project-1.2.3
+./configure<span class="w"> </span>--prefix<span class="o">=</span>/usr/local
+make
+sudo<span class="w"> </span>make<span class="w"> </span>install
+</code></pre></div>
+<p>Read the project's build instructions first. <code>./configure --help</code> lists options. <code>make -j"$(nproc)"</code> builds in parallel. <code>make install</code> copies files into the prefix.</p>
+<p>A safer staging step is:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">make<span class="w"> </span><span class="nv">DESTDIR</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/package"</span><span class="w"> </span>install
+find<span class="w"> </span>package<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+</code></pre></div>
+<p>This collects the installed files in a temporary tree so you can inspect them before copying to the live system. Packaging tools such as <code>checkinstall</code> can turn the result into a distribution package, but they are not a substitute for a proper package recipe.</p>
+<p>Record the version, source URL, checksum and build options. Future updates depend on that record.</p>
+<h2 id="checksums-and-signatures">Checksums and signatures<a aria-label="Link to this section" class="g-anchor" href="#checksums-and-signatures">#</a></h2>
+<p>A checksum detects accidental corruption and simple tampering. A signature verifies who published a file, assuming you trust the public key.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sha256sum<span class="w"> </span>project-1.2.3.tar.xz
+sha256sum<span class="w"> </span>-c<span class="w"> </span>project-1.2.3.tar.xz.sha256
+gpg<span class="w"> </span>--verify<span class="w"> </span>project-1.2.3.tar.xz.sig<span class="w"> </span>project-1.2.3.tar.xz
+</code></pre></div>
+<p>If the checksum does not match, stop. Do not try to fix the file. Download it again from the official source and compare the published checksum through a second channel.</p>
+<p>GPG key handling matters:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">gpg<span class="w"> </span>--list-keys
+gpg<span class="w"> </span>--import<span class="w"> </span>publisher.asc
+gpg<span class="w"> </span>--fingerprint<span class="w"> </span>publisher@example.org
+</code></pre></div>
+<p>Check the fingerprint against an independent source. A key downloaded from the same page as the file does not prove much if that page was compromised. Key trust is a social and operational problem, not only a command-line one.</p>
+<p>Debian and Ubuntu package managers verify repository signatures automatically. Do not disable signature checks to make an installation proceed. Fix the repository configuration or choose a different source.</p>
+<h2 id="partitions-filesystems-and-lvm">Partitions, filesystems and LVM<a aria-label="Link to this section" class="g-anchor" href="#partitions-filesystems-and-lvm">#</a></h2>
+<p>A disk can be divided into partitions. A partition can hold a filesystem, swap, LVM physical volume or another structure.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsblk
+sudo<span class="w"> </span>fdisk<span class="w"> </span>-l
+sudo<span class="w"> </span>parted<span class="w"> </span>-l
+sudo<span class="w"> </span>blkid
+</code></pre></div>
+<p><code>lsblk</code> shows the device tree. <code>fdisk -l</code> and <code>parted -l</code> list partition tables. <code>blkid</code> shows UUIDs, labels and filesystem types.</p>
+<p>Create a filesystem only on the correct device:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>mkfs.ext4<span class="w"> </span>/dev/sdb1
+sudo<span class="w"> </span>mkfs.xfs<span class="w"> </span>/dev/sdc1
+</code></pre></div>
+<p>This destroys existing data. Confirm the device path twice. Disk names can change when hardware is added or removed. UUIDs are more stable in <code>/etc/fstab</code>.</p>
+<h3 id="walk-through-a-new-disk">Walk through a new disk<a aria-label="Link to this section" class="g-anchor" href="#walk-through-a-new-disk">#</a></h3>
+<p>The following sequence is an example for a new, empty disk. Confirm the device name with <code>lsblk</code> before every step. On a lab machine, <code>/dev/sdb</code> might be the disk you intend to use, or it might be a USB drive with data you need.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsblk
+sudo<span class="w"> </span>fdisk<span class="w"> </span>-l<span class="w"> </span>/dev/sdb
+sudo<span class="w"> </span>fdisk<span class="w"> </span>/dev/sdb
+</code></pre></div>
+<p>Inside <code>fdisk</code>, the usual sequence for one Linux partition on a DOS label is:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">n       create a new partition
+p       choose a primary partition
+1       partition number
+Enter   accept the default first sector
+Enter   accept the default last sector
+w       write the table and exit
+</code></pre></div>
+<p><code>q</code> quits without writing. <code>d</code> deletes a partition. <code>p</code> prints the table. Read the prompts instead of typing from memory. After writing:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>partprobe<span class="w"> </span>/dev/sdb
+lsblk<span class="w"> </span>-f<span class="w"> </span>/dev/sdb
+sudo<span class="w"> </span>mkfs.ext4<span class="w"> </span>/dev/sdb1
+sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/data
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/sdb1<span class="w"> </span>/data
+df<span class="w"> </span>-h<span class="w"> </span>/data
+</code></pre></div>
+<p>Make the mount persistent with the filesystem UUID, not the device name:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>blkid<span class="w"> </span>/dev/sdb1
+sudoedit<span class="w"> </span>/etc/fstab
+</code></pre></div>
+<p>Add a line such as:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx /data ext4 defaults,nofail 0 2
+</code></pre></div>
+<p>Then test:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>umount<span class="w"> </span>/data
+sudo<span class="w"> </span>mount<span class="w"> </span>-a
+findmnt<span class="w"> </span>/data
+</code></pre></div>
+<p><code>nofail</code> lets the system boot if the disk is missing. That is useful for removable data disks and dangerous for a disk that a required service needs. Use <code>defaults</code> only after you understand the mount options you need. For GPT disks, use <code>parted</code> or <code>gdisk</code>; the concepts are the same.</p>
+<p>LVM adds a layer between disks and filesystems. Do not run this sequence on the same disk you just partitioned unless you intend to replace that layout. Use a separate empty disk or an unused partition. Inspect existing objects before you create new ones:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>pvs
+sudo<span class="w"> </span>vgs
+sudo<span class="w"> </span>lvs
+</code></pre></div>
+<p>Only run <code>pvcreate</code> on a disk or partition you intend to dedicate to LVM. It overwrites existing filesystem signatures:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>pvcreate<span class="w"> </span>/dev/sdb
+sudo<span class="w"> </span>vgcreate<span class="w"> </span>vg0<span class="w"> </span>/dev/sdb
+sudo<span class="w"> </span>lvcreate<span class="w"> </span>-L<span class="w"> </span>10G<span class="w"> </span>-n<span class="w"> </span>data<span class="w"> </span>vg0
+sudo<span class="w"> </span>mkfs.ext4<span class="w"> </span>/dev/vg0/data
+sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/data
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/vg0/data<span class="w"> </span>/data
+</code></pre></div>
+<p><code>pvs</code>, <code>vgs</code> and <code>lvs</code> show physical volumes, volume groups and logical volumes. Extending a logical volume does not automatically grow the filesystem. Run the filesystem-specific resize command after the volume change:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>lvextend<span class="w"> </span>-L<span class="w"> </span>+5G<span class="w"> </span>/dev/vg0/data
+sudo<span class="w"> </span>resize2fs<span class="w"> </span>/dev/vg0/data
+</code></pre></div>
+<p>Check and repair a filesystem only when it is unmounted, or at boot before it is mounted:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>umount<span class="w"> </span>/dev/sdb1
+sudo<span class="w"> </span>fsck<span class="w"> </span>-f<span class="w"> </span>/dev/sdb1
+</code></pre></div>
+<p>Running <code>fsck</code> on a mounted read-write filesystem can cause damage. Know the filesystem type and read the tool's manual page.</p>
+<h2 id="disk-health-and-i-o-errors">Disk health and I/O errors<a aria-label="Link to this section" class="g-anchor" href="#disk-health-and-i-o-errors">#</a></h2>
+<p><code>smartctl</code> reads drive health data when the drive supports it.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/sda
+sudo<span class="w"> </span>smartctl<span class="w"> </span>-t<span class="w"> </span>short<span class="w"> </span>/dev/sda
+sudo<span class="w"> </span>smartctl<span class="w"> </span>-l<span class="w"> </span>selftest<span class="w"> </span>/dev/sda
+</code></pre></div>
+<p>Look for reallocated sectors, pending sectors, uncorrectable errors and a failing self-test. A single old error may be historical. A growing count is a warning.</p>
+<p>Kernel messages record I/O and hardware problems:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">dmesg<span class="w"> </span>-T<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span>
+dmesg<span class="w"> </span>-T<span class="w"> </span>--level<span class="o">=</span>err,warn
+journalctl<span class="w"> </span>-k<span class="w"> </span>-p<span class="w"> </span>err<span class="w"> </span>--no-pager
+</code></pre></div>
+<p><code>-T</code> prints human-readable timestamps when the kernel log supports them. On some systems, <code>dmesg</code> access is restricted. Use <code>journalctl -k</code> as an alternative.</p>
+<p>Do not run destructive surface tests on a disk that holds data you need. Back up first. A failing drive can fail completely during a stress test.</p>
+<h2 id="bootloader-initramfs-and-recovery">Bootloader, initramfs and recovery<a aria-label="Link to this section" class="g-anchor" href="#bootloader-initramfs-and-recovery">#</a></h2>
+<p>The boot process depends on a bootloader, a kernel, an initramfs and the init system. Recovery means knowing how to interrupt and repair each stage.</p>
+<p>GRUB is the most common bootloader on x86 systems.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/default/grub
+sudo<span class="w"> </span>update-grub
+sudo<span class="w"> </span>grub2-mkconfig<span class="w"> </span>-o<span class="w"> </span>/boot/grub2/grub.cfg
+</code></pre></div>
+<p>The first command is used on Debian and Ubuntu. The second is common on Red Hat family systems. The configuration path varies. Check the distribution documentation before regenerating a bootloader configuration.</p>
+<p>The initramfs contains the early userspace needed to mount the real root filesystem. Rebuild it after changing storage drivers, RAID, LVM or encryption configuration.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>update-initramfs<span class="w"> </span>-u
+sudo<span class="w"> </span>dracut<span class="w"> </span>-f
+</code></pre></div>
+<p>Use the command that matches your distribution. A missing driver in the initramfs can make the system unbootable even when the kernel and root filesystem are fine.</p>
+<p>Recovery options:</p>
+<ul>
+<li>Boot into a rescue or emergency target.</li>
+<li>Add <code>systemd.unit=rescue.target</code> to the kernel command line.</li>
+<li>Boot a live USB and mount the installed system.</li>
+<li>Use <code>chroot</code> to repair the installed system from the live environment.</li>
+</ul>
+<p>A typical chroot repair sequence:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsblk
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/sda2<span class="w"> </span>/mnt
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/sda1<span class="w"> </span>/mnt/boot
+sudo<span class="w"> </span>mount<span class="w"> </span>--bind<span class="w"> </span>/dev<span class="w"> </span>/mnt/dev
+sudo<span class="w"> </span>mount<span class="w"> </span>--bind<span class="w"> </span>/proc<span class="w"> </span>/mnt/proc
+sudo<span class="w"> </span>mount<span class="w"> </span>--bind<span class="w"> </span>/sys<span class="w"> </span>/mnt/sys
+sudo<span class="w"> </span>chroot<span class="w"> </span>/mnt
+</code></pre></div>
+<p>Inside the chroot, you can reinstall the bootloader, rebuild the initramfs or repair configuration. Exit with <code>exit</code>, then unmount in reverse order.</p>
+<p>Do not run a chroot repair sequence from memory on a production machine. Read the distribution's recovery guide and confirm every device path.</p>
+<h2 id="containers-and-isolated-services">Containers and isolated services<a aria-label="Link to this section" class="g-anchor" href="#containers-and-isolated-services">#</a></h2>
+<p>Containers package an application with its user-space dependencies and run it in an isolated view of the host. They share the host kernel, so they are lighter than virtual machines and not a complete security boundary.</p>
+<p>Docker and Podman are common runtimes. Their basic commands are similar.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">docker<span class="w"> </span>ps
+docker<span class="w"> </span>images
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>alpine<span class="w"> </span>sh
+docker<span class="w"> </span>logs<span class="w"> </span>container_name
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>container_name<span class="w"> </span>sh
+docker<span class="w"> </span>inspect<span class="w"> </span>container_name
+docker<span class="w"> </span>stop<span class="w"> </span>container_name
+</code></pre></div>
+<p>Podman uses the same command shape:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">podman<span class="w"> </span>ps
+podman<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>alpine<span class="w"> </span>sh
+podman<span class="w"> </span>logs<span class="w"> </span>container_name
+</code></pre></div>
+<p><code>--rm</code> removes the container when it exits. <code>-it</code> attaches an interactive terminal. <code>docker logs</code> reads the container's standard output. <code>docker exec</code> starts a process inside a running container.</p>
+<p>Persistent data should live in a volume or a bind mount, not in the container's writable layer.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">docker<span class="w"> </span>volume<span class="w"> </span>create<span class="w"> </span>appdata
+docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>app<span class="w"> </span>-v<span class="w"> </span>appdata:/var/lib/app<span class="w"> </span>image:tag
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/data:/data:ro"</span><span class="w"> </span>alpine<span class="w"> </span>ls<span class="w"> </span>/data
+</code></pre></div>
+<p>The <code>:ro</code> suffix mounts the host directory read-only. A bind mount gives the container direct access to a host path. Treat that access as a privilege decision.</p>
+<p>Inspect the container's isolation:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">docker<span class="w"> </span>inspect<span class="w"> </span>--format<span class="w"> </span><span class="s1">'{{.Config.User}}'</span><span class="w"> </span>container_name
+docker<span class="w"> </span>inspect<span class="w"> </span>--format<span class="w"> </span><span class="s1">'{{json .Mounts}}'</span><span class="w"> </span>container_name
+docker<span class="w"> </span>top<span class="w"> </span>container_name
+</code></pre></div>
+<p>Run as a non-root user inside the image when possible. Do not mount the Docker socket into a container unless you intend to give it control over the host's container runtime. A container with the host Docker socket is effectively root on the host.</p>
+<p>Docker Compose describes multi-container services in YAML:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">yaml</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-yaml"><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">web</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nginx:stable</span>
+<span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"8080:80"</span>
+<span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./site:/usr/share/nginx/html:ro</span>
+</code></pre></div>
+<p>Use <code>docker compose up -d</code> to start and <code>docker compose down</code> to stop. Read the compose file before running it. Port mappings, volumes and environment variables define the container's exposure.</p>
+<h2 id="lab-inspect-a-safe-system">Lab: inspect a safe system<a aria-label="Link to this section" class="g-anchor" href="#lab-inspect-a-safe-system">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">lsblk<span class="w"> </span>-f
+df<span class="w"> </span>-h
+df<span class="w"> </span>-i
+findmnt<span class="w"> </span>/
+cat<span class="w"> </span>/etc/fstab
+systemctl<span class="w"> </span>get-default
+systemctl<span class="w"> </span>--failed
+journalctl<span class="w"> </span>-b<span class="w"> </span>-p<span class="w"> </span>err<span class="w"> </span>--no-pager<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span>
+</code></pre></div>
+<p>Then answer:</p>
+<ol>
+<li>Which filesystem is mounted at <code>/</code>?</li>
+<li>How much space and how many inodes are free?</li>
+<li>Which device provides the root filesystem?</li>
+<li>Are any units failed?</li>
+<li>What is the default systemd target?</li>
+</ol>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Running <code>apt upgrade</code> without reading the proposed changes.</li>
+<li>Adding repositories and keys from untrusted sources.</li>
+<li>Deleting files to free space without finding the owner.</li>
+<li>Editing fstab without testing with <code>mount -a</code>.</li>
+<li>Rebooting a broken system before collecting logs.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Install, query and remove packages on Debian or Ubuntu.</li>
+<li>Explain the difference between a package and a repository.</li>
+<li>Inspect disks, filesystems, inodes and mounts.</li>
+<li>Read fstab and test a mount change safely.</li>
+<li>Describe the Linux boot sequence and find boot errors.</li>
+</ul>
+<p>Next you will connect the system to a network and inspect it from the command line.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 07 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/06-processes-services-systemd.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 06</span><strong>Processes, Services and systemd</strong></a><a class="g-chapter-card" href="../foundations/08-networking-essentials.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 08</span><strong>Networking from the Command Line</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#package-managers" data-toc-link>Package managers</a><a class="g-toc-link depth-2" href="#debian-and-ubuntu-workflow" data-toc-link>Debian and Ubuntu workflow</a><a class="g-toc-link depth-2" href="#repository-trust" data-toc-link>Repository trust</a><a class="g-toc-link depth-2" href="#inspect-disks-and-space" data-toc-link>Inspect disks and space</a><a class="g-toc-link depth-2" href="#mount-points-and-fstab" data-toc-link>Mount points and fstab</a><a class="g-toc-link depth-2" href="#swap" data-toc-link>Swap</a><a class="g-toc-link depth-2" href="#the-boot-sequence" data-toc-link>The boot sequence</a><a class="g-toc-link depth-2" href="#boot-problems" data-toc-link>Boot problems</a><a class="g-toc-link depth-2" href="#beyond-apt-other-package-ecosystems" data-toc-link>Beyond apt: other package ecosystems</a><a class="g-toc-link depth-2" href="#build-software-from-source" data-toc-link>Build software from source</a><a class="g-toc-link depth-2" href="#checksums-and-signatures" data-toc-link>Checksums and signatures</a><a class="g-toc-link depth-2" href="#partitions-filesystems-and-lvm" data-toc-link>Partitions, filesystems and LVM</a><a class="g-toc-link depth-3" href="#walk-through-a-new-disk" data-toc-link>Walk through a new disk</a><a class="g-toc-link depth-2" href="#disk-health-and-i-o-errors" data-toc-link>Disk health and I/O errors</a><a class="g-toc-link depth-2" href="#bootloader-initramfs-and-recovery" data-toc-link>Bootloader, initramfs and recovery</a><a class="g-toc-link depth-2" href="#containers-and-isolated-services" data-toc-link>Containers and isolated services</a><a class="g-toc-link depth-2" href="#lab-inspect-a-safe-system" data-toc-link>Lab: inspect a safe system</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 07 / 19 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

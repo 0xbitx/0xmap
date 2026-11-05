@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Chapter 27 of the 0XMAP Linux for Hackers field guide. Reduce attack surface, capture audit events and keep a live record of activity.">
+  <title>Chapter 27: Linux Hardening and Monitoring | 0XMAP Linux Field Guide</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Chapter 27</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Chapter navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Chapters</p>
+      <p class="g-sidebar-count">30 chapters / 5 sections</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close chapter menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">01</span><span>Foundations</span></div><ol><li><a class="g-nav-link" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html" ><span class="g-nav-num">01</span><span class="g-nav-title">Why Linux matters</span></a></li><li><a class="g-nav-link" href="../chapters/02-basic-file-navigation-in-linux.html" ><span class="g-nav-num">02</span><span class="g-nav-title">File navigation</span></a></li><li><a class="g-nav-link" href="../chapters/03-understanding-linux-file-permissions.html" ><span class="g-nav-num">03</span><span class="g-nav-title">File permissions</span></a></li><li><a class="g-nav-link" href="../chapters/04-users-groups-and-privilege-escalation-basics.html" ><span class="g-nav-num">04</span><span class="g-nav-title">Users and groups</span></a></li><li><a class="g-nav-link" href="../chapters/05-linux-package-managers-and-dependency-abuse.html" ><span class="g-nav-num">05</span><span class="g-nav-title">Package managers</span></a></li><li><a class="g-nav-link" href="../chapters/06-introduction-to-bash-scripting.html" ><span class="g-nav-num">06</span><span class="g-nav-title">Bash scripting</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">02</span><span>Shell and scheduling</span></div><ol><li><a class="g-nav-link" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" ><span class="g-nav-num">07</span><span class="g-nav-title">Bash variables</span></a></li><li><a class="g-nav-link" href="../chapters/08-environment-variables-and-bashrc-abuse.html" ><span class="g-nav-num">08</span><span class="g-nav-title">Shell startup abuse</span></a></li><li><a class="g-nav-link" href="../chapters/09-processes-services-and-enumeration.html" ><span class="g-nav-num">09</span><span class="g-nav-title">Processes and services</span></a></li><li><a class="g-nav-link" href="../chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html" ><span class="g-nav-num">10</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link" href="../chapters/11-ssh-access-and-abuse.html" ><span class="g-nav-num">11</span><span class="g-nav-title">SSH access and abuse</span></a></li><li><a class="g-nav-link" href="../chapters/12-file-permissions-and-privilege-escalation-basics.html" ><span class="g-nav-num">12</span><span class="g-nav-title">Permissions to privilege</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">03</span><span>Access and network</span></div><ol><li><a class="g-nav-link" href="../chapters/13-environment-variables-and-path-hijacking.html" ><span class="g-nav-num">13</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link" href="../chapters/14-logs-and-system-auditing.html" ><span class="g-nav-num">14</span><span class="g-nav-title">Logs and auditing</span></a></li><li><a class="g-nav-link" href="../chapters/15-networking-fundamentals-for-hackers.html" ><span class="g-nav-num">15</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link" href="../chapters/16-firewalls-and-packet-filtering.html" ><span class="g-nav-num">16</span><span class="g-nav-title">Firewalls</span></a></li><li><a class="g-nav-link" href="../chapters/17-ssh-and-tunneling.html" ><span class="g-nav-num">17</span><span class="g-nav-title">SSH tunneling</span></a></li><li><a class="g-nav-link" href="../chapters/18-linux-kernel-and-exploit-basics.html" ><span class="g-nav-num">18</span><span class="g-nav-title">Kernel exploits</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">04</span><span>Persistence and isolation</span></div><ol><li><a class="g-nav-link" href="../chapters/19-linux-persistence-techniques.html" ><span class="g-nav-num">19</span><span class="g-nav-title">Persistence</span></a></li><li><a class="g-nav-link" href="../chapters/20-linux-services-and-daemon-exploitation.html" ><span class="g-nav-num">20</span><span class="g-nav-title">Service exploitation</span></a></li><li><a class="g-nav-link" href="../chapters/21-linux-capabilities-and-exploitation.html" ><span class="g-nav-num">21</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link" href="../chapters/22-advanced-persistence.html" ><span class="g-nav-num">22</span><span class="g-nav-title">Advanced persistence</span></a></li><li><a class="g-nav-link" href="../chapters/23-containers-and-docker-exploitation.html" ><span class="g-nav-num">23</span><span class="g-nav-title">Containers</span></a></li><li><a class="g-nav-link" href="../chapters/24-host-based-monitoring-auditd-and-osquery.html" ><span class="g-nav-num">24</span><span class="g-nav-title">Host monitoring</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">05</span><span>Defense and workflow</span></div><ol><li><a class="g-nav-link" href="../chapters/25-linux-forensics-and-incident-response.html" ><span class="g-nav-num">25</span><span class="g-nav-title">Forensics and IR</span></a></li><li><a class="g-nav-link" href="../chapters/26-automating-linux-privilege-escalation-checks.html" ><span class="g-nav-num">26</span><span class="g-nav-title">Privilege automation</span></a></li><li><a class="g-nav-link" href="../chapters/27-linux-hardening-and-monitoring.html"  aria-current="page"><span class="g-nav-num">27</span><span class="g-nav-title">Hardening and monitoring</span></a></li><li><a class="g-nav-link" href="../chapters/28-network-sniffing-and-packet-capture.html" ><span class="g-nav-num">28</span><span class="g-nav-title">Packet capture</span></a></li><li><a class="g-nav-link" href="../chapters/29-linux-memory-analysis-and-credential-hunting.html" ><span class="g-nav-num">29</span><span class="g-nav-title">Memory analysis</span></a></li><li><a class="g-nav-link" href="../chapters/30-building-your-linux-hacking-workflow.html" ><span class="g-nav-num">30</span><span class="g-nav-title">Workflow</span></a></li></ol></section>
+  </nav>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Authorized labs and systems only. Read in order or use the menu to jump.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#section-defense">Section 05</a><span>/</span>
+          <span>Chapter 27</span>
+        </nav>
+        <p class="g-kicker">Section 05 / Defense and workflow</p>
+        <h1>Linux Hardening and Monitoring</h1>
+        <p class="g-deck">Reduce attack surface, capture audit events and keep a live record of activity.</p>
+        <div class="g-chapter-meta">
+          <span>10 min read</span>
+          <span>25 sections</span>
+          <span>29 code blocks</span>
+          <span>Chapter 27 / 30</span>
+        </div>
+        <div class="g-chapter-actions"><a class="g-btn ghost" data-next-chapter href="../chapters/28-network-sniffing-and-packet-capture.html">Next chapter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>25 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-why-hardening-matters" data-toc-link>1. Why Hardening Matters</a><a class="g-toc-link depth-2" href="#2-install-and-enable-auditd" data-toc-link>2. Install &amp; Enable Auditd</a><a class="g-toc-link depth-2" href="#3-critical-audit-rules-high-value-targets" data-toc-link>3. Critical Audit Rules (High-Value Targets)</a><a class="g-toc-link depth-3" href="#monitor-etc-passwd-and-etc-shadow" data-toc-link>Monitor /etc/passwd and /etc/shadow</a><a class="g-toc-link depth-3" href="#monitor-privilege-escalation-binaries" data-toc-link>Monitor privilege escalation binaries</a><a class="g-toc-link depth-3" href="#track-binary-execution" data-toc-link>Track binary execution</a><a class="g-toc-link depth-3" href="#detect-changes-in-perms-ownership" data-toc-link>Detect changes in perms/ownership</a><a class="g-toc-link depth-2" href="#4-reviewing-audit-logs" data-toc-link>4. Reviewing Audit Logs</a><a class="g-toc-link depth-2" href="#5-additional-hardening-steps" data-toc-link>5. Additional Hardening Steps</a><a class="g-toc-link depth-3" href="#disable-unnecessary-services" data-toc-link>Disable unnecessary services</a><a class="g-toc-link depth-3" href="#secure-ssh" data-toc-link>Secure SSH</a><a class="g-toc-link depth-3" href="#tighten-sudo-rules" data-toc-link>Tighten sudo rules</a><a class="g-toc-link depth-3" href="#kernel-protections-sysctl" data-toc-link>Kernel protections (sysctl)</a><a class="g-toc-link depth-2" href="#6-output-redirection-2-and" data-toc-link>6. Output Redirection (&gt;, &gt;&gt;, 2&gt;, &amp;&gt;)</a><a class="g-toc-link depth-2" href="#7-tee-command-the-hacker-s-real-time-logger" data-toc-link>7. tee Command - The Hacker’s Real-Time Logger</a><a class="g-toc-link depth-2" href="#8-live-monitoring-with-tail-less-f-watch-and-multitail" data-toc-link>8. Live Monitoring with tail, less +F, watch, and multitail</a><a class="g-toc-link depth-2" href="#9-capture-tool-output-invisibly-useful-for-ctfs-and-red-team" data-toc-link>9. Capture Tool Output Invisibly (Useful for CTFs &amp; Red Team)</a><a class="g-toc-link depth-2" href="#10-scripted-logging-for-recon-tools" data-toc-link>10. Scripted Logging for Recon Tools</a><a class="g-toc-link depth-2" href="#11-system-activity-monitoring-for-hackers" data-toc-link>11. System Activity Monitoring for Hackers</a><a class="g-toc-link depth-2" href="#12-monitor-file-changes" data-toc-link>12. Monitor file changes</a><a class="g-toc-link depth-2" href="#13-silent-logging-for-persistence" data-toc-link>13. Silent Logging for Persistence</a><a class="g-toc-link depth-2" href="#advanced-modern-hardening-baseline" data-toc-link>Advanced: Modern hardening baseline</a><a class="g-toc-link depth-2" href="#pentester-perspective" data-toc-link>Pentester Perspective</a><a class="g-toc-link depth-2" href="#lab-task" data-toc-link>Lab Task</a></nav>
+</details>
+      <div class="g-prose"><h2 id="objective">Objective<a aria-label="Link to this section" class="g-anchor" href="#objective">#</a></h2>
+<p>Introduce essential Linux hardening techniques and teach how to monitor critical system activity using <code>auditd</code> and capturing output, logging everything, and monitoring systems in real-time without breaking stealth , a powerful auditing framework for security teams, IR responders, and pentesters simulating defenders.</p>
+<h2 id="1-why-hardening-matters">1. Why Hardening Matters<a aria-label="Link to this section" class="g-anchor" href="#1-why-hardening-matters">#</a></h2>
+<p>A hardened system reduces the attack surface, limits privilege escalation paths, and provides logs that matter during investigations.<br/>
+Hardening is <strong>proactive defense</strong> - stopping attacks before they happen.</p>
+<h2 id="2-install-and-enable-auditd">2. Install &amp; Enable Auditd<a aria-label="Link to this section" class="g-anchor" href="#2-install-and-enable-auditd">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>auditd<span class="w"> </span>audispd-plugins<span class="w"> </span>-y
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>auditd
+</code></pre></div>
+<p>Check status:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">auditctl<span class="w"> </span>-s
+</code></pre></div>
+<h2 id="3-critical-audit-rules-high-value-targets">3. Critical Audit Rules (High-Value Targets)<a aria-label="Link to this section" class="g-anchor" href="#3-critical-audit-rules-high-value-targets">#</a></h2>
+<h3 id="monitor-etc-passwd-and-etc-shadow">Monitor <code>/etc/passwd</code> and <code>/etc/shadow</code><a aria-label="Link to this section" class="g-anchor" href="#monitor-etc-passwd-and-etc-shadow">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">-w<span class="w"> </span>/etc/passwd<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>passwd_changes
+-w<span class="w"> </span>/etc/shadow<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>shadow_changes
+</code></pre></div>
+<h3 id="monitor-privilege-escalation-binaries">Monitor privilege escalation binaries<a aria-label="Link to this section" class="g-anchor" href="#monitor-privilege-escalation-binaries">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">-w<span class="w"> </span>/usr/bin/sudo<span class="w"> </span>-p<span class="w"> </span>x<span class="w"> </span>-k<span class="w"> </span>sudo_exec
+-w<span class="w"> </span>/bin/su<span class="w"> </span>-p<span class="w"> </span>x<span class="w"> </span>-k<span class="w"> </span>su_exec
+</code></pre></div>
+<h3 id="track-binary-execution">Track binary execution<a aria-label="Link to this section" class="g-anchor" href="#track-binary-execution">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">-a<span class="w"> </span>always,exit<span class="w"> </span>-F<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>b64<span class="w"> </span>-S<span class="w"> </span>execve<span class="w"> </span>-k<span class="w"> </span>exec_log
+</code></pre></div>
+<h3 id="detect-changes-in-perms-ownership">Detect changes in perms/ownership<a aria-label="Link to this section" class="g-anchor" href="#detect-changes-in-perms-ownership">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">-a<span class="w"> </span>always,exit<span class="w"> </span>-F<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>b64<span class="w"> </span>-S<span class="w"> </span>chmod,chown,fchmod,fchown<span class="w"> </span>-k<span class="w"> </span>perms_changes
+</code></pre></div>
+<p>Reload rules:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>augenrules<span class="w"> </span>--load
+</code></pre></div>
+<h2 id="4-reviewing-audit-logs">4. Reviewing Audit Logs<a aria-label="Link to this section" class="g-anchor" href="#4-reviewing-audit-logs">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ausearch<span class="w"> </span>-k<span class="w"> </span>exec_log
+ausearch<span class="w"> </span>-k<span class="w"> </span>passwd_changes
+aureport<span class="w"> </span>--summary
+aureport<span class="w"> </span>-x<span class="w"> </span>--summary
+</code></pre></div>
+<p>These reveal:</p>
+<ul>
+<li>Unexpected program execution</li>
+<li>Privilege escalation attempts</li>
+<li>File modification attempts</li>
+<li>Recon or lateral movement behavior</li>
+</ul>
+<h2 id="5-additional-hardening-steps">5. Additional Hardening Steps<a aria-label="Link to this section" class="g-anchor" href="#5-additional-hardening-steps">#</a></h2>
+<h3 id="disable-unnecessary-services">Disable unnecessary services<a aria-label="Link to this section" class="g-anchor" href="#disable-unnecessary-services">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>disable<span class="w"> </span>--now<span class="w"> </span>service_name
+</code></pre></div>
+<h3 id="secure-ssh">Secure SSH<a aria-label="Link to this section" class="g-anchor" href="#secure-ssh">#</a></h3>
+<ul>
+<li>Disable root login</li>
+<li>Disable passwords</li>
+<li>Use keys + fail2ban</li>
+</ul>
+<h3 id="tighten-sudo-rules">Tighten sudo rules<a aria-label="Link to this section" class="g-anchor" href="#tighten-sudo-rules">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">visudo
+</code></pre></div>
+<h3 id="kernel-protections-sysctl">Kernel protections (sysctl)<a aria-label="Link to this section" class="g-anchor" href="#kernel-protections-sysctl">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">kernel.kptr_restrict<span class="o">=</span><span class="m">2</span>
+kernel.dmesg_restrict<span class="o">=</span><span class="m">1</span>
+fs.protected_symlinks<span class="o">=</span><span class="m">1</span>
+</code></pre></div>
+<h2 id="6-output-redirection-2-and">6. Output Redirection (&gt;, &gt;&gt;, 2&gt;, &amp;&gt;)<a aria-label="Link to this section" class="g-anchor" href="#6-output-redirection-2-and">#</a></h2>
+<p><strong>Write output to a file</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>&gt;<span class="w"> </span>output.txt
+</code></pre></div>
+<p>→ Overwrites existing content.</p>
+<p><strong>Append instead of overwrite</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>&gt;&gt;<span class="w"> </span>output.txt
+</code></pre></div>
+<p><strong>Capture errors only</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>/root<span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>errors.log
+</code></pre></div>
+<h2 id="7-tee-command-the-hacker-s-real-time-logger">7. <code>tee</code> Command - The Hacker’s Real-Time Logger<a aria-label="Link to this section" class="g-anchor" href="#7-tee-command-the-hacker-s-real-time-logger">#</a></h2>
+<p><code>tee</code> lets you save output to a file while still seeing it on the terminal.<br/>
+Perfect for recon, exploit debugging, brute-force monitoring, and automation<br/>
+<strong>Basic usage</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nmap<span class="w"> </span>-sV<span class="w"> </span>target.com<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>scan.log
+</code></pre></div>
+<h2 id="8-live-monitoring-with-tail-less-f-watch-and-multitail">8. Live Monitoring with <code>tail</code>, <code>less +F</code>, <code>watch</code>, and <code>multitail</code><a aria-label="Link to this section" class="g-anchor" href="#8-live-monitoring-with-tail-less-f-watch-and-multitail">#</a></h2>
+<p><strong>Watch a log in real time</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tail<span class="w"> </span>-f<span class="w"> </span>/var/log/auth.log
+</code></pre></div>
+<p><strong>Better than tail:</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">less<span class="w"> </span>+F<span class="w"> </span>/var/log/syslog
+</code></pre></div>
+<p><strong>Repeated command execution</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">watch<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="s2">"ss -tupan | grep 443"</span>
+</code></pre></div>
+<p><strong>Multi-pane log watching</strong>
+(install if needed)</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">multitail /var/log/syslog /var/log/auth.log
+</code></pre></div>
+<h2 id="9-capture-tool-output-invisibly-useful-for-ctfs-and-red-team">9. Capture Tool Output Invisibly (Useful for CTFs &amp; Red Team)<a aria-label="Link to this section" class="g-anchor" href="#9-capture-tool-output-invisibly-useful-for-ctfs-and-red-team">#</a></h2>
+<p><strong>Redirect everything silently:</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">command &gt; /dev/null 2&gt;&amp;1
+</code></pre></div>
+<p>Perfect for hiding commands during enumeration.</p>
+<h2 id="10-scripted-logging-for-recon-tools">10. Scripted Logging for Recon Tools<a aria-label="Link to this section" class="g-anchor" href="#10-scripted-logging-for-recon-tools">#</a></h2>
+<p>Example: log every subfinder run with timestamp.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">#!/bin/bash
+timestamp=$(date +"%Y-%m-%d-%H-%M")
+subfinder -d example.com | tee -a logs/subs-$timestamp.txt
+</code></pre></div>
+<h2 id="11-system-activity-monitoring-for-hackers">11. System Activity Monitoring for Hackers<a aria-label="Link to this section" class="g-anchor" href="#11-system-activity-monitoring-for-hackers">#</a></h2>
+<p><strong>Monitor processes</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">top
+htop
+atop
+</code></pre></div>
+<p><strong>Monitor network</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">iftop
+nethogs
+</code></pre></div>
+<p><strong>Monitor filesystem activity</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">iotop
+</code></pre></div>
+<p>These help understand if your exploit crashed a service or caused load.</p>
+<h2 id="12-monitor-file-changes">12. Monitor file changes<a aria-label="Link to this section" class="g-anchor" href="#12-monitor-file-changes">#</a></h2>
+<p><strong>Powerful for privilege escalation and persistence detection.</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">watch<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="s2">"ls -l /etc/passwd"</span>
+</code></pre></div>
+<p><strong>Or continuous diff:</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body">diff &lt;(ls /etc) &lt;(ls /etc)
+</code></pre></div>
+<h2 id="13-silent-logging-for-persistence">13. Silent Logging for Persistence<a aria-label="Link to this section" class="g-anchor" href="#13-silent-logging-for-persistence">#</a></h2>
+<p><strong>Collect system data without drawing attention.</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ps<span class="w"> </span>aux<span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/.cache<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+id<span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/.cache
+whoami<span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/.cache
+uname<span class="w"> </span>-a<span class="w"> </span>&gt;&gt;<span class="w"> </span>/tmp/.cache
+</code></pre></div>
+<h2 id="advanced-modern-hardening-baseline">Advanced: Modern hardening baseline<a aria-label="Link to this section" class="g-anchor" href="#advanced-modern-hardening-baseline">#</a></h2>
+<p>Hardening is more than disabling services. A modern baseline combines kernel
+settings, mandatory access control, verified boot and continuous drift
+detection.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager
+sudo<span class="w"> </span>lynis<span class="w"> </span>audit<span class="w"> </span>system
+sudo<span class="w"> </span>aa-status
+getenforce<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+sudo<span class="w"> </span>aide<span class="w"> </span>--check
+sudo<span class="w"> </span>fapolicyd-cli<span class="w"> </span>--status<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+mokutil<span class="w"> </span>--sb-state<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+sudo<span class="w"> </span>bootctl<span class="w"> </span>status
+</code></pre></div>
+<p>Use OpenSCAP when a formal benchmark is required. List the profiles in the
+installed SCAP source data stream first, then evaluate the profile that matches
+your distribution and policy. The example selects the first data stream it
+finds; set <code>SSG_FILE</code> explicitly when more than one distribution is installed.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">SCAP_DIR</span><span class="o">=</span>/usr/share/xml/scap/ssg/content
+<span class="nv">SSG_FILE</span><span class="o">=</span><span class="k">$(</span>find<span class="w"> </span><span class="s2">"</span><span class="nv">$SCAP_DIR</span><span class="s2">"</span><span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-name<span class="w"> </span><span class="s1">'ssg-*-ds.xml'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="k">)</span>
+oscap<span class="w"> </span>info<span class="w"> </span><span class="s2">"</span><span class="nv">$SSG_FILE</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">40</span>
+sudo<span class="w"> </span>oscap<span class="w"> </span>xccdf<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--profile<span class="w"> </span>xccdf_org.ssgproject.content_profile_cis<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--results<span class="w"> </span>/var/tmp/oscap-results.xml<span class="w"> </span><span class="s2">"</span><span class="nv">$SSG_FILE</span><span class="s2">"</span>
+</code></pre></div>
+<p>Add these controls where they fit the environment:</p>
+<ul>
+<li>Enforce AppArmor or SELinux profiles for exposed services.</li>
+<li>Use <code>fapolicyd</code> or an allowlist to limit execution in high-value segments.</li>
+<li>Enable AIDE or another file integrity monitor and ship the baseline off-host.</li>
+<li>Require Secure Boot and measure boot with TPM 2.0 where the hardware supports
+it.</li>
+<li>Restrict removable devices with USBGuard.</li>
+<li>Keep <code>/etc/sysctl.d/</code> under version control and verify it after updates.</li>
+<li>Review <code>systemd-analyze security</code> scores for internet-facing units and remove
+unnecessary capabilities, devices and writable paths.</li>
+</ul>
+<p>A hardening score is not a guarantee. Validate that the control blocks the
+behavior you care about, and keep an exception log with an owner and expiry
+date.</p>
+<h2 id="pentester-perspective">Pentester Perspective<a aria-label="Link to this section" class="g-anchor" href="#pentester-perspective">#</a></h2>
+<p>Hardened systems:</p>
+<ul>
+<li>Reduce common privilege escalation paths</li>
+<li>Leave meaningful logs</li>
+<li>Increase attacker cost</li>
+<li>Detect noise quickly</li>
+</ul>
+<p>Understanding defender configs = better Red Teaming.</p>
+<h2 id="lab-task">Lab Task<a aria-label="Link to this section" class="g-anchor" href="#lab-task">#</a></h2>
+<ol>
+<li>Install auditd on a VM.</li>
+<li>Add rules from section 3.</li>
+<li>Perform system actions (chmod, passwd, sudo).</li>
+<li>Use ausearch to trace everything.</li>
+<li>Write a short report on high-value findings.</li>
+</ol>
+</div>
+      <p class="g-source-note">Chapter 27 of the Linux for Hackers guide. Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+      <nav class="g-chapter-nav" aria-label="Chapter navigation"><a class="g-chapter-card" href="../chapters/26-automating-linux-privilege-escalation-checks.html" data-prev-chapter><span class="g-chapter-card-label">Previous / Chapter 26</span><strong>Automating Linux Privilege Escalation Checks</strong></a><a class="g-chapter-card" href="../chapters/28-network-sniffing-and-packet-capture.html" data-next-chapter><span class="g-chapter-card-label">Next / Chapter 28</span><strong>Linux Network Sniffing and Packet Capture</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-why-hardening-matters" data-toc-link>1. Why Hardening Matters</a><a class="g-toc-link depth-2" href="#2-install-and-enable-auditd" data-toc-link>2. Install &amp; Enable Auditd</a><a class="g-toc-link depth-2" href="#3-critical-audit-rules-high-value-targets" data-toc-link>3. Critical Audit Rules (High-Value Targets)</a><a class="g-toc-link depth-3" href="#monitor-etc-passwd-and-etc-shadow" data-toc-link>Monitor /etc/passwd and /etc/shadow</a><a class="g-toc-link depth-3" href="#monitor-privilege-escalation-binaries" data-toc-link>Monitor privilege escalation binaries</a><a class="g-toc-link depth-3" href="#track-binary-execution" data-toc-link>Track binary execution</a><a class="g-toc-link depth-3" href="#detect-changes-in-perms-ownership" data-toc-link>Detect changes in perms/ownership</a><a class="g-toc-link depth-2" href="#4-reviewing-audit-logs" data-toc-link>4. Reviewing Audit Logs</a><a class="g-toc-link depth-2" href="#5-additional-hardening-steps" data-toc-link>5. Additional Hardening Steps</a><a class="g-toc-link depth-3" href="#disable-unnecessary-services" data-toc-link>Disable unnecessary services</a><a class="g-toc-link depth-3" href="#secure-ssh" data-toc-link>Secure SSH</a><a class="g-toc-link depth-3" href="#tighten-sudo-rules" data-toc-link>Tighten sudo rules</a><a class="g-toc-link depth-3" href="#kernel-protections-sysctl" data-toc-link>Kernel protections (sysctl)</a><a class="g-toc-link depth-2" href="#6-output-redirection-2-and" data-toc-link>6. Output Redirection (&gt;, &gt;&gt;, 2&gt;, &amp;&gt;)</a><a class="g-toc-link depth-2" href="#7-tee-command-the-hacker-s-real-time-logger" data-toc-link>7. tee Command - The Hacker’s Real-Time Logger</a><a class="g-toc-link depth-2" href="#8-live-monitoring-with-tail-less-f-watch-and-multitail" data-toc-link>8. Live Monitoring with tail, less +F, watch, and multitail</a><a class="g-toc-link depth-2" href="#9-capture-tool-output-invisibly-useful-for-ctfs-and-red-team" data-toc-link>9. Capture Tool Output Invisibly (Useful for CTFs &amp; Red Team)</a><a class="g-toc-link depth-2" href="#10-scripted-logging-for-recon-tools" data-toc-link>10. Scripted Logging for Recon Tools</a><a class="g-toc-link depth-2" href="#11-system-activity-monitoring-for-hackers" data-toc-link>11. System Activity Monitoring for Hackers</a><a class="g-toc-link depth-2" href="#12-monitor-file-changes" data-toc-link>12. Monitor file changes</a><a class="g-toc-link depth-2" href="#13-silent-logging-for-persistence" data-toc-link>13. Silent Logging for Persistence</a><a class="g-toc-link depth-2" href="#advanced-modern-hardening-baseline" data-toc-link>Advanced: Modern hardening baseline</a><a class="g-toc-link depth-2" href="#pentester-perspective" data-toc-link>Pentester Perspective</a><a class="g-toc-link depth-2" href="#lab-task" data-toc-link>Lab Task</a></nav>
+    <div class="g-toc-foot">Chapter 27 / 25 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

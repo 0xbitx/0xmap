@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 5 of 10. Read UIDs, groups, modes, ACLs and sudo rules, then change access with intent.">
+  <title>Part 05: Users, Permissions and Sudo | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html" aria-current="page"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 05</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 05</p>
+        <h1>Users, Permissions and Sudo</h1>
+        <p class="g-deck">Read UIDs, groups, modes, ACLs and sudo rules, then change access with intent.</p>
+        <div class="g-chapter-meta">
+          <span>17 min read</span>
+          <span>20 sections</span>
+          <span>30 code blocks</span>
+          <span>Part 05 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>20 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#identities" data-toc-link>Identities</a><a class="g-toc-link depth-2" href="#permission-bits" data-toc-link>Permission bits</a><a class="g-toc-link depth-2" href="#octal-notation" data-toc-link>Octal notation</a><a class="g-toc-link depth-2" href="#change-ownership" data-toc-link>Change ownership</a><a class="g-toc-link depth-2" href="#the-umask" data-toc-link>The umask</a><a class="g-toc-link depth-2" href="#special-bits" data-toc-link>Special bits</a><a class="g-toc-link depth-2" href="#access-control-lists" data-toc-link>Access control lists</a><a class="g-toc-link depth-2" href="#sudo" data-toc-link>Sudo</a><a class="g-toc-link depth-2" href="#service-accounts" data-toc-link>Service accounts</a><a class="g-toc-link depth-2" href="#account-databases-and-the-login-flow" data-toc-link>Account databases and the login flow</a><a class="g-toc-link depth-2" href="#manage-users-and-groups" data-toc-link>Manage users and groups</a><a class="g-toc-link depth-2" href="#pam-in-one-page" data-toc-link>PAM in one page</a><a class="g-toc-link depth-2" href="#capabilities" data-toc-link>Capabilities</a><a class="g-toc-link depth-2" href="#security-modules" data-toc-link>Security modules</a><a class="g-toc-link depth-2" href="#ssh-key-permissions" data-toc-link>SSH key permissions</a><a class="g-toc-link depth-2" href="#sudo-in-more-detail" data-toc-link>Sudo in more detail</a><a class="g-toc-link depth-2" href="#password-hashes-and-shadow-fields" data-toc-link>Password hashes and shadow fields</a><a class="g-toc-link depth-2" href="#lab-inspect-and-adjust-a-sandbox" data-toc-link>Lab: inspect and adjust a sandbox</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>Linux is a multi-user system. Every process has an identity, and every file has an owner, a group and a mode. The kernel uses those facts to decide whether an operation is allowed. This part teaches you to read that decision and change it deliberately.</p>
+<h2 id="identities">Identities<a aria-label="Link to this section" class="g-anchor" href="#identities">#</a></h2>
+<p>A user account has a username, a numeric user ID, a primary group and usually a home directory and login shell.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">id
+whoami
+groups
+getent<span class="w"> </span>passwd<span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span>
+</code></pre></div>
+<p>The account database is <code>/etc/passwd</code>. Each line has seven colon-separated fields:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">name:password:UID:GID:GECOS:home:shell
+</code></pre></div>
+<p>The password field is usually <code>x</code>, which means the hash is stored in <code>/etc/shadow</code>. Only privileged processes should read the shadow file.</p>
+<p>Groups are defined in <code>/etc/group</code>. A user can belong to one primary group and many supplementary groups. Group membership is a convenient way to grant access to several users at once.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getent<span class="w"> </span>group<span class="w"> </span>sudo
+getent<span class="w"> </span>group<span class="w"> </span>docker
+</code></pre></div>
+<h2 id="permission-bits">Permission bits<a aria-label="Link to this section" class="g-anchor" href="#permission-bits">#</a></h2>
+<p>A long listing shows the mode, owner and group:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">-rw-r----- 1 alice analysts 1200 Jan 10 12:00 report.txt
+</code></pre></div>
+<p>The first character is the file type. The next nine characters are three sets of three permissions:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">owner  group  other
+rw-    r--    ---
+</code></pre></div>
+<p>Each set can contain:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning for a file</th>
+<th>Meaning for a directory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r</code></td>
+<td>Read contents</td>
+<td>List names</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td>Change contents</td>
+<td>Create, delete and rename entries</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>Execute the file</td>
+<td>Enter the directory and access entries</td>
+</tr>
+</tbody>
+</table></div>
+<p>The execute bit on a directory is easy to miss. Without <code>x</code>, you cannot <code>cd</code> into it or access files by path, even if you can list its names.</p>
+<h2 id="octal-notation">Octal notation<a aria-label="Link to this section" class="g-anchor" href="#octal-notation">#</a></h2>
+<p>Each permission set is a number from 0 to 7:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Value</th>
+<th>Permissions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>---</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>--x</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>-w-</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>-wx</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>r--</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>r-x</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>rw-</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>rwx</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>So <code>755</code> means <code>rwxr-xr-x</code>, and <code>640</code> means <code>rw-r-----</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">chmod<span class="w"> </span><span class="m">640</span><span class="w"> </span>report.txt
+chmod<span class="w"> </span><span class="m">750</span><span class="w"> </span>scripts
+chmod<span class="w"> </span>u+x<span class="w"> </span>backup.sh
+chmod<span class="w"> </span>g-w<span class="w"> </span>report.txt
+chmod<span class="w"> </span>o-r<span class="w"> </span>report.txt
+</code></pre></div>
+<p><code>chmod</code> accepts octal modes and symbolic modes. Symbolic modes use <code>u</code> for owner, <code>g</code> for group, <code>o</code> for other and <code>a</code> for all. <code>+</code> adds, <code>-</code> removes and <code>=</code> sets exactly.</p>
+<h2 id="change-ownership">Change ownership<a aria-label="Link to this section" class="g-anchor" href="#change-ownership">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>chown<span class="w"> </span>alice<span class="w"> </span>report.txt
+sudo<span class="w"> </span>chown<span class="w"> </span>alice:analysts<span class="w"> </span>report.txt
+sudo<span class="w"> </span>chgrp<span class="w"> </span>analysts<span class="w"> </span>report.txt
+</code></pre></div>
+<p>Only root can give a file to another user. A normal user can change the group of a file only to a group they belong to, and only if the filesystem allows it. <code>chown -R</code> recurses, so use it carefully.</p>
+<h2 id="the-umask">The umask<a aria-label="Link to this section" class="g-anchor" href="#the-umask">#</a></h2>
+<p>When a process creates a file, the kernel starts from a default mode and removes the bits in the umask. A common umask is <code>022</code>:</p>
+<ul>
+<li>Files start at <code>666</code>, so <code>666</code> minus <code>022</code> gives <code>644</code>.</li>
+<li>Directories start at <code>777</code>, so <code>777</code> minus <code>022</code> gives <code>755</code>.</li>
+</ul>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">umask</span>
+<span class="nb">umask</span><span class="w"> </span><span class="m">027</span>
+</code></pre></div>
+<p>A umask of <code>027</code> gives files <code>640</code> and directories <code>750</code> by default. Set it in a shell startup file or a service definition when the default is too open.</p>
+<h2 id="special-bits">Special bits<a aria-label="Link to this section" class="g-anchor" href="#special-bits">#</a></h2>
+<p>Three special bits change normal permission behavior:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>4000</code></td>
+<td>SUID</td>
+<td>Program runs with the file owner's effective UID</td>
+</tr>
+<tr>
+<td><code>2000</code></td>
+<td>SGID</td>
+<td>Program runs with the file group, or a directory inherits its group</td>
+</tr>
+<tr>
+<td><code>1000</code></td>
+<td>Sticky</td>
+<td>Only the file owner, directory owner or root can delete entries</td>
+</tr>
+</tbody>
+</table></div>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-2000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+ls<span class="w"> </span>-ld<span class="w"> </span>/tmp
+</code></pre></div>
+<p>SUID binaries are a normal part of many systems, but unexpected SUID files are worth investigating. Do not remove a special bit from a system binary without understanding what depends on it.</p>
+<h2 id="access-control-lists">Access control lists<a aria-label="Link to this section" class="g-anchor" href="#access-control-lists">#</a></h2>
+<p>The classic mode has only one owner and one group. Access control lists, or ACLs, allow more specific grants.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getfacl<span class="w"> </span>report.txt
+setfacl<span class="w"> </span>-m<span class="w"> </span>u:bob:r<span class="w"> </span>report.txt
+setfacl<span class="w"> </span>-m<span class="w"> </span>g:analysts:rw<span class="w"> </span>report.txt
+setfacl<span class="w"> </span>-x<span class="w"> </span>u:bob<span class="w"> </span>report.txt
+</code></pre></div>
+<p>The <code>+</code> in a long listing indicates that a file has an ACL. Use <code>getfacl</code> before changing ACLs so you can see the existing entries.</p>
+<h2 id="sudo">Sudo<a aria-label="Link to this section" class="g-anchor" href="#sudo">#</a></h2>
+<p><code>sudo</code> runs a command as another user, usually root, according to a policy in <code>/etc/sudoers</code> and <code>/etc/sudoers.d</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>-l
+sudo<span class="w"> </span>-u<span class="w"> </span>www-data<span class="w"> </span>id
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>ssh
+</code></pre></div>
+<p><code>sudo -l</code> lists what your account is allowed to run. Read it carefully. A rule that allows a broad command can be equivalent to full root access, even if it looks limited.</p>
+<p>Edit sudo policy with <code>visudo</code>, which checks syntax before saving:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>visudo
+</code></pre></div>
+<p>A simple rule looks like this:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">alice ALL=(ALL:ALL) ALL
+</code></pre></div>
+<p>That gives Alice full sudo access. A narrower rule might allow only one command:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">alice ALL=(root) /usr/bin/systemctl restart nginx
+</code></pre></div>
+<p>Even narrow rules need review. Some commands can start shells, edit arbitrary files or load configuration that runs as root. Treat sudo policy as security-sensitive code.</p>
+<h2 id="service-accounts">Service accounts<a aria-label="Link to this section" class="g-anchor" href="#service-accounts">#</a></h2>
+<p>Many services run as dedicated users such as <code>www-data</code>, <code>postgres</code> or <code>nginx</code>. These accounts usually have no login shell and no password. They exist to limit the damage if the service is compromised.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getent<span class="w"> </span>passwd<span class="w"> </span>www-data
+ps<span class="w"> </span>-o<span class="w"> </span>user,pid,cmd<span class="w"> </span>-C<span class="w"> </span>nginx
+</code></pre></div>
+<p>Do not run a network service as root unless the service genuinely needs it and you have reviewed the design.</p>
+<h2 id="account-databases-and-the-login-flow">Account databases and the login flow<a aria-label="Link to this section" class="g-anchor" href="#account-databases-and-the-login-flow">#</a></h2>
+<p>Linux stores account information in a small set of text databases. The most important are:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/etc/passwd</code></td>
+<td>Username, UID, GID, description, home directory and shell</td>
+</tr>
+<tr>
+<td><code>/etc/shadow</code></td>
+<td>Password hashes and password aging, readable by root only</td>
+</tr>
+<tr>
+<td><code>/etc/group</code></td>
+<td>Group names, GIDs and member lists</td>
+</tr>
+<tr>
+<td><code>/etc/gshadow</code></td>
+<td>Group passwords and administrators, readable by root only</td>
+</tr>
+<tr>
+<td><code>/etc/login.defs</code></td>
+<td>Defaults for UID ranges, password aging and creation</td>
+</tr>
+<tr>
+<td><code>/etc/skel/</code></td>
+<td>Template files copied into new home directories</td>
+</tr>
+<tr>
+<td><code>/etc/nsswitch.conf</code></td>
+<td>Which sources provide users, groups, hosts and other names</td>
+</tr>
+</tbody>
+</table></div>
+<p>A simplified local login looks like this:</p>
+<ol>
+<li><code>getty</code> or a display manager presents a login prompt.</li>
+<li>The login program collects a username and password.</li>
+<li>PAM, the Pluggable Authentication Modules framework, runs the configured checks.</li>
+<li>The system verifies the password hash in <code>/etc/shadow</code> or delegates to another source.</li>
+<li>The login program sets the user and group identity, home directory and environment.</li>
+<li>The user's login shell starts.</li>
+</ol>
+<p>SSH logins follow a similar path. <code>sshd</code> authenticates the user, then starts the shell or the requested command. PAM policy can apply account restrictions, password quality rules, session limits and audit hooks.</p>
+<p>Inspect your own entry and the resolved account data:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getent<span class="w"> </span>passwd<span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span>
+getent<span class="w"> </span>group<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>id<span class="w"> </span>-gn<span class="k">)</span><span class="s2">"</span>
+getent<span class="w"> </span>shadow<span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span>
+lastlog<span class="w"> </span>-u<span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span>
+</code></pre></div>
+<p>Only root can read <code>/etc/shadow</code>. <code>getent</code> asks the name service switch, so it works with local files, LDAP or other sources. Reading <code>/etc/passwd</code> directly only shows the local file.</p>
+<h2 id="manage-users-and-groups">Manage users and groups<a aria-label="Link to this section" class="g-anchor" href="#manage-users-and-groups">#</a></h2>
+<p>On Debian and Ubuntu, <code>adduser</code> is a friendly wrapper around <code>useradd</code>. On other distributions, <code>useradd</code> is the standard low-level tool.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>adduser<span class="w"> </span>alice
+sudo<span class="w"> </span>useradd<span class="w"> </span>-m<span class="w"> </span>-s<span class="w"> </span>/bin/bash<span class="w"> </span>bob
+sudo<span class="w"> </span>passwd<span class="w"> </span>bob
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>sudo<span class="w"> </span>bob
+sudo<span class="w"> </span>usermod<span class="w"> </span>-s<span class="w"> </span>/bin/zsh<span class="w"> </span>bob
+sudo<span class="w"> </span>userdel<span class="w"> </span>-r<span class="w"> </span>bob
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Task</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create a user</td>
+<td><code>adduser alice</code> or <code>useradd -m alice</code></td>
+</tr>
+<tr>
+<td>Set a password</td>
+<td><code>passwd alice</code></td>
+</tr>
+<tr>
+<td>Add a supplementary group</td>
+<td><code>usermod -aG group user</code></td>
+</tr>
+<tr>
+<td>Change the login shell</td>
+<td><code>usermod -s /bin/bash user</code></td>
+</tr>
+<tr>
+<td>Lock an account</td>
+<td><code>usermod -L user</code> or <code>passwd -l user</code></td>
+</tr>
+<tr>
+<td>Unlock an account</td>
+<td><code>usermod -U user</code> or <code>passwd -u user</code></td>
+</tr>
+<tr>
+<td>Delete a user</td>
+<td><code>userdel -r user</code></td>
+</tr>
+<tr>
+<td>Create a group</td>
+<td><code>groupadd project</code></td>
+</tr>
+<tr>
+<td>Add a member to a group</td>
+<td><code>gpasswd -a user project</code></td>
+</tr>
+<tr>
+<td>Remove a member</td>
+<td><code>gpasswd -d user project</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Be careful with <code>usermod -G</code>. Without <code>-a</code>, it replaces the user's supplementary groups instead of adding one. The safe form is <code>usermod -aG group user</code>.</p>
+<p>Password aging is controlled with <code>chage</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>chage<span class="w"> </span>-l<span class="w"> </span>alice
+sudo<span class="w"> </span>chage<span class="w"> </span>-M<span class="w"> </span><span class="m">90</span><span class="w"> </span>-W<span class="w"> </span><span class="m">14</span><span class="w"> </span>alice
+</code></pre></div>
+<p><code>-M</code> sets the maximum password age in days. <code>-W</code> sets the warning period. Password policy belongs in a documented standard, not only in one account's settings.</p>
+<h2 id="pam-in-one-page">PAM in one page<a aria-label="Link to this section" class="g-anchor" href="#pam-in-one-page">#</a></h2>
+<p>PAM sits between an application and the authentication mechanism. Applications such as <code>login</code>, <code>sshd</code>, <code>su</code> and <code>sudo</code> include PAM support. The rules live in <code>/etc/pam.d/</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ls<span class="w"> </span>/etc/pam.d
+cat<span class="w"> </span>/etc/pam.d/common-auth
+cat<span class="w"> </span>/etc/pam.d/sshd
+</code></pre></div>
+<p>A PAM line has four fields: type, control, module and arguments.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">type    control  module-path              arguments
+auth    required pam_unix.so
+</code></pre></div>
+<p>Common types are <code>auth</code> for authentication, <code>account</code> for account validity, <code>password</code> for password changes and <code>session</code> for session setup. Common controls are <code>required</code>, <code>requisite</code>, <code>sufficient</code> and <code>optional</code>.</p>
+<p>PAM is powerful and easy to break. A mistake in <code>/etc/pam.d/common-auth</code> can lock every account out, including root. Keep a root shell open, make a backup and test in a disposable lab before changing authentication policy.</p>
+<h2 id="capabilities">Capabilities<a aria-label="Link to this section" class="g-anchor" href="#capabilities">#</a></h2>
+<p>Capabilities split root's power into smaller privileges. Instead of making a program SUID root, you can grant only the capability it needs.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getcap<span class="w"> </span>-r<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+getpcaps<span class="w"> </span><span class="nv">$$</span>
+capsh<span class="w"> </span>--print
+sudo<span class="w"> </span>setcap<span class="w"> </span><span class="nv">cap_net_bind_service</span><span class="o">=</span>+ep<span class="w"> </span>/usr/local/bin/myserver
+sudo<span class="w"> </span>getcap<span class="w"> </span>/usr/local/bin/myserver
+sudo<span class="w"> </span>setcap<span class="w"> </span>-r<span class="w"> </span>/usr/local/bin/myserver
+</code></pre></div>
+<p><code>cap_net_bind_service</code> allows a program to bind to a privileged port below 1024. <code>cap_net_raw</code> allows raw sockets. <code>cap_dac_override</code> bypasses file read, write and execute permission checks, so it is close to root for many purposes.</p>
+<p>Capabilities are stored in extended attributes. They can be lost when a file is copied or replaced by a package upgrade. Treat an unexpected capability as a finding worth investigating.</p>
+<h2 id="security-modules">Security modules<a aria-label="Link to this section" class="g-anchor" href="#security-modules">#</a></h2>
+<p>Mandatory access control adds policy on top of the classic permission bits. The two common Linux implementations are SELinux and AppArmor.</p>
+<p>SELinux is common on Red Hat family systems. It labels files and processes and enforces type-based rules.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getenforce
+sestatus
+ls<span class="w"> </span>-Z<span class="w"> </span>/var/www/html
+ps<span class="w"> </span>-eZ<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+sudo<span class="w"> </span>ausearch<span class="w"> </span>-m<span class="w"> </span>avc<span class="w"> </span>-ts<span class="w"> </span>recent
+</code></pre></div>
+<p>AppArmor is common on Ubuntu and SUSE. It applies profiles to programs.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>aa-status
+sudo<span class="w"> </span>aa-enforce<span class="w"> </span>/etc/apparmor.d/usr.bin.example
+sudo<span class="w"> </span>aa-complain<span class="w"> </span>/etc/apparmor.d/usr.bin.example
+</code></pre></div>
+<p>Check which system your lab uses before changing policy. Disabling a security module to make one application work is usually the wrong fix. Write or adjust a profile instead.</p>
+<h2 id="ssh-key-permissions">SSH key permissions<a aria-label="Link to this section" class="g-anchor" href="#ssh-key-permissions">#</a></h2>
+<p>SSH is strict about private key and configuration permissions. A private key that other users can read is rejected.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">chmod<span class="w"> </span><span class="m">700</span><span class="w"> </span>~/.ssh
+chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>~/.ssh/id_ed25519
+chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>~/.ssh/id_ed25519.pub
+chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>~/.ssh/authorized_keys
+chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>~/.ssh/config
+</code></pre></div>
+<p>The public key can be world-readable. The private key must not be. The <code>.ssh</code> directory should not be writable by anyone else. These rules apply to the account that owns the files, not to the client alone.</p>
+<h2 id="sudo-in-more-detail">Sudo in more detail<a aria-label="Link to this section" class="g-anchor" href="#sudo-in-more-detail">#</a></h2>
+<p><code>sudo</code> caches an authentication timestamp for a short period. Use <code>sudo -k</code> to clear it and <code>sudo -v</code> to refresh it without running a command.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>-k
+sudo<span class="w"> </span>-v
+sudo<span class="w"> </span>-l
+sudo<span class="w"> </span>-u<span class="w"> </span>www-data<span class="w"> </span>id
+sudo<span class="w"> </span>-i
+</code></pre></div>
+<p><code>sudo -i</code> starts a login shell as root. <code>sudo -u</code> runs a command as another user. <code>sudo -l</code> lists allowed commands. On some systems, a user may be allowed to run <code>sudo -l</code> but not to read the full policy.</p>
+<p>Prefer files in <code>/etc/sudoers.d/</code> over editing <code>/etc/sudoers</code> directly. Always use <code>visudo -f</code> to validate syntax:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>visudo<span class="w"> </span>-f<span class="w"> </span>/etc/sudoers.d/lab
+</code></pre></div>
+<p>A rule that permits a text editor, a pager, a package manager, a scripting language or a service manager can often be turned into a full shell. Review sudo rules as code, not as a convenience list.</p>
+<h2 id="password-hashes-and-shadow-fields">Password hashes and shadow fields<a aria-label="Link to this section" class="g-anchor" href="#password-hashes-and-shadow-fields">#</a></h2>
+<p>Password hashes belong in <code>/etc/shadow</code>, not in <code>/etc/passwd</code>. A shadow line has nine colon-separated fields:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">name:hash:lastchange:min:max:warn:inactive:expire:reserved
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>Username</td>
+</tr>
+<tr>
+<td><code>hash</code></td>
+<td>Password hash, <code>!</code> or <code>*</code> for a locked account, or an empty field for no password</td>
+</tr>
+<tr>
+<td><code>lastchange</code></td>
+<td>Days since 1970-01-01 when the password last changed</td>
+</tr>
+<tr>
+<td><code>min</code></td>
+<td>Minimum days before a password can be changed</td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td>Maximum days before a password must be changed</td>
+</tr>
+<tr>
+<td><code>warn</code></td>
+<td>Days before expiry to warn the user</td>
+</tr>
+<tr>
+<td><code>inactive</code></td>
+<td>Days after expiry before the account is disabled</td>
+</tr>
+<tr>
+<td><code>expire</code></td>
+<td>Account expiration date in days since 1970-01-01</td>
+</tr>
+<tr>
+<td><code>reserved</code></td>
+<td>Reserved for future use</td>
+</tr>
+</tbody>
+</table></div>
+<p>A modern hash looks like <code>$6$...</code> for SHA-512 or <code>$y$...</code> for yescrypt. The prefix identifies the algorithm, and the rest includes a salt and the digest. Hashes are one-way functions, but weak passwords can still be guessed offline. That is why password length, uniqueness and rate limiting matter.</p>
+<p>Check password status without revealing the hash:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>passwd<span class="w"> </span>-S<span class="w"> </span>alice
+sudo<span class="w"> </span>chage<span class="w"> </span>-l<span class="w"> </span>alice
+</code></pre></div>
+<p><code>passwd -S</code> shows whether the password is set, locked or empty, and the last change date. <code>chage -l</code> shows the aging policy.</p>
+<p>Generate a hash for a lab account only when you have a reason:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">openssl<span class="w"> </span>passwd<span class="w"> </span>-6
+mkpasswd<span class="w"> </span>-m<span class="w"> </span>yescrypt
+</code></pre></div>
+<p>Do not paste real password hashes into tickets, chat or notes. Treat the shadow file as sensitive. Restrict backups that contain it and encrypt them.</p>
+<h2 id="lab-inspect-and-adjust-a-sandbox">Lab: inspect and adjust a sandbox<a aria-label="Link to this section" class="g-anchor" href="#lab-inspect-and-adjust-a-sandbox">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/linux-foundations/lab05
+<span class="nb">cd</span><span class="w"> </span>~/linux-foundations/lab05
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'sensitive lab data\n'</span><span class="w"> </span>&gt;<span class="w"> </span>secret.txt
+chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>secret.txt
+ls<span class="w"> </span>-l<span class="w"> </span>secret.txt
+stat<span class="w"> </span>secret.txt
+<span class="nb">umask</span>
+</code></pre></div>
+<p>Then:</p>
+<ol>
+<li>Create a group called <code>labteam</code> if you have sudo access.</li>
+<li>Add your user to the group.</li>
+<li>Change the file group to <code>labteam</code>.</li>
+<li>Set the mode to <code>640</code>.</li>
+<li>Use <code>getfacl</code> to inspect it.</li>
+<li>Explain why another normal user still cannot read it.</li>
+</ol>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Using <code>chmod 777</code> to solve an access problem.</li>
+<li>Forgetting that directory execute permission is required to access files inside.</li>
+<li>Running <code>chown -R</code> on the wrong path.</li>
+<li>Editing <code>/etc/sudoers</code> directly instead of using <code>visudo</code>.</li>
+<li>Assuming a service account is harmless because it cannot log in.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Read UIDs, GIDs and group membership.</li>
+<li>Interpret symbolic and octal modes.</li>
+<li>Change ownership and permissions safely.</li>
+<li>Explain SUID, SGID and the sticky bit.</li>
+<li>Inspect sudo rights and understand why broad rules are dangerous.</li>
+</ul>
+<p>Next you will look at the processes and services that use these permissions.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 05 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/04-reading-searching-editing.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 04</span><strong>Reading, Searching and Editing Files</strong></a><a class="g-chapter-card" href="../foundations/06-processes-services-systemd.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 06</span><strong>Processes, Services and systemd</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#identities" data-toc-link>Identities</a><a class="g-toc-link depth-2" href="#permission-bits" data-toc-link>Permission bits</a><a class="g-toc-link depth-2" href="#octal-notation" data-toc-link>Octal notation</a><a class="g-toc-link depth-2" href="#change-ownership" data-toc-link>Change ownership</a><a class="g-toc-link depth-2" href="#the-umask" data-toc-link>The umask</a><a class="g-toc-link depth-2" href="#special-bits" data-toc-link>Special bits</a><a class="g-toc-link depth-2" href="#access-control-lists" data-toc-link>Access control lists</a><a class="g-toc-link depth-2" href="#sudo" data-toc-link>Sudo</a><a class="g-toc-link depth-2" href="#service-accounts" data-toc-link>Service accounts</a><a class="g-toc-link depth-2" href="#account-databases-and-the-login-flow" data-toc-link>Account databases and the login flow</a><a class="g-toc-link depth-2" href="#manage-users-and-groups" data-toc-link>Manage users and groups</a><a class="g-toc-link depth-2" href="#pam-in-one-page" data-toc-link>PAM in one page</a><a class="g-toc-link depth-2" href="#capabilities" data-toc-link>Capabilities</a><a class="g-toc-link depth-2" href="#security-modules" data-toc-link>Security modules</a><a class="g-toc-link depth-2" href="#ssh-key-permissions" data-toc-link>SSH key permissions</a><a class="g-toc-link depth-2" href="#sudo-in-more-detail" data-toc-link>Sudo in more detail</a><a class="g-toc-link depth-2" href="#password-hashes-and-shadow-fields" data-toc-link>Password hashes and shadow fields</a><a class="g-toc-link depth-2" href="#lab-inspect-and-adjust-a-sandbox" data-toc-link>Lab: inspect and adjust a sandbox</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 05 / 20 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

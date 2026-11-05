@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 10 of 10. Use logs and a repeatable method to diagnose failures and apply a secure baseline.">
+  <title>Part 10: Logs, Troubleshooting and a Secure Baseline | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html" aria-current="page"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 10</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 10</p>
+        <h1>Logs, Troubleshooting and a Secure Baseline</h1>
+        <p class="g-deck">Use logs and a repeatable method to diagnose failures and apply a secure baseline.</p>
+        <div class="g-chapter-meta">
+          <span>19 min read</span>
+          <span>20 sections</span>
+          <span>26 code blocks</span>
+          <span>Part 10 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>20 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#where-logs-live" data-toc-link>Where logs live</a><a class="g-toc-link depth-2" href="#a-troubleshooting-method" data-toc-link>A troubleshooting method</a><a class="g-toc-link depth-2" href="#common-problems-and-first-checks" data-toc-link>Common problems and first checks</a><a class="g-toc-link depth-2" href="#investigate-a-full-disk" data-toc-link>Investigate a full disk</a><a class="g-toc-link depth-2" href="#investigate-a-service" data-toc-link>Investigate a service</a><a class="g-toc-link depth-2" href="#investigate-a-network-problem" data-toc-link>Investigate a network problem</a><a class="g-toc-link depth-2" href="#a-practical-security-baseline" data-toc-link>A practical security baseline</a><a class="g-toc-link depth-2" href="#quick-audit-commands" data-toc-link>Quick audit commands</a><a class="g-toc-link depth-2" href="#backups-and-recovery" data-toc-link>Backups and recovery</a><a class="g-toc-link depth-2" href="#logging-architecture" data-toc-link>Logging architecture</a><a class="g-toc-link depth-2" href="#auditing-and-file-integrity" data-toc-link>Auditing and file integrity</a><a class="g-toc-link depth-2" href="#performance-troubleshooting" data-toc-link>Performance troubleshooting</a><a class="g-toc-link depth-2" href="#a-stronger-security-baseline" data-toc-link>A stronger security baseline</a><a class="g-toc-link depth-2" href="#incident-response-basics" data-toc-link>Incident response basics</a><a class="g-toc-link depth-2" href="#backups-snapshots-and-recovery" data-toc-link>Backups, snapshots and recovery</a><a class="g-toc-link depth-2" href="#monitoring-without-a-platform" data-toc-link>Monitoring without a platform</a><a class="g-toc-link depth-2" href="#time-locale-and-certificates" data-toc-link>Time, locale and certificates</a><a class="g-toc-link depth-2" href="#lab-diagnose-a-controlled-failure" data-toc-link>Lab: diagnose a controlled failure</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>A Linux system tells you what it is doing through logs, process state, exit codes and resource counters. Troubleshooting is the skill of asking a precise question, collecting the right evidence and changing one thing at a time. Security is the habit of reducing unnecessary access before something goes wrong.</p>
+<h2 id="where-logs-live">Where logs live<a aria-label="Link to this section" class="g-anchor" href="#where-logs-live">#</a></h2>
+<p>Modern systems centralize service logs in the systemd journal. Traditional text logs still exist under <code>/var/log</code>.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">journalctl<span class="w"> </span>--no-pager<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span>
+journalctl<span class="w"> </span>-b<span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>-p<span class="w"> </span>err<span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>--since<span class="w"> </span><span class="s1">'1 hour ago'</span><span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>--no-pager
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Location</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>journalctl</code></td>
+<td>systemd journal, service output and kernel messages</td>
+</tr>
+<tr>
+<td><code>/var/log/syslog</code></td>
+<td>General system log on Debian and Ubuntu</td>
+</tr>
+<tr>
+<td><code>/var/log/auth.log</code></td>
+<td>Authentication events on Debian and Ubuntu</td>
+</tr>
+<tr>
+<td><code>/var/log/kern.log</code></td>
+<td>Kernel messages</td>
+</tr>
+<tr>
+<td><code>/var/log/dpkg.log</code></td>
+<td>Package installation history</td>
+</tr>
+<tr>
+<td><code>/var/log/apt/</code></td>
+<td>APT history and term logs</td>
+</tr>
+<tr>
+<td><code>/var/log/nginx/</code></td>
+<td>Web server logs, when installed</td>
+</tr>
+</tbody>
+</table></div>
+<p>Log locations vary by distribution. If a file is missing, check the service configuration and the distribution documentation.</p>
+<p><code>dmesg</code> shows the kernel ring buffer. It is useful for hardware, driver and boot messages:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">dmesg<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span>
+dmesg<span class="w"> </span>--level<span class="o">=</span>err,warn
+</code></pre></div>
+<h2 id="a-troubleshooting-method">A troubleshooting method<a aria-label="Link to this section" class="g-anchor" href="#a-troubleshooting-method">#</a></h2>
+<p>Use the same loop every time:</p>
+<ol>
+<li><strong>Define the symptom.</strong> "The service is down" is too broad. "Requests to port 443 time out from this host" is testable.</li>
+<li><strong>Check the simple things.</strong> Is the host up? Is the cable or route present? Is the disk full? Is the clock correct?</li>
+<li><strong>Reproduce the problem.</strong> Find the smallest command that shows the failure.</li>
+<li><strong>Collect evidence.</strong> Read logs, inspect process state, check sockets and measure resources.</li>
+<li><strong>Form one hypothesis.</strong> Change one variable at a time.</li>
+<li><strong>Verify the fix.</strong> Repeat the original test and check the logs for new errors.</li>
+<li><strong>Record what happened.</strong> Future you will forget the details.</li>
+</ol>
+<p>Avoid changing several things at once. If the problem disappears, you will not know which change fixed it.</p>
+<h2 id="common-problems-and-first-checks">Common problems and first checks<a aria-label="Link to this section" class="g-anchor" href="#common-problems-and-first-checks">#</a></h2>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Symptom</th>
+<th>First checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Command not found</td>
+<td><code>PATH</code>, package installed, typo, shell function</td>
+</tr>
+<tr>
+<td>Permission denied</td>
+<td><code>ls -l</code>, <code>id</code>, directory execute bit, ACL, mount options</td>
+</tr>
+<tr>
+<td>Disk full</td>
+<td><code>df -h</code>, <code>df -i</code>, <code>du -sh</code>, deleted open files</td>
+</tr>
+<tr>
+<td>Service will not start</td>
+<td><code>systemctl status</code>, <code>journalctl -u</code>, config syntax</td>
+</tr>
+<tr>
+<td>Port already in use</td>
+<td><code>ss -tulpn</code>, process owner, service conflict</td>
+</tr>
+<tr>
+<td>DNS fails</td>
+<td><code>/etc/resolv.conf</code>, <code>resolvectl</code>, <code>getent hosts</code>, <code>/etc/hosts</code></td>
+</tr>
+<tr>
+<td>SSH login fails</td>
+<td>key permissions, <code>authorized_keys</code>, sshd config, auth log</td>
+</tr>
+<tr>
+<td>Slow system</td>
+<td><code>uptime</code>, <code>top</code>, <code>free -h</code>, <code>vmstat</code>, disk latency</td>
+</tr>
+<tr>
+<td>Boot fails</td>
+<td>GRUB, initramfs, fstab, root UUID, recovery shell</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="investigate-a-full-disk">Investigate a full disk<a aria-label="Link to this section" class="g-anchor" href="#investigate-a-full-disk">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">df<span class="w"> </span>-h
+df<span class="w"> </span>-i
+du<span class="w"> </span>-sh<span class="w"> </span>/var/*<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-h
+find<span class="w"> </span>/var/log<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-size<span class="w"> </span>+100M<span class="w"> </span>-ls
+lsof<span class="w"> </span>+L1
+</code></pre></div>
+<p><code>df</code> reports filesystem usage. <code>du</code> reports directory usage. <code>lsof +L1</code> finds deleted files that are still open, which can hold space until the process is restarted.</p>
+<p>Do not delete logs blindly. Check the service owner, retention policy and whether the file is currently open. Prefer log rotation or a controlled truncate over removing an active file.</p>
+<h2 id="investigate-a-service">Investigate a service<a aria-label="Link to this section" class="g-anchor" href="#investigate-a-service">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>status<span class="w"> </span>example<span class="w"> </span>--no-pager
+journalctl<span class="w"> </span>-u<span class="w"> </span>example<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span><span class="w"> </span>--no-pager
+systemctl<span class="w"> </span>cat<span class="w"> </span>example
+systemctl<span class="w"> </span>show<span class="w"> </span>example<span class="w"> </span>-p<span class="w"> </span>ExecStart,User,WorkingDirectory
+</code></pre></div>
+<p>Read the unit, the service user, the working directory and the last error. A service can fail because a path is missing, a permission is wrong, a port is taken or a dependency is not ready.</p>
+<p>If you change a unit file:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>example
+systemctl<span class="w"> </span>status<span class="w"> </span>example<span class="w"> </span>--no-pager
+</code></pre></div>
+<h2 id="investigate-a-network-problem">Investigate a network problem<a aria-label="Link to this section" class="g-anchor" href="#investigate-a-network-problem">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ip<span class="w"> </span>-brief<span class="w"> </span>addr
+ip<span class="w"> </span>route
+getent<span class="w"> </span>hosts<span class="w"> </span>example.com
+ss<span class="w"> </span>-tulpn
+curl<span class="w"> </span>-v<span class="w"> </span>--max-time<span class="w"> </span><span class="m">5</span><span class="w"> </span>https://example.com
+</code></pre></div>
+<p>Work from the bottom up: interface, address, route, name resolution, socket, application. If <code>curl</code> reaches an IP address but not a hostname, focus on DNS. If a local service listens on loopback only, a remote client cannot reach it.</p>
+<h2 id="a-practical-security-baseline">A practical security baseline<a aria-label="Link to this section" class="g-anchor" href="#a-practical-security-baseline">#</a></h2>
+<p>You do not need a perfect hardening guide to improve a system. Start with these controls:</p>
+<ol>
+<li><strong>Patch regularly.</strong> Apply security updates and reboot when the kernel or core libraries require it.</li>
+<li><strong>Use least privilege.</strong> Do not run services as root without a specific reason. Give users only the sudo rules they need.</li>
+<li><strong>Protect SSH.</strong> Prefer keys over passwords, disable direct root login where appropriate, and restrict access by user or network.</li>
+<li><strong>Enable a firewall.</strong> Allow only the services that should be reachable. Test from another host.</li>
+<li><strong>Remove unused software.</strong> Every installed service is another surface to maintain.</li>
+<li><strong>Keep logs.</strong> Make sure the journal or remote log destination survives a reboot if you need evidence.</li>
+<li><strong>Back up important data.</strong> Test a restore, not just a backup.</li>
+<li><strong>Keep secrets out of shell history and world-readable files.</strong> Use a secret manager or restricted file permissions.</li>
+<li><strong>Monitor changes.</strong> Track new services, new listening ports, new users and unexpected SUID files.</li>
+<li><strong>Document the baseline.</strong> A control you cannot verify is only an intention.</li>
+</ol>
+<h2 id="quick-audit-commands">Quick audit commands<a aria-label="Link to this section" class="g-anchor" href="#quick-audit-commands">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">who
+last<span class="w"> </span>-n<span class="w"> </span><span class="m">10</span>
+sudo<span class="w"> </span>-l
+ss<span class="w"> </span>-tulpn
+systemctl<span class="w"> </span>--failed
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+find<span class="w"> </span>/<span class="w"> </span>-perm<span class="w"> </span>-0002<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+df<span class="w"> </span>-h
+free<span class="w"> </span>-h
+</code></pre></div>
+<p>Run these only on systems you own or are authorized to inspect. Interpret results in context. A SUID binary is not automatically malicious, and a world-writable file is not automatically a vulnerability.</p>
+<h2 id="backups-and-recovery">Backups and recovery<a aria-label="Link to this section" class="g-anchor" href="#backups-and-recovery">#</a></h2>
+<p>A backup plan should answer:</p>
+<ul>
+<li>What data must survive?</li>
+<li>How often can it change?</li>
+<li>How long can the system be down?</li>
+<li>Where is the backup stored?</li>
+<li>Who can restore it?</li>
+<li>When was the last successful restore test?</li>
+</ul>
+<p>A copy on the same disk is not a backup. Keep at least one copy on a different device or location, and protect it from the same credentials that protect the live system.</p>
+<h2 id="logging-architecture">Logging architecture<a aria-label="Link to this section" class="g-anchor" href="#logging-architecture">#</a></h2>
+<p>Linux logging is a set of layers, not one file. The kernel, systemd, services and applications all produce records. Those records may go to the journal, to syslog, to application-specific files or to a remote collector.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Layer</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kernel ring buffer</td>
+<td>Hardware, driver, filesystem and boot messages</td>
+</tr>
+<tr>
+<td>systemd journal</td>
+<td>Collects service output, kernel messages and metadata</td>
+</tr>
+<tr>
+<td>rsyslog or syslog-ng</td>
+<td>Routes traditional syslog messages to files or remote hosts</td>
+</tr>
+<tr>
+<td>Application logs</td>
+<td>Service-specific files under <code>/var/log</code> or another configured path</td>
+</tr>
+<tr>
+<td>Log rotation</td>
+<td>Limits file size and retention</td>
+</tr>
+<tr>
+<td>Remote logging</td>
+<td>Sends copies to another host so local damage does not erase the record</td>
+</tr>
+</tbody>
+</table></div>
+<p>Check whether the journal is persistent:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/systemd/journald.conf
+ls<span class="w"> </span>-ld<span class="w"> </span>/var/log/journal
+journalctl<span class="w"> </span>--disk-usage
+</code></pre></div>
+<p>If <code>/var/log/journal</code> does not exist and <code>Storage=auto</code> is set, the journal may be volatile and disappear at reboot. For a lab, volatile logs are fine. For a system you need to investigate, configure persistent storage or remote logging.</p>
+<p>Limit journal size and retention in <code>/etc/systemd/journald.conf</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">ini</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-ini"><span class="k">[Journal]</span>
+<span class="na">Storage</span><span class="o">=</span><span class="s">persistent</span>
+<span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
+<span class="na">SystemKeepFree</span><span class="o">=</span><span class="s">2G</span>
+<span class="na">MaxRetentionSec</span><span class="o">=</span><span class="s">30day</span>
+</code></pre></div>
+<p>After changing the configuration:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>systemd-journald
+journalctl<span class="w"> </span>--vacuum-time<span class="o">=</span>7d
+journalctl<span class="w"> </span>--vacuum-size<span class="o">=</span>500M
+</code></pre></div>
+<p><code>journalctl --vacuum-*</code> deletes old entries. Confirm retention requirements before running it.</p>
+<p>Traditional logs are rotated by <code>logrotate</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/logrotate.conf
+ls<span class="w"> </span>/etc/logrotate.d
+sudo<span class="w"> </span>logrotate<span class="w"> </span>-d<span class="w"> </span>/etc/logrotate.conf
+sudo<span class="w"> </span>logrotate<span class="w"> </span>-f<span class="w"> </span>/etc/logrotate.conf
+</code></pre></div>
+<p><code>-d</code> is a debug dry run. <code>-f</code> forces rotation. A misconfigured rule can fill the disk or delete logs you need. Test with <code>-d</code> first.</p>
+<h2 id="auditing-and-file-integrity">Auditing and file integrity<a aria-label="Link to this section" class="g-anchor" href="#auditing-and-file-integrity">#</a></h2>
+<p>The audit subsystem records security-relevant events. It can log system calls, file access, user changes and command execution.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>auditd
+sudo<span class="w"> </span>auditctl<span class="w"> </span>-l
+sudo<span class="w"> </span>ausearch<span class="w"> </span>-m<span class="w"> </span>USER_LOGIN<span class="w"> </span>-ts<span class="w"> </span>today
+sudo<span class="w"> </span>aureport<span class="w"> </span>--summary
+sudo<span class="w"> </span>aureport<span class="w"> </span>-au
+</code></pre></div>
+<p><code>auditctl -l</code> lists active rules. <code>ausearch</code> queries the audit log. <code>aureport</code> summarizes events. Rules live in <code>/etc/audit/rules.d/</code> on many distributions. A broad rule set can generate a large volume of data, so start with a focused policy.</p>
+<p>File integrity tools compare current files against a known baseline.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>aide<span class="w"> </span>--init
+sudo<span class="w"> </span>aide<span class="w"> </span>--check
+debsums<span class="w"> </span>-c
+rpm<span class="w"> </span>-Va
+</code></pre></div>
+<p>AIDE builds a database of hashes and metadata. <code>debsums -c</code> checks Debian package files against their recorded checksums. <code>rpm -Va</code> verifies RPM package files. These tools detect changes to packaged files, not changes to data or configuration outside the package database.</p>
+<p>A changed file is not automatically malicious. An administrator may have edited it, or a package update may have replaced it. Correlate with package history and logs.</p>
+<p>Inspect login history:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">who
+w
+last<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span>
+lastlog
+journalctl<span class="w"> </span>-u<span class="w"> </span>ssh<span class="w"> </span>--since<span class="w"> </span>today<span class="w"> </span>--no-pager
+</code></pre></div>
+<p><code>who</code> shows current logins. <code>w</code> adds what each user is doing. <code>last</code> reads the login history. <code>lastlog</code> shows the most recent login for each account. These records can be incomplete or altered on a compromised host, so preserve them before cleanup.</p>
+<h2 id="performance-troubleshooting">Performance troubleshooting<a aria-label="Link to this section" class="g-anchor" href="#performance-troubleshooting">#</a></h2>
+<p>A slow system is not always short on CPU. Check the four main resources: CPU, memory, disk and network.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">uptime
+top
+free<span class="w"> </span>-h
+vmstat<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">5</span>
+iostat<span class="w"> </span>-xz<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">5</span>
+pidstat<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">5</span>
+sar<span class="w"> </span>-u<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p><code>uptime</code> shows load averages. Load counts runnable and uninterruptible tasks. A high load with low CPU usage often points to blocked I/O.</p>
+<p><code>free -h</code> shows memory, buffers, cache and swap. Linux uses spare memory for cache, so a low "free" value is normal. Look at available memory and swap activity.</p>
+<p><code>vmstat</code> shows runnable processes, blocked processes, swap in and out, I/O and CPU. A persistent <code>r</code> queue or high <code>wa</code> time deserves attention.</p>
+<p><code>iostat -xz</code> shows per-device utilization, queue size and latency. <code>pidstat</code> shows per-process CPU, memory and I/O. <code>sar</code> reads historical performance data when sysstat is installed and collection is enabled.</p>
+<p>Pressure stall information is available on newer kernels:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/proc/pressure/cpu
+cat<span class="w"> </span>/proc/pressure/memory
+cat<span class="w"> </span>/proc/pressure/io
+</code></pre></div>
+<p>The <code>some</code> and <code>full</code> lines report the percentage of time tasks were stalled. Rising <code>full</code> values for memory or I/O often explain latency better than average utilization.</p>
+<p>Investigate in this order:</p>
+<ol>
+<li>Define the symptom and the time window.</li>
+<li>Check load, CPU, memory, disk and network.</li>
+<li>Identify the busiest process or device.</li>
+<li>Correlate with logs and recent changes.</li>
+<li>Change one thing and measure again.</li>
+</ol>
+<p>Do not restart services at random. A restart hides evidence and may make the problem return later.</p>
+<h2 id="a-stronger-security-baseline">A stronger security baseline<a aria-label="Link to this section" class="g-anchor" href="#a-stronger-security-baseline">#</a></h2>
+<p>The earlier baseline is a starting point. A reproducible baseline adds verification.</p>
+<ol>
+<li><strong>Inventory the system.</strong> Know the OS, kernel, packages, services, users and listening ports.</li>
+<li><strong>Patch on a schedule.</strong> Track security updates and reboot when required.</li>
+<li><strong>Remove unused software and services.</strong> Every service is an attack surface.</li>
+<li><strong>Use least privilege.</strong> Limit sudo, service accounts, capabilities and file permissions.</li>
+<li><strong>Harden SSH.</strong> Keys only where possible, no direct root login, restrict users and source networks.</li>
+<li><strong>Enable a default deny firewall.</strong> Allow only required inbound traffic.</li>
+<li><strong>Enable auditing and persistent logging.</strong> Know what changed and keep the record.</li>
+<li><strong>Protect secrets.</strong> Use a secret manager or restricted files, not shell history or world-readable configuration.</li>
+<li><strong>Back up and test restores.</strong> A backup that has never been restored is a hope.</li>
+<li><strong>Monitor drift.</strong> Alert on new users, new listening ports, new services, unexpected SUID files and package changes.</li>
+<li><strong>Document exceptions.</strong> A control that is disabled needs an owner, a reason and an expiry date.</li>
+<li><strong>Review regularly.</strong> A baseline is a process, not a one-time checklist.</li>
+</ol>
+<p>Useful verification commands:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">getent<span class="w"> </span>passwd<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'$3 &gt;= 1000 {print $1, $3, $7}'</span>
+ss<span class="w"> </span>-tulpn
+systemctl<span class="w"> </span>list-unit-files<span class="w"> </span>--type<span class="o">=</span>service<span class="w"> </span>--state<span class="o">=</span>enabled
+sudo<span class="w"> </span>find<span class="w"> </span>/<span class="w"> </span>-xdev<span class="w"> </span>-perm<span class="w"> </span>-4000<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-print<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+sudo<span class="w"> </span>find<span class="w"> </span>/<span class="w"> </span>-xdev<span class="w"> </span>-perm<span class="w"> </span>-0002<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-print<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+sudo<span class="w"> </span>apt<span class="w"> </span>list<span class="w"> </span>--upgradable
+</code></pre></div>
+<p><code>-xdev</code> keeps <code>find</code> on one filesystem. That avoids crawling network mounts and pseudo filesystems. Review the results in context. A SUID binary or a world-writable file may be intentional.</p>
+<h2 id="incident-response-basics">Incident response basics<a aria-label="Link to this section" class="g-anchor" href="#incident-response-basics">#</a></h2>
+<p>An incident is not only a technical problem. It is a sequence of decisions under uncertainty. A small team needs a simple process.</p>
+<ol>
+<li><strong>Prepare.</strong> Keep contacts, backups, logging and an isolated analysis machine ready.</li>
+<li><strong>Identify.</strong> Confirm that an event is real and decide its scope.</li>
+<li><strong>Contain.</strong> Stop the spread without destroying evidence. Isolate the host at the network layer when possible.</li>
+<li><strong>Preserve.</strong> Capture memory, disk images, logs and relevant configuration before cleanup.</li>
+<li><strong>Eradicate.</strong> Remove the cause, not only the symptom.</li>
+<li><strong>Recover.</strong> Restore from a trusted baseline and monitor closely.</li>
+<li><strong>Learn.</strong> Record what happened, what worked and what failed.</li>
+</ol>
+<p>Preservation commands depend on the environment. At minimum, record the time, the host, the current user, network connections, running processes and recent logs.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">date<span class="w"> </span>-u
+hostname
+who
+ss<span class="w"> </span>-tulpn
+ps<span class="w"> </span>-eo<span class="w"> </span>pid,ppid,user,stat,cmd
+journalctl<span class="w"> </span>--since<span class="w"> </span><span class="s1">'2 hours ago'</span><span class="w"> </span>--no-pager<span class="w"> </span>&gt;<span class="w"> </span>incident-journal.txt
+</code></pre></div>
+<p>Do not run a full forensic collection from memory on a production host. Use a documented procedure, write-blockers for disk images and a chain of custody. The goal of this section is to teach the first hour, not to replace a forensic analyst.</p>
+<h2 id="backups-snapshots-and-recovery">Backups, snapshots and recovery<a aria-label="Link to this section" class="g-anchor" href="#backups-snapshots-and-recovery">#</a></h2>
+<p>A backup plan answers five questions:</p>
+<ul>
+<li>What data must survive?</li>
+<li>How much data can be lost?</li>
+<li>How long can recovery take?</li>
+<li>Where are the copies stored?</li>
+<li>Who has tested a restore?</li>
+</ul>
+<p>The 3-2-1 rule is a useful default: at least three copies, on two different media, with one off-site. It is not a law. A small lab may use a local snapshot plus an encrypted remote copy.</p>
+<p>Snapshots are not backups if they live on the same failing disk or in the same compromised account. They are useful for quick rollback, not for disaster recovery.</p>
+<p>Test restoration:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">rsync<span class="w"> </span>-av<span class="w"> </span>--dry-run<span class="w"> </span>backup/<span class="w"> </span>restore/
+sha256sum<span class="w"> </span>important.tar.gz
+tar<span class="w"> </span>-tzf<span class="w"> </span>important.tar.gz<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+</code></pre></div>
+<p>A dry run checks paths and permissions. A checksum verifies the copy. Listing an archive verifies that it can be read. None of these replaces a real restore into a clean directory.</p>
+<h2 id="monitoring-without-a-platform">Monitoring without a platform<a aria-label="Link to this section" class="g-anchor" href="#monitoring-without-a-platform">#</a></h2>
+<p>You do not need a full observability stack to notice problems.</p>
+<ul>
+<li>Check disk space and inode use daily.</li>
+<li>Check failed systemd units after boot.</li>
+<li>Check the journal for repeated errors.</li>
+<li>Check listening ports after package changes.</li>
+<li>Check certificate expiry for public services.</li>
+<li>Check backup completion and restore tests.</li>
+<li>Check login failures and new accounts.</li>
+<li>Check time synchronization.</li>
+</ul>
+<p>A simple daily report script can cover the basics:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="ch">#!/usr/bin/env bash</span>
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'host: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>hostname<span class="k">)</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'uptime: %s\n'</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>uptime<span class="w"> </span>-p<span class="k">)</span><span class="s2">"</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'disk:\n'</span>
+df<span class="w"> </span>-h<span class="w"> </span>/
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'failed units:\n'</span>
+systemctl<span class="w"> </span>--failed<span class="w"> </span>--no-legend<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<span class="nb">printf</span><span class="w"> </span><span class="s1">'listening:\n'</span>
+ss<span class="w"> </span>-tulpn
+</code></pre></div>
+<p>Run it from cron or a systemd timer and send the output to a location you actually read. A report nobody reads is not monitoring.</p>
+<h2 id="time-locale-and-certificates">Time, locale and certificates<a aria-label="Link to this section" class="g-anchor" href="#time-locale-and-certificates">#</a></h2>
+<p>Correct time is a security control. TLS certificates, Kerberos tickets, logs and scheduled jobs all depend on it.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">timedatectl
+timedatectl<span class="w"> </span>status
+timedatectl<span class="w"> </span>list-timezones
+sudo<span class="w"> </span>timedatectl<span class="w"> </span>set-timezone<span class="w"> </span>Europe/London
+</code></pre></div>
+<p><code>timedatectl</code> shows the local time, universal time, time zone and synchronization state. A system with the wrong time may fail certificate validation or produce misleading logs.</p>
+<p>Check the time synchronization service:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">systemctl<span class="w"> </span>status<span class="w"> </span>systemd-timesyncd
+chronyc<span class="w"> </span>tracking
+chronyc<span class="w"> </span>sources
+</code></pre></div>
+<p><code>systemd-timesyncd</code> is a simple client. <code>chrony</code> is common on servers and can act as a client or a server. Only one time daemon should manage the clock at a time.</p>
+<p>Locale settings affect character encoding, collation and message language.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">locale
+localectl<span class="w"> </span>status
+localectl<span class="w"> </span>list-locales
+</code></pre></div>
+<p>A UTF-8 locale is the normal choice:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>localectl<span class="w"> </span>set-locale<span class="w"> </span><span class="nv">LANG</span><span class="o">=</span>en_US.UTF-8
+</code></pre></div>
+<p>Locale changes affect new sessions and services. They can change sort order, date formats and how programs handle non-ASCII text. Test scripts and reports after changing the locale.</p>
+<p>Inspect TLS certificate expiry:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>cert.pem<span class="w"> </span>-noout<span class="w"> </span>-subject<span class="w"> </span>-issuer<span class="w"> </span>-dates
+openssl<span class="w"> </span>s_client<span class="w"> </span>-connect<span class="w"> </span>example.com:443<span class="w"> </span>-servername<span class="w"> </span>example.com<span class="w"> </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>openssl<span class="w"> </span>x509<span class="w"> </span>-noout<span class="w"> </span>-subject<span class="w"> </span>-dates
+</code></pre></div>
+<p>The first command reads a local certificate. The second opens a TLS connection and reads the server certificate. Check the subject, issuer and expiration date. A certificate can be valid but issued for the wrong name, so also verify the hostname and chain.</p>
+<p>For a quick expiry check in a script:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nv">end</span><span class="o">=</span><span class="k">$(</span>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>cert.pem<span class="w"> </span>-noout<span class="w"> </span>-enddate<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="o">=</span><span class="w"> </span>-f2<span class="k">)</span>
+date<span class="w"> </span>-d<span class="w"> </span><span class="s2">"</span><span class="nv">$end</span><span class="s2">"</span><span class="w"> </span>+%s
+</code></pre></div>
+<p>Convert the result to a date and compare it with the current time. Alert before expiry, not after.</p>
+<h2 id="lab-diagnose-a-controlled-failure">Lab: diagnose a controlled failure<a aria-label="Link to this section" class="g-anchor" href="#lab-diagnose-a-controlled-failure">#</a></h2>
+<p>In a disposable lab:</p>
+<ol>
+<li>Stop a non-essential service.</li>
+<li>Confirm the failure with <code>systemctl status</code>.</li>
+<li>Read the last 30 journal lines for that unit.</li>
+<li>Identify the first error, not the last symptom.</li>
+<li>Fix the cause.</li>
+<li>Restart the service and verify it is active.</li>
+<li>Write a three-line incident note: symptom, cause, fix.</li>
+</ol>
+<p>Then run the quick audit commands and explain which results are expected for your lab.</p>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Restarting a service before reading its logs.</li>
+<li>Deleting files to free space without finding the owner.</li>
+<li>Changing firewall rules without a second access path.</li>
+<li>Treating every warning as an emergency.</li>
+<li>Hardening a system without testing the result.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Find system and service logs.</li>
+<li>Follow a repeatable troubleshooting method.</li>
+<li>Diagnose disk, service, network and permission failures.</li>
+<li>Apply a practical security baseline.</li>
+<li>Verify a fix instead of assuming it worked.</li>
+</ul>
+<p>You now have the foundation to read the Linux for Hackers chapters with context. Start with Chapter 01, keep a lab snapshot and test every technique only on systems you own or have written permission to assess.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 10 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/09-bash-scripting-foundations.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 09</span><strong>Bash Scripting Foundations</strong></a><a class="g-chapter-card" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html"><span class="g-chapter-card-label">Main guide</span><strong>Open Chapter 01 of Linux for Hackers</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#where-logs-live" data-toc-link>Where logs live</a><a class="g-toc-link depth-2" href="#a-troubleshooting-method" data-toc-link>A troubleshooting method</a><a class="g-toc-link depth-2" href="#common-problems-and-first-checks" data-toc-link>Common problems and first checks</a><a class="g-toc-link depth-2" href="#investigate-a-full-disk" data-toc-link>Investigate a full disk</a><a class="g-toc-link depth-2" href="#investigate-a-service" data-toc-link>Investigate a service</a><a class="g-toc-link depth-2" href="#investigate-a-network-problem" data-toc-link>Investigate a network problem</a><a class="g-toc-link depth-2" href="#a-practical-security-baseline" data-toc-link>A practical security baseline</a><a class="g-toc-link depth-2" href="#quick-audit-commands" data-toc-link>Quick audit commands</a><a class="g-toc-link depth-2" href="#backups-and-recovery" data-toc-link>Backups and recovery</a><a class="g-toc-link depth-2" href="#logging-architecture" data-toc-link>Logging architecture</a><a class="g-toc-link depth-2" href="#auditing-and-file-integrity" data-toc-link>Auditing and file integrity</a><a class="g-toc-link depth-2" href="#performance-troubleshooting" data-toc-link>Performance troubleshooting</a><a class="g-toc-link depth-2" href="#a-stronger-security-baseline" data-toc-link>A stronger security baseline</a><a class="g-toc-link depth-2" href="#incident-response-basics" data-toc-link>Incident response basics</a><a class="g-toc-link depth-2" href="#backups-snapshots-and-recovery" data-toc-link>Backups, snapshots and recovery</a><a class="g-toc-link depth-2" href="#monitoring-without-a-platform" data-toc-link>Monitoring without a platform</a><a class="g-toc-link depth-2" href="#time-locale-and-certificates" data-toc-link>Time, locale and certificates</a><a class="g-toc-link depth-2" href="#lab-diagnose-a-controlled-failure" data-toc-link>Lab: diagnose a controlled failure</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 10 / 20 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Linux Foundations part 4 of 10. Read long files, search text, build pipelines and edit configuration with nano or vim.">
+  <title>Part 04: Reading, Searching and Editing Files | 0XMAP Linux Foundations</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Foundations</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Handbook navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Linux Foundations</p>
+      <p class="g-sidebar-count">10 parts / beginner path</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close handbook menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part">
+      <div class="g-nav-part-head"><span class="g-nav-part-num">HF</span><span>Handbook</span></div>
+      <ol><li><a class="g-nav-link g-nav-link-simple" href="../foundations/01-linux-mental-model.html"><span class="g-nav-num">01</span><span class="g-nav-title">Linux mental model</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/02-lab-setup-and-command-line.html"><span class="g-nav-num">02</span><span class="g-nav-title">Lab and command line</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/03-files-and-filesystem.html"><span class="g-nav-num">03</span><span class="g-nav-title">Files and paths</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/04-reading-searching-editing.html" aria-current="page"><span class="g-nav-num">04</span><span class="g-nav-title">Text and editors</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/05-users-permissions-sudo.html"><span class="g-nav-num">05</span><span class="g-nav-title">Users and sudo</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/06-processes-services-systemd.html"><span class="g-nav-num">06</span><span class="g-nav-title">Processes and systemd</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/07-packages-storage-boot.html"><span class="g-nav-num">07</span><span class="g-nav-title">Packages and disks</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/08-networking-essentials.html"><span class="g-nav-num">08</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/09-bash-scripting-foundations.html"><span class="g-nav-num">09</span><span class="g-nav-title">Bash scripts</span></a></li><li><a class="g-nav-link g-nav-link-simple" href="../foundations/10-logs-troubleshooting-security.html"><span class="g-nav-num">10</span><span class="g-nav-title">Logs and security</span></a></li></ol>
+    </section>
+  </nav>
+  <a class="g-side-guide" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+    <span class="g-side-guide-kicker">Main guide</span>
+    <strong>Linux for Hackers</strong>
+    <span>30 chapters across 5 sections</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Companion handbook. Read the parts in order or use them as a reference.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#foundations">Linux Foundations</a><span>/</span>
+          <span>Part 04</span>
+        </nav>
+        <p class="g-kicker">Linux Foundations / Part 04</p>
+        <h1>Reading, Searching and Editing Files</h1>
+        <p class="g-deck">Read long files, search text, build pipelines and edit configuration with nano or vim.</p>
+        <div class="g-chapter-meta">
+          <span>18 min read</span>
+          <span>16 sections</span>
+          <span>31 code blocks</span>
+          <span>Part 04 / 10</span>
+        </div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>16 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#read-a-file-without-flooding-the-terminal" data-toc-link>Read a file without flooding the terminal</a><a class="g-toc-link depth-2" href="#count-and-number-lines" data-toc-link>Count and number lines</a><a class="g-toc-link depth-2" href="#search-with-grep" data-toc-link>Search with grep</a><a class="g-toc-link depth-2" href="#pipes-turn-small-tools-into-one-workflow" data-toc-link>Pipes turn small tools into one workflow</a><a class="g-toc-link depth-2" href="#redirection-and-tee" data-toc-link>Redirection and tee</a><a class="g-toc-link depth-2" href="#text-processing-basics" data-toc-link>Text processing basics</a><a class="g-toc-link depth-2" href="#edit-files-with-nano" data-toc-link>Edit files with nano</a><a class="g-toc-link depth-2" href="#edit-files-with-vim" data-toc-link>Edit files with vim</a><a class="g-toc-link depth-2" href="#regular-expressions-in-practice" data-toc-link>Regular expressions in practice</a><a class="g-toc-link depth-2" href="#stream-editing-with-sed" data-toc-link>Stream editing with sed</a><a class="g-toc-link depth-2" href="#field-processing-with-awk" data-toc-link>Field processing with awk</a><a class="g-toc-link depth-2" href="#compare-and-combine-files" data-toc-link>Compare and combine files</a><a class="g-toc-link depth-2" href="#structured-text-and-encodings" data-toc-link>Structured text and encodings</a><a class="g-toc-link depth-2" href="#lab-build-a-small-report" data-toc-link>Lab: build a small report</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+</details>
+      <div class="g-prose"><p>Most Linux work is text work. Configuration lives in text files, logs are text streams, command output is text and scripts are text. Learn to read, filter and edit text efficiently and the rest of the system becomes easier to inspect.</p>
+<h2 id="read-a-file-without-flooding-the-terminal">Read a file without flooding the terminal<a aria-label="Link to this section" class="g-anchor" href="#read-a-file-without-flooding-the-terminal">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cat<span class="w"> </span>/etc/hostname
+less<span class="w"> </span>/etc/services
+head<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span><span class="w"> </span>/var/log/syslog
+tail<span class="w"> </span>-n<span class="w"> </span><span class="m">20</span><span class="w"> </span>/var/log/syslog
+</code></pre></div>
+<p><code>cat</code> prints the whole file. It is fine for short files and terrible for long ones. <code>less</code> opens a pager with search and scrolling. Use <code>/pattern</code> to search, <code>n</code> for the next match, <code>g</code> for the top, <code>G</code> for the bottom and <code>q</code> to quit.</p>
+<p><code>head</code> and <code>tail</code> show the beginning and end of a file. <code>tail -f</code> follows a file as it grows, which is useful for live logs:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">tail<span class="w"> </span>-f<span class="w"> </span>/var/log/auth.log
+</code></pre></div>
+<p>Press <code>Ctrl+C</code> to stop following.</p>
+<h2 id="count-and-number-lines">Count and number lines<a aria-label="Link to this section" class="g-anchor" href="#count-and-number-lines">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">wc<span class="w"> </span>-l<span class="w"> </span>/etc/passwd
+wc<span class="w"> </span>-w<span class="w"> </span>/etc/passwd
+wc<span class="w"> </span>-c<span class="w"> </span>/etc/passwd
+nl<span class="w"> </span>-ba<span class="w"> </span>/etc/hostname
+</code></pre></div>
+<p><code>wc -l</code> counts newline characters, not logical lines. A file without a final newline can report one fewer line than you expect. <code>nl</code> numbers lines, which is useful when discussing a specific part of a file.</p>
+<h2 id="search-with-grep">Search with grep<a aria-label="Link to this section" class="g-anchor" href="#search-with-grep">#</a></h2>
+<p><code>grep</code> prints lines that match a pattern.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>root<span class="w"> </span>/etc/passwd
+grep<span class="w"> </span>-i<span class="w"> </span>error<span class="w"> </span>/var/log/syslog
+grep<span class="w"> </span>-n<span class="w"> </span><span class="s1">'Failed password'</span><span class="w"> </span>/var/log/auth.log
+grep<span class="w"> </span>-r<span class="w"> </span><span class="s1">'PermitRootLogin'</span><span class="w"> </span>/etc/ssh
+grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span>/etc/ssh/sshd_config
+</code></pre></div>
+<p>Common options:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-i</code></td>
+<td>Ignore case</td>
+</tr>
+<tr>
+<td><code>-n</code></td>
+<td>Show line numbers</td>
+</tr>
+<tr>
+<td><code>-r</code></td>
+<td>Recurse into directories</td>
+</tr>
+<tr>
+<td><code>-v</code></td>
+<td>Invert the match</td>
+</tr>
+<tr>
+<td><code>-w</code></td>
+<td>Match whole words</td>
+</tr>
+<tr>
+<td><code>-F</code></td>
+<td>Treat the pattern as fixed text</td>
+</tr>
+<tr>
+<td><code>-E</code></td>
+<td>Use extended regular expressions</td>
+</tr>
+<tr>
+<td><code>-l</code></td>
+<td>Print only matching filenames</td>
+</tr>
+<tr>
+<td><code>-c</code></td>
+<td>Print a match count</td>
+</tr>
+</tbody>
+</table></div>
+<p>Basic regular expressions include <code>.</code> for any character, <code>*</code> for zero or more of the previous character, <code>^</code> for the start of a line, <code>$</code> for the end of a line and <code>[abc]</code> for a character class.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'^(root|daemon):'</span><span class="w"> </span>/etc/passwd
+grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'Failed|Invalid'</span><span class="w"> </span>/var/log/auth.log
+</code></pre></div>
+<p><code>rg</code> from ripgrep is a faster recursive search tool when it is installed. It respects <code>.gitignore</code> by default, which is helpful in code directories but can hide files when you are investigating a system.</p>
+<h2 id="pipes-turn-small-tools-into-one-workflow">Pipes turn small tools into one workflow<a aria-label="Link to this section" class="g-anchor" href="#pipes-turn-small-tools-into-one-workflow">#</a></h2>
+<p>A pipe sends the output of one command into the input of another. This is the core of the Unix style: small programs, connected well.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ps<span class="w"> </span>-ef<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>ssh
+grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span>/etc/services<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+cat<span class="w"> </span>/var/log/syslog<span class="w"> </span><span class="p">|</span><span class="w"> </span>wc<span class="w"> </span>-l
+</code></pre></div>
+<p>The third example is a useless use of <code>cat</code>. <code>wc -l /var/log/syslog</code> does the same work with one process. Use <code>cat</code> when you need to concatenate files or when a command only reads from standard input, not as a reflex.</p>
+<p>A more useful pipeline:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span><span class="s1">'Failed password'</span><span class="w"> </span>/var/log/auth.log<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $(NF-3)}'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>uniq<span class="w"> </span>-c<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-nr<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>head
+</code></pre></div>
+<p>This counts failed login attempts by source address. Read it from left to right: find lines, extract a field, sort, count duplicates, sort by count and show the top results. Do not worry about the exact field position yet. The point is that each stage does one job.</p>
+<h2 id="redirection-and-tee">Redirection and tee<a aria-label="Link to this section" class="g-anchor" href="#redirection-and-tee">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash"><span class="nb">command</span><span class="w"> </span>&gt;<span class="w"> </span>output.txt
+<span class="nb">command</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>output.txt
+<span class="nb">command</span><span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>errors.txt
+<span class="nb">command</span><span class="w"> </span>&gt;<span class="w"> </span>output.txt<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<span class="nb">command</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>output.txt
+<span class="nb">command</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>output.txt
+</code></pre></div>
+<p><code>&gt;</code> replaces a file. <code>&gt;&gt;</code> appends. <code>2&gt;</code> redirects standard error. <code>2&gt;&amp;1</code> sends error to the same destination as normal output. <code>tee</code> writes to both the terminal and a file, which is useful when you want to watch a process and keep a record.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>ping.txt
+</code></pre></div>
+<h2 id="text-processing-basics">Text processing basics<a aria-label="Link to this section" class="g-anchor" href="#text-processing-basics">#</a></h2>
+<p>You will not become an awk expert in one page, but you should recognize the common tools.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">cut<span class="w"> </span>-d:<span class="w"> </span>-f1<span class="w"> </span>/etc/passwd
+sort<span class="w"> </span>/etc/passwd
+sort<span class="w"> </span>-u<span class="w"> </span>/etc/passwd
+uniq<span class="w"> </span>-c<span class="w"> </span>sorted.txt
+tr<span class="w"> </span><span class="s1">'[:lower:]'</span><span class="w"> </span><span class="s1">'[:upper:]'</span><span class="w"> </span>&lt;<span class="w"> </span>/etc/hostname
+sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'1,10p'</span><span class="w"> </span>/etc/passwd
+sed<span class="w"> </span><span class="s1">'s/old/new/g'</span><span class="w"> </span>file.txt
+awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'{print $1, $3}'</span><span class="w"> </span>/etc/passwd
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Tool</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cut</code></td>
+<td>Select fields or characters</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>Sort lines</td>
+</tr>
+<tr>
+<td><code>uniq</code></td>
+<td>Collapse adjacent duplicates</td>
+</tr>
+<tr>
+<td><code>tr</code></td>
+<td>Translate or delete characters</td>
+</tr>
+<tr>
+<td><code>sed</code></td>
+<td>Stream editing and substitution</td>
+</tr>
+<tr>
+<td><code>awk</code></td>
+<td>Field-based processing and reporting</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>uniq</code> only collapses adjacent duplicates, so sort first if you want a true unique list.</p>
+<h2 id="edit-files-with-nano">Edit files with nano<a aria-label="Link to this section" class="g-anchor" href="#edit-files-with-nano">#</a></h2>
+<p><code>nano</code> is a small, friendly editor. It is a good default when you need to make a quick change.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nano<span class="w"> </span>notes.txt
+</code></pre></div>
+<p>The bottom of the screen shows the shortcuts. <code>Ctrl+O</code> writes the file, <code>Enter</code> confirms the filename, <code>Ctrl+X</code> exits, <code>Ctrl+K</code> cuts a line and <code>Ctrl+U</code> pastes it. <code>Ctrl+W</code> searches.</p>
+<p>Before editing a system file, make a backup:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>cp<span class="w"> </span>/etc/ssh/sshd_config<span class="w"> </span>/etc/ssh/sshd_config.bak
+sudo<span class="w"> </span>nano<span class="w"> </span>/etc/ssh/sshd_config
+</code></pre></div>
+<p>Then validate the change before restarting a service. A broken configuration file can lock you out of a remote system.</p>
+<h2 id="edit-files-with-vim">Edit files with vim<a aria-label="Link to this section" class="g-anchor" href="#edit-files-with-vim">#</a></h2>
+<p><code>vim</code> is everywhere, including minimal systems where nano is not installed. You do not need to master it, but you should be able to open, edit, save and quit.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">vim<span class="w"> </span>notes.txt
+vimtutor
+</code></pre></div>
+<p><code>vimtutor</code> opens a guided lesson. Run it once and work through the whole file. It is faster than memorizing a wall of shortcuts.</p>
+<p>Vim has modes. Normal mode is for navigation and commands. Insert mode is for typing. Visual mode selects text. Command-line mode starts with <code>:</code>.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Mode</th>
+<th>How to enter</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Normal</td>
+<td><code>Esc</code></td>
+<td>Move, delete, copy and run commands</td>
+</tr>
+<tr>
+<td>Insert</td>
+<td><code>i</code>, <code>a</code>, <code>o</code></td>
+<td>Type text</td>
+</tr>
+<tr>
+<td>Visual</td>
+<td><code>v</code>, <code>V</code>, <code>Ctrl+v</code></td>
+<td>Select characters, lines or blocks</td>
+</tr>
+<tr>
+<td>Command line</td>
+<td><code>:</code></td>
+<td>Save, quit, search and replace</td>
+</tr>
+</tbody>
+</table></div>
+<p>Move around in normal mode:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>h</code>, <code>j</code>, <code>k</code>, <code>l</code></td>
+<td>Left, down, up, right</td>
+</tr>
+<tr>
+<td><code>w</code>, <code>b</code>, <code>e</code></td>
+<td>Next word, previous word, end of word</td>
+</tr>
+<tr>
+<td><code>0</code>, <code>^</code>, <code>$</code></td>
+<td>Start of line, first non-blank, end of line</td>
+</tr>
+<tr>
+<td><code>gg</code>, <code>G</code></td>
+<td>Start of file, end of file</td>
+</tr>
+<tr>
+<td><code>:42</code></td>
+<td>Go to line 42</td>
+</tr>
+<tr>
+<td><code>Ctrl+d</code>, <code>Ctrl+u</code></td>
+<td>Half page down, half page up</td>
+</tr>
+<tr>
+<td><code>Ctrl+f</code>, <code>Ctrl+b</code></td>
+<td>Page down, page up</td>
+</tr>
+<tr>
+<td><code>%</code></td>
+<td>Jump to the matching bracket</td>
+</tr>
+</tbody>
+</table></div>
+<p>Edit text:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>i</code>, <code>I</code></td>
+<td>Insert before the cursor, at the start of the line</td>
+</tr>
+<tr>
+<td><code>a</code>, <code>A</code></td>
+<td>Append after the cursor, at the end of the line</td>
+</tr>
+<tr>
+<td><code>o</code>, <code>O</code></td>
+<td>Open a new line below, above</td>
+</tr>
+<tr>
+<td><code>x</code>, <code>X</code></td>
+<td>Delete a character, delete the character before the cursor</td>
+</tr>
+<tr>
+<td><code>dw</code>, <code>dd</code>, <code>D</code></td>
+<td>Delete a word, a line, to the end of the line</td>
+</tr>
+<tr>
+<td><code>d0</code>, <code>d$</code></td>
+<td>Delete to the start, end of the line</td>
+</tr>
+<tr>
+<td><code>yy</code>, <code>yw</code></td>
+<td>Yank a line, a word</td>
+</tr>
+<tr>
+<td><code>p</code>, <code>P</code></td>
+<td>Paste after, before</td>
+</tr>
+<tr>
+<td><code>u</code>, <code>Ctrl+r</code></td>
+<td>Undo, redo</td>
+</tr>
+<tr>
+<td><code>r</code>, <code>cc</code>, <code>C</code></td>
+<td>Replace a character, change a line, change to the end</td>
+</tr>
+<tr>
+<td><code>&gt;&gt;</code>, <code>&lt;&lt;</code></td>
+<td>Indent, outdent</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>Repeat the last change</td>
+</tr>
+</tbody>
+</table></div>
+<p>Search, replace and manage files:</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/pattern</code>, <code>?pattern</code></td>
+<td>Search forward, backward</td>
+</tr>
+<tr>
+<td><code>n</code>, <code>N</code></td>
+<td>Next match, previous match</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>Search for the word under the cursor</td>
+</tr>
+<tr>
+<td><code>:%s/old/new/g</code></td>
+<td>Replace every match in the file</td>
+</tr>
+<tr>
+<td><code>:s/old/new/g</code></td>
+<td>Replace every match on the current line</td>
+</tr>
+<tr>
+<td><code>:%s/old/new/gc</code></td>
+<td>Replace with confirmation</td>
+</tr>
+<tr>
+<td><code>:noh</code></td>
+<td>Clear search highlighting</td>
+</tr>
+<tr>
+<td><code>:w</code>, <code>:q</code>, <code>:wq</code>, <code>:q!</code></td>
+<td>Save, quit, save and quit, quit without saving</td>
+</tr>
+<tr>
+<td><code>:e file</code></td>
+<td>Open another file</td>
+</tr>
+<tr>
+<td><code>:split file</code>, <code>:vsplit file</code></td>
+<td>Split horizontally, vertically</td>
+</tr>
+<tr>
+<td><code>Ctrl+w w</code></td>
+<td>Switch between splits</td>
+</tr>
+<tr>
+<td><code>:ls</code>, <code>:bn</code>, <code>:bp</code></td>
+<td>List buffers, next buffer, previous buffer</td>
+</tr>
+</tbody>
+</table></div>
+<p>Visual mode and macros:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">v       select characters
+V       select lines
+Ctrl+v  select a block
+y d &gt; &lt; yank, delete, indent, outdent
+qa      start recording a macro into register a
+q       stop recording
+@a      run macro a
+@@      repeat the last macro
+</code></pre></div>
+<p>Useful settings for reading and editing configuration:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">text</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-text">:set number
+:set relativenumber
+:set paste
+:set nohlsearch
+</code></pre></div>
+<p>Use <code>sudoedit</code> for system files. It runs your editor with your normal environment and writes the result through sudo, which avoids leaving root-owned swap or configuration files behind:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudoedit<span class="w"> </span>/etc/ssh/sshd_config
+</code></pre></div>
+<p>If you get lost, press <code>Esc</code> a few times, then type <code>:q!</code> to leave without saving.</p>
+<h2 id="regular-expressions-in-practice">Regular expressions in practice<a aria-label="Link to this section" class="g-anchor" href="#regular-expressions-in-practice">#</a></h2>
+<p>A regular expression describes a pattern. <code>grep</code>, <code>sed</code>, <code>awk</code>, <code>find</code> and many editors use some version of them. The basics are consistent, but the exact syntax depends on the tool.</p>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.</code></td>
+<td>Any single character except a newline</td>
+</tr>
+<tr>
+<td><code>^</code></td>
+<td>Start of a line</td>
+</tr>
+<tr>
+<td><code>$</code></td>
+<td>End of a line</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>Zero or more of the previous item</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>One or more of the previous item, in extended mode</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>Zero or one of the previous item, in extended mode</td>
+</tr>
+<tr>
+<td><code>[abc]</code></td>
+<td>One character from the set</td>
+</tr>
+<tr>
+<td><code>[^abc]</code></td>
+<td>One character not in the set</td>
+</tr>
+<tr>
+<td><code>[a-z]</code></td>
+<td>One character in the range</td>
+</tr>
+<tr>
+<td><code>[[:digit:]]</code></td>
+<td>One digit, in a POSIX character class</td>
+</tr>
+<tr>
+<td><code>[[:alpha:]]</code></td>
+<td>One letter</td>
+</tr>
+<tr>
+<td><code>[[:space:]]</code></td>
+<td>One whitespace character</td>
+</tr>
+<tr>
+<td><code>(...)</code></td>
+<td>Group, in extended mode</td>
+</tr>
+<tr>
+<td>`a</td>
+<td>b`</td>
+</tr>
+<tr>
+<td><code>\b</code></td>
+<td>Word boundary in many implementations</td>
+</tr>
+</tbody>
+</table></div>
+<p>Use single quotes around patterns so the shell does not expand them. Use <code>grep -E</code> for extended regular expressions, or <code>grep -P</code> for Perl-compatible expressions when available.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'^(root|daemon):'</span><span class="w"> </span>/etc/passwd
+grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'Failed|Invalid'</span><span class="w"> </span>/var/log/auth.log
+grep<span class="w"> </span>-oE<span class="w"> </span><span class="s1">'([0-9]{1,3}\.){3}[0-9]{1,3}'</span><span class="w"> </span>/var/log/auth.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-u
+grep<span class="w"> </span>-vE<span class="w"> </span><span class="s1">'^\s*(#|$)'</span><span class="w"> </span>/etc/ssh/sshd_config
+</code></pre></div>
+<p>The last command removes comment lines and blank lines. <code>[0-9]{1,3}</code> repeats a digit class. The escaped dot matches a literal dot rather than any character.</p>
+<p><code>grep -o</code> prints only the matching part. That is useful for extracting addresses, usernames or identifiers. <code>grep -c</code> counts matching lines, not matches. <code>grep -l</code> prints filenames. <code>grep -L</code> prints files without a match.</p>
+<p>Search a code tree while excluding unrelated directories:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">grep<span class="w"> </span>-rn<span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.conf'</span><span class="w"> </span>--exclude-dir<span class="o">=</span><span class="s1">'.git'</span><span class="w"> </span><span class="s1">'Listen'</span><span class="w"> </span>/etc<span class="w"> </span>/opt<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+<p>The <code>2&gt;/dev/null</code> hides permission errors. Do not hide all errors on a system you are troubleshooting until you have seen them once.</p>
+<h2 id="stream-editing-with-sed">Stream editing with sed<a aria-label="Link to this section" class="g-anchor" href="#stream-editing-with-sed">#</a></h2>
+<p><code>sed</code> reads input, applies commands and writes output. By default it prints every line.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'1,10p'</span><span class="w"> </span>/etc/passwd
+sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'/^root/p'</span><span class="w"> </span>/etc/passwd
+sed<span class="w"> </span><span class="s1">'s/:/\t/g'</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+sed<span class="w"> </span>-E<span class="w"> </span><span class="s1">'s/^(root|daemon):[^:]*/\1:REDACTED/'</span><span class="w"> </span>/etc/passwd
+</code></pre></div>
+<p><code>-n</code> suppresses automatic printing. The <code>p</code> command prints selected lines. <code>s/old/new/</code> substitutes the first match on each line. Add <code>g</code> to replace every match.</p>
+<p>Addresses select lines:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'5,12p'</span><span class="w"> </span>file.txt
+sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'/start/,/end/p'</span><span class="w"> </span>file.txt
+sed<span class="w"> </span><span class="s1">'/^#/d'</span><span class="w"> </span>file.txt
+</code></pre></div>
+<p><code>5,12p</code> selects a line range. <code>/start/,/end/p</code> selects from one pattern to another. <code>d</code> deletes matching lines from the output.</p>
+<p>Edit a file in place, keeping a backup:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sed<span class="w"> </span>-i.bak<span class="w"> </span><span class="s1">'s/old-value/new-value/g'</span><span class="w"> </span>config.txt
+</code></pre></div>
+<p>Always inspect the result:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">diff<span class="w"> </span>-u<span class="w"> </span>config.txt.bak<span class="w"> </span>config.txt
+</code></pre></div>
+<p><code>sed</code> is not a full programming language, but it is excellent for predictable line-oriented edits. For complex parsing, use <code>awk</code>, Python or a real configuration tool.</p>
+<h2 id="field-processing-with-awk">Field processing with awk<a aria-label="Link to this section" class="g-anchor" href="#field-processing-with-awk">#</a></h2>
+<p><code>awk</code> treats each line as a record and each record as fields. It is ideal for reports and quick extraction.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'{print $1, $3}'</span><span class="w"> </span>/etc/passwd
+awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'$3 &gt;= 1000 {print $1, $3, $7}'</span><span class="w"> </span>/etc/passwd
+awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'BEGIN {print "user uid"} {print $1, $3} END {print "done"}'</span><span class="w"> </span>/etc/passwd
+awk<span class="w"> </span><span class="s1">'{print NR, $0}'</span><span class="w"> </span>file.txt
+awk<span class="w"> </span><span class="s1">'{print NF, $NF}'</span><span class="w"> </span>file.txt
+</code></pre></div>
+<div class="g-table-wrap"><table class="g-table">
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$0</code></td>
+<td>The whole record</td>
+</tr>
+<tr>
+<td><code>$1</code>, <code>$2</code></td>
+<td>Fields</td>
+</tr>
+<tr>
+<td><code>$NF</code></td>
+<td>The last field</td>
+</tr>
+<tr>
+<td><code>NF</code></td>
+<td>Number of fields</td>
+</tr>
+<tr>
+<td><code>NR</code></td>
+<td>Current record number across all input</td>
+</tr>
+<tr>
+<td><code>FNR</code></td>
+<td>Record number in the current file</td>
+</tr>
+<tr>
+<td><code>FS</code></td>
+<td>Input field separator</td>
+</tr>
+<tr>
+<td><code>OFS</code></td>
+<td>Output field separator</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>-F:</code> sets the field separator to a colon. A pattern before the action filters records. <code>BEGIN</code> runs before input. <code>END</code> runs after input.</p>
+<p>A more realistic report:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'$3 &gt;= 1000 &amp;&amp; $3 &lt; 65534 {</span>
+<span class="s1">    printf "%-18s %6s %s\n", $1, $3, $7</span>
+<span class="s1">}'</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+</code></pre></div>
+<p>Use <code>printf</code> when alignment matters. Use <code>sort -k</code> to sort by a specific field:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">awk<span class="w"> </span>-F:<span class="w"> </span><span class="s1">'{print $1, $3}'</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-k2,2n
+</code></pre></div>
+<h2 id="compare-and-combine-files">Compare and combine files<a aria-label="Link to this section" class="g-anchor" href="#compare-and-combine-files">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">diff<span class="w"> </span>-u<span class="w"> </span>old.txt<span class="w"> </span>new.txt
+diff<span class="w"> </span>-r<span class="w"> </span>dir1<span class="w"> </span>dir2
+patch<span class="w"> </span>-p1<span class="w"> </span>&lt;<span class="w"> </span>change.patch
+comm<span class="w"> </span>-12<span class="w"> </span>&lt;<span class="o">(</span>sort<span class="w"> </span>a.txt<span class="o">)</span><span class="w"> </span>&lt;<span class="o">(</span>sort<span class="w"> </span>b.txt<span class="o">)</span>
+join<span class="w"> </span>-t:<span class="w"> </span>-1<span class="w"> </span><span class="m">1</span><span class="w"> </span>-2<span class="w"> </span><span class="m">1</span><span class="w"> </span>sorted-a.txt<span class="w"> </span>sorted-b.txt
+paste<span class="w"> </span>-d,<span class="w"> </span>a.txt<span class="w"> </span>b.txt
+column<span class="w"> </span>-t<span class="w"> </span>-s:<span class="w"> </span>/etc/passwd
+</code></pre></div>
+<p><code>diff -u</code> produces a unified diff that <code>patch</code> can apply. <code>comm</code> compares two sorted files. <code>join</code> combines lines with a common key. <code>paste</code> places files side by side. <code>column -t</code> aligns columns for reading.</p>
+<p>The <code>&lt;(...)</code> syntax is process substitution. The shell runs the command and provides its output as a temporary file-like object. It is a Bash feature, not portable to every shell.</p>
+<h2 id="structured-text-and-encodings">Structured text and encodings<a aria-label="Link to this section" class="g-anchor" href="#structured-text-and-encodings">#</a></h2>
+<p>JSON and YAML are common in configuration and APIs.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">python3<span class="w"> </span>-m<span class="w"> </span>json.tool<span class="w"> </span>data.json
+jq<span class="w"> </span>.<span class="w"> </span>data.json
+jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.items[] | .name'</span><span class="w"> </span>data.json
+yq<span class="w"> </span><span class="s1">'.services.web.image'</span><span class="w"> </span>compose.yml
+</code></pre></div>
+<p><code>jq</code> is a full JSON query language. Start with <code>.</code> to pretty-print, then select fields. <code>yq</code> is similar for YAML. If these tools are missing, Python is a reliable fallback for JSON.</p>
+<p>Check a file's type before opening it in a text editor:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">file<span class="w"> </span>mystery.dat
+file<span class="w"> </span>-i<span class="w"> </span>mystery.dat
+strings<span class="w"> </span>-n<span class="w"> </span><span class="m">6</span><span class="w"> </span>mystery.dat<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+xxd<span class="w"> </span>-l<span class="w"> </span><span class="m">128</span><span class="w"> </span>mystery.dat
+</code></pre></div>
+<p><code>file</code> inspects magic bytes. <code>file -i</code> reports the MIME type and charset. <code>strings</code> extracts printable runs from a binary. <code>xxd</code> shows a hex dump.</p>
+<p>Convert text encodings with <code>iconv</code>:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">iconv<span class="w"> </span>-f<span class="w"> </span>ISO-8859-1<span class="w"> </span>-t<span class="w"> </span>UTF-8<span class="w"> </span>old.txt<span class="w"> </span>&gt;<span class="w"> </span>new.txt
+</code></pre></div>
+<p>If a file contains invalid bytes, <code>iconv</code> stops. Use <code>-c</code> to drop invalid characters, but only after you understand what is being lost.</p>
+<p>Base64 is an encoding, not encryption:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">base64<span class="w"> </span>file.bin<span class="w"> </span>&gt;<span class="w"> </span>file.b64
+base64<span class="w"> </span>-d<span class="w"> </span>file.b64<span class="w"> </span>&gt;<span class="w"> </span>file.bin
+</code></pre></div>
+<h2 id="lab-build-a-small-report">Lab: build a small report<a aria-label="Link to this section" class="g-anchor" href="#lab-build-a-small-report">#</a></h2>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">mkdir<span class="w"> </span>-p<span class="w"> </span>~/linux-foundations/lab04
+<span class="nb">cd</span><span class="w"> </span>~/linux-foundations/lab04
+cp<span class="w"> </span>/etc/passwd<span class="w"> </span>users.txt
+grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">'^#'</span><span class="w"> </span>users.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d:<span class="w"> </span>-f1,3,7<span class="w"> </span>&gt;<span class="w"> </span>report.txt
+sort<span class="w"> </span>report.txt<span class="w"> </span>-o<span class="w"> </span>report.txt
+head<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span>report.txt
+wc<span class="w"> </span>-l<span class="w"> </span>report.txt
+</code></pre></div>
+<p>Then answer:</p>
+<ol>
+<li>How many user entries are in the report?</li>
+<li>Which shells appear in the last field?</li>
+<li>Which account has UID 0?</li>
+<li>What happens if you run <code>grep -v '^#' users.txt &gt; users.txt</code>? Do not run it on an important file. Explain the risk.</li>
+</ol>
+<h2 id="common-mistakes">Common mistakes<a aria-label="Link to this section" class="g-anchor" href="#common-mistakes">#</a></h2>
+<ul>
+<li>Editing a file in place with a redirection that points to the same file.</li>
+<li>Restarting a service before validating its configuration.</li>
+<li>Using <code>cat</code> on a multi-gigabyte log.</li>
+<li>Forgetting that <code>grep</code> patterns are regular expressions unless you use <code>-F</code>.</li>
+<li>Running <code>uniq</code> without sorting first.</li>
+</ul>
+<h2 id="checkpoint">Checkpoint<a aria-label="Link to this section" class="g-anchor" href="#checkpoint">#</a></h2>
+<p>You should now be able to:</p>
+<ul>
+<li>Read short and long files with the right tool.</li>
+<li>Search logs and configuration with <code>grep</code>.</li>
+<li>Build a multi-stage pipeline.</li>
+<li>Redirect output and keep a copy with <code>tee</code>.</li>
+<li>Make a safe edit with nano or vim.</li>
+</ul>
+<p>Next you will learn how Linux decides who can read, write and execute those files.</p>
+</div>
+      <p class="g-source-note">Linux Foundations handbook: Part 04 of 10. This companion handbook sits alongside the main chapters. Practice every command in a lab you own.</p>
+      <div class="g-foundation-cta">
+        <div>
+          <p class="g-kicker">Next step</p>
+          <strong>Ready for the main guide?</strong>
+          <p>Start Chapter 01 and apply these fundamentals to a full Linux for Hackers workflow.</p>
+        </div>
+        <a class="g-btn primary" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html">
+          Start chapter 01 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <nav class="g-chapter-nav" aria-label="Handbook navigation"><a class="g-chapter-card" href="../foundations/03-files-and-filesystem.html" data-prev-foundation><span class="g-chapter-card-label">Previous / Part 03</span><strong>Files, Directories and the Filesystem</strong></a><a class="g-chapter-card" href="../foundations/05-users-permissions-sudo.html" data-next-foundation><span class="g-chapter-card-label">Next / Part 05</span><strong>Users, Permissions and Sudo</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#read-a-file-without-flooding-the-terminal" data-toc-link>Read a file without flooding the terminal</a><a class="g-toc-link depth-2" href="#count-and-number-lines" data-toc-link>Count and number lines</a><a class="g-toc-link depth-2" href="#search-with-grep" data-toc-link>Search with grep</a><a class="g-toc-link depth-2" href="#pipes-turn-small-tools-into-one-workflow" data-toc-link>Pipes turn small tools into one workflow</a><a class="g-toc-link depth-2" href="#redirection-and-tee" data-toc-link>Redirection and tee</a><a class="g-toc-link depth-2" href="#text-processing-basics" data-toc-link>Text processing basics</a><a class="g-toc-link depth-2" href="#edit-files-with-nano" data-toc-link>Edit files with nano</a><a class="g-toc-link depth-2" href="#edit-files-with-vim" data-toc-link>Edit files with vim</a><a class="g-toc-link depth-2" href="#regular-expressions-in-practice" data-toc-link>Regular expressions in practice</a><a class="g-toc-link depth-2" href="#stream-editing-with-sed" data-toc-link>Stream editing with sed</a><a class="g-toc-link depth-2" href="#field-processing-with-awk" data-toc-link>Field processing with awk</a><a class="g-toc-link depth-2" href="#compare-and-combine-files" data-toc-link>Compare and combine files</a><a class="g-toc-link depth-2" href="#structured-text-and-encodings" data-toc-link>Structured text and encodings</a><a class="g-toc-link depth-2" href="#lab-build-a-small-report" data-toc-link>Lab: build a small report</a><a class="g-toc-link depth-2" href="#common-mistakes" data-toc-link>Common mistakes</a><a class="g-toc-link depth-2" href="#checkpoint" data-toc-link>Checkpoint</a></nav>
+    <div class="g-toc-foot">Part 04 / 16 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>

