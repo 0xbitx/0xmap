@@ -1,1 +1,3 @@
 # 0xmap
+
+APP: https://0xbitx.github.io/0xmap
